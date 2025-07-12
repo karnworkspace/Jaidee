@@ -1,0 +1,79 @@
+/* Dashboard.module.css */
+
+.dashboardContainer {
+  padding: 2rem;
+  background-color: #f9fafb;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #111827;
+}
+
+.addButton {
+  background-color: #10b981;
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.addButton:hover {
+  background-color: #059669;
+}
+
+/* Table Styling */
+.customerTableContainer {
+  width: 100%;
+  background-color: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.customerTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.customerTable th,
+.customerTable td {
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.customerTable th {
+  background-color: #f3f4f6;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.customerTable tbody tr.customerRow:hover {
+  background-color: #f9fafb;
+  cursor: pointer;
+}
+
+.customerTable td {
+  color: #374151;
+}
+
+.noCustomers {
+  text-align: center;
+  padding: 4rem;
+  color: #6b7280;
+}

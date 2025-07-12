@@ -1,0 +1,74 @@
+/* RentToOwnTable.module.css */
+
+.container {
+  padding: 1rem;
+}
+
+.header {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 700;   /* font-bold */
+  margin-bottom: 1rem;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb; /* border */
+  border-radius: 0.75rem; /* rounded-xl */
+}
+
+.table {
+  min-width: 100%;
+  font-size: 0.875rem; /* text-sm */
+  border-collapse: collapse; /* Ensure borders collapse */
+}
+
+.tableHeader {
+  background-color: #f3f4f6; /* bg-gray-100 */
+}
+
+.th {
+  padding: 0.5rem 1rem; /* px-4 py-2 */
+  text-align: left;
+  border: 1px solid #e5e7eb; /* Add border to table headers */
+}
+
+.th:last-child {
+  text-align: right;
+}
+
+.td {
+  padding: 0.5rem 1rem; /* px-4 py-2 */
+  border: 1px solid #e5e7eb; /* Add border to table cells */
+}
+
+.tdRight {
+  padding: 0.5rem 1rem; /* px-4 py-2 */
+  text-align: right;
+  border: 1px solid #e5e7eb; /* Add border to table cells */
+}
+
+.endOfMonthRow {
+  background-color: #dcfce7; /* bg-green-50 */
+  font-weight: 600; /* font-semibold */
+}
+
+.normalRow:hover {
+  background-color: #f9fafb; /* hover:bg-gray-50 */
+}
+
+.buttonContainer {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.toggleButton {
+  padding: 0.5rem 1rem; /* px-4 py-2 */
+  border-radius: 0.25rem; /* rounded */
+  background-color: #2563eb; /* bg-blue-600 */
+  color: white;
+  cursor: pointer;
+}
+
+.toggleButton:hover {
+  background-color: #1d4ed8; /* hover:bg-blue-700 */
+}
