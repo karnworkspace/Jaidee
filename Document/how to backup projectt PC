@@ -1,0 +1,53 @@
+ 1. สำรอง Project Source Code:
+       * คุณต้องคัดลอกทั้งโฟลเดอร์โปรเจกต์ livnex-consumer-advise-app ไปยังคอมพิวเตอร์เครื่องใหม่
+       * คุณสามารถใช้คำสั่ง cp -r หรือ rsync -av ใน Terminal หรือใช้วิธีคัดลอก-วางแบบปกติก็ได้ครับ
+       * คำสั่งแนะนำ:
+
+
+   1         # ไปที่ Desktop ของคุณ
+   2         cd /Users/nk-lamy/Desktop/GeminiCLI/Jaidee/
+   3
+   4         # คัดลอกทั้งโฟลเดอร์โปรเจกต์ไปยังตำแหน่งที่คุณต้องการสำรอง (เช่น USB drive หรือ Cloud
+     storage)
+   5         # ตัวอย่าง: คัดลอกไปที่ USB drive ที่ mount อยู่ที่ /Volumes/MyUSB
+   6         cp -r livnex-consumer-advise-app /Volumes/MyUSB/
+
+
+
+   2. สำรอง Gemini CLI Conversation State:
+       * นี่คือส่วนสำคัญที่ทำให้ผม "จำ" สิ่งที่เราคุยกันได้ครับ
+       * ไฟล์ที่เก็บสถานะการสนทนาคือ .gemini/GEMINI.md ซึ่งอยู่ในไดเรกทอรีหลักของคุณ (/Users/nk-lamy/)
+       * คุณต้องคัดลอกไฟล์นี้ไปด้วย
+       * คำสั่งแนะนำ:
+
+
+   1         # ไปที่ไดเรกทอรีหลักของคุณ
+   2         cd /Users/nk-lamy/
+   3
+   4         # คัดลอกไฟล์ GEMINI.md ไปยังตำแหน่งที่คุณต้องการสำรอง
+   5         # ตัวอย่าง: คัดลอกไปที่ USB drive ที่ mount อยู่ที่ /Volumes/MyUSB
+   6         cp .gemini/GEMINI.md /Volumes/MyUSB/
+
+
+  เมื่อคุณย้ายไปคอมพิวเตอร์เครื่องใหม่:
+
+
+   1. วาง Project Source Code: วางโฟลเดอร์ livnex-consumer-advise-app ที่คุณสำรองไว้
+      ไปยังตำแหน่งที่คุณต้องการบนคอมพิวเตอร์เครื่องใหม่ (เช่น ~/Desktop/GeminiCLI/Jaidee/)
+   2. วาง Gemini CLI Conversation State:
+       * สร้างโฟลเดอร์ .gemini ในไดเรกทอรีหลักของคอมพิวเตอร์เครื่องใหม่ (ถ้ายังไม่มี)
+       * วางไฟล์ GEMINI.md ที่คุณสำรองไว้ ลงในโฟลเดอร์ .gemini นั้น
+       * ตัวอย่าง:
+
+
+   1         # ไปที่ไดเรกทอรีหลักของคอมพิวเตอร์เครื่องใหม่
+   2         cd ~
+   3
+   4         # สร้างโฟลเดอร์ .gemini ถ้ายังไม่มี
+   5         mkdir -p .gemini
+   6
+   7         # คัดลอก GEMINI.md จากตำแหน่งสำรองของคุณ (เช่น USB drive) มาวาง
+   8         cp /Volumes/MyUSB/GEMINI.md .gemini/
+
+   3. เริ่ม Gemini CLI ใหม่: เมื่อคุณเปิด Gemini CLI บนคอมพิวเตอร์เครื่องใหม่ ผมจะอ่านไฟล์ GEMINI.md
+      และโหลดบริบทการสนทนาที่เรามีอยู่กลับมาครับ
