@@ -157,186 +157,196 @@ function CustomerForm() {
 
   return (
     <div className={styles.formContainer}>
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <h2>{isEditing ? 'แก้ไขข้อมูลลูกค้า' : 'เพิ่มข้อมูลลูกค้าใหม่'}</h2>
+      <div className={styles.formWrapper}>
+        <div className={styles.formHeader}>
+          <h2>{isEditing ? 'แก้ไขข้อมูลลูกค้า' : 'เพิ่มข้อมูลลูกค้าใหม่'}</h2>
+        </div>
+        <div className={styles.formContent}>
+          <form onSubmit={handleSubmit}>
         
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}><label>วันที่<span className={styles.required}>*</span></label><input type="date" name="date" value={formData.date} onChange={handleChange} required /></div>
-            <div className={styles.formGroup}><label>เจ้าหน้าที่</label><input type="text" name="officer" value={formData.officer} onChange={handleChange} /></div>
-        </div>
+            <div className={styles.formSection}>
+              <h3>📋 ข้อมูลเบื้องต้น</h3>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>วันที่<span className={styles.required}>*</span></label><input type="date" name="date" value={formData.date} onChange={handleChange} required /></div>
+                <div className={styles.formGroup}><label>เจ้าหน้าที่</label><input type="text" name="officer" value={formData.officer} onChange={handleChange} /></div>
+              </div>
+            </div>
 
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}><label>ชื่อ-นามสกุล<span className={styles.required}>*</span></label><input type="text" name="name" value={formData.name} onChange={handleChange} required /></div>
-            <div className={styles.formGroup}><label>อายุ<span className={styles.required}>*</span></label><input type="number" name="age" value={formData.age} onChange={handleChange} required /></div>
-        </div>
-
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}><label>เบอร์โทร<span className={styles.required}>*</span></label><input type="text" name="phone" value={formData.phone} onChange={handleChange} required /></div>
-            <div className={styles.formGroup}><label>อาชีพ<span className={styles.required}>*</span></label><input type="text" name="job" value={formData.job} onChange={handleChange} required /></div>
-        </div>
-
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}><label>ตำแหน่ง<span className={styles.required}>*</span></label><input type="text" name="position" value={formData.position} onChange={handleChange} required /></div>
-            <div className={styles.formGroup}>
-                <label>เจ้าของธุรกิจประเภท</label>
-                <select name="businessOwnerType" value={formData.businessOwnerType} onChange={handleChange}>
+            <div className={styles.formSection}>
+              <h3>👤 ข้อมูลส่วนบุคคล</h3>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>ชื่อ-นามสกุล<span className={styles.required}>*</span></label><input type="text" name="name" value={formData.name} onChange={handleChange} required /></div>
+                <div className={styles.formGroup}><label>อายุ<span className={styles.required}>*</span></label><input type="number" name="age" value={formData.age} onChange={handleChange} required /></div>
+              </div>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>เบอร์โทร<span className={styles.required}>*</span></label><input type="text" name="phone" value={formData.phone} onChange={handleChange} required /></div>
+                <div className={styles.formGroup}><label>อาชีพ<span className={styles.required}>*</span></label><input type="text" name="job" value={formData.job} onChange={handleChange} required /></div>
+              </div>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>ตำแหน่ง<span className={styles.required}>*</span></label><input type="text" name="position" value={formData.position} onChange={handleChange} required /></div>
+                <div className={styles.formGroup}>
+                  <label>เจ้าของธุรกิจประเภท</label>
+                  <select name="businessOwnerType" value={formData.businessOwnerType} onChange={handleChange}>
                     <option value="ไม่ใช่เจ้าของธุรกิจ">ไม่ใช่เจ้าของธุรกิจ</option>
                     <option value="เจ้าของธุรกิจส่วนตัว">เจ้าของธุรกิจส่วนตัว</option>
-                </select>
+                  </select>
+                </div>
+              </div>
+              {formData.businessOwnerType === 'เจ้าของธุรกิจส่วนตัว' && (
+                <div className={styles.formRow + ' ' + styles.fullWidth}>
+                  <div className={styles.formGroup}>
+                    <label>ประเภทธุรกิจส่วนตัว</label>
+                    <input type="text" name="privateBusinessType" value={formData.privateBusinessType} onChange={handleChange} />
+                  </div>
+                </div>
+              )}
             </div>
-        </div>
 
-        {formData.businessOwnerType === 'เจ้าของธุรกิจส่วนตัว' && (
-            <div className={styles.formGroup}>
-                <label>ประเภทธุรกิจส่วนตัว</label>
-                <input type="text" name="privateBusinessType" value={formData.privateBusinessType} onChange={handleChange} />
+            <div className={styles.formSection}>
+              <h3>🏠 ข้อมูลทรัพย์สิน</h3>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>โครงการ<span className={styles.required}>*</span></label><input type="text" name="projectName" value={formData.projectName} onChange={handleChange} required /></div>
+                <div className={styles.formGroup}><label>เลขห้อง<span className={styles.required}>*</span></label><input type="text" name="unit" value={formData.unit} onChange={handleChange} required /></div>
+              </div>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>มูลค่าทรัพย์ (บาท)<span className={styles.required}>*</span></label><input type="text" name="propertyValue" value={formatNumber(formData.propertyValue)} onChange={handleNumberChange} required /></div>
+                <div className={styles.formGroup}><label>LTV (%)<span className={styles.required}>*</span></label><input type="number" name="ltv" value={formData.ltv} onChange={handleChange} required /></div>
+              </div>
+              <div className={styles.formRow + ' ' + styles.fullWidth}>
+                <div className={styles.formGroup}><label>ช่วงเวลาที่พร้อมโอน<span className={styles.required}>*</span></label><input type="month" name="readyToTransfer" value={formData.readyToTransfer} onChange={handleChange} required /></div>
+              </div>
             </div>
-        )}
 
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}><label>โครงการ<span className={styles.required}>*</span></label><input type="text" name="projectName" value={formData.projectName} onChange={handleChange} required /></div>
-            <div className={styles.formGroup}><label>เลขห้อง<span className={styles.required}>*</span></label><input type="text" name="unit" value={formData.unit} onChange={handleChange} required /></div>
-        </div>
+            <div className={styles.formSection}>
+              <h3>💰 ข้อมูลการเช่าออม (Rent-to-Own Evaluation)</h3>
+              <h4>1. ข้อมูลทรัพย์และส่วนลด</h4>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>มูลค่าทรัพย์เต็มจำนวน</label><input type="text" name="propertyPrice" value={formatNumber(formData.propertyPrice)} onChange={handleNumberChange} /></div>
+                <div className={styles.formGroup}><label>ส่วนลด (บาท)</label><input type="text" name="discount" value={formatNumber(formData.discount)} onChange={handleNumberChange} /></div>
+              </div>
 
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}><label>มูลค่าทรัพย์ (บาท)<span className={styles.required}>*</span></label><input type="text" name="propertyValue" value={formatNumber(formData.propertyValue)} onChange={handleNumberChange} required /></div>
-            <div className={styles.formGroup}><label>LTV (%)<span className={styles.required}>*</span></label><input type="number" name="ltv" value={formData.ltv} onChange={handleChange} required /></div>
-        </div>
-
-        <div className={styles.formRow}>
-        <div className={styles.formGroup}><label>ช่วงเวลาที่พร้อมโอน<span className={styles.required}>*</span></label><input type="month" name="readyToTransfer" value={formData.readyToTransfer} onChange={handleChange} required /></div>
-        </div>
-
-    {/* New fields for detailed rent-to-own evaluation */}
-    <h3>ข้อมูลการเช่าออม (Rent-to-Own Evaluation)</h3>
-    <div className={styles.formSection}>
-        <h4>1. ข้อมูลทรัพย์และส่วนลด</h4>
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}><label>มูลค่าทรัพย์เต็มจำนวน</label><input type="text" name="propertyPrice" value={formatNumber(formData.propertyPrice)} onChange={handleNumberChange} /></div>
-            <div className={styles.formGroup}><label>ส่วนลด (บาท)</label><input type="text" name="discount" value={formatNumber(formData.discount)} onChange={handleNumberChange} /></div>
-        </div>
-    </div>
-
-    <div className={styles.formSection}>
-        <h4>2. เงื่อนไขการเช่าออม</h4>
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-                <label>จำนวนงวด (เดือน)</label>
-                <select name="installmentMonths" value={formData.installmentMonths} onChange={handleChange}>
+              <h4>2. เงื่อนไขการเช่าออม</h4>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>จำนวนงวด (เดือน)</label>
+                  <select name="installmentMonths" value={formData.installmentMonths} onChange={handleChange}>
                     <option value={6}>6</option>
                     <option value={12}>12</option>
                     <option value={18}>18</option>
                     <option value={24}>24</option>
                     <option value={30}>30</option>
                     <option value={36}>36</option>
-                </select>
-            </div>
-            <div className={styles.formGroup}><label>ค่าเช่าที่ชำระเกิน</label><input type="text" name="overpaidRent" value={formatNumber(formData.overpaidRent)} onChange={handleNumberChange} /></div>
-        </div>
-    </div>
+                  </select>
+                </div>
+                <div className={styles.formGroup}><label>ค่าเช่าที่ชำระเกิน</label><input type="text" name="overpaidRent" value={formatNumber(formData.overpaidRent)} onChange={handleNumberChange} /></div>
+              </div>
 
-    <div className={styles.formSection}>
-        <h4>3. อัตราและค่าคงที่</h4>
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}><label>อัตราค่าเช่าซื้อ (บาท/ล้าน)</label><input type="text" name="rentRatePerMillion" value={formatNumber(formData.rentRatePerMillion)} onChange={handleNumberChange} /></div>
-            <div className={styles.formGroup}><label>ตัวคูณค่าประกัน</label><input type="text" name="guaranteeMultiplier" value={formatNumber(formData.guaranteeMultiplier)} onChange={handleNumberChange} /></div>
-            <div className={styles.formGroup}><label>ตัวคูณค่าเช่าล่วงหน้า</label><input type="text" name="prepaidRentMultiplier" value={formatNumber(formData.prepaidRentMultiplier)} onChange={handleNumberChange} /></div>
-        </div>
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}><label>อัตราดอกเบี้ยต่อปี (%)</label><input type="text" name="annualInterestRate" value={formatNumber(formData.annualInterestRate)} onChange={handleNumberChange} /></div>
-        </div>
-    </div>
+              <h4>3. อัตราและค่าคงที่</h4>
+              <div className={styles.formRow + ' ' + styles.threeColumn}>
+                <div className={styles.formGroup}><label>อัตราค่าเช่าซื้อ (บาท/ล้าน)</label><input type="text" name="rentRatePerMillion" value={formatNumber(formData.rentRatePerMillion)} onChange={handleNumberChange} /></div>
+                <div className={styles.formGroup}><label>ตัวคูณค่าประกัน</label><input type="text" name="guaranteeMultiplier" value={formatNumber(formData.guaranteeMultiplier)} onChange={handleNumberChange} /></div>
+                <div className={styles.formGroup}><label>ตัวคูณค่าเช่าล่วงหน้า</label><input type="text" name="prepaidRentMultiplier" value={formatNumber(formData.prepaidRentMultiplier)} onChange={handleNumberChange} /></div>
+              </div>
+              <div className={styles.formRow + ' ' + styles.fullWidth}>
+                <div className={styles.formGroup}><label>อัตราดอกเบี้ยต่อปี (%)</label><input type="text" name="annualInterestRate" value={formatNumber(formData.annualInterestRate)} onChange={handleNumberChange} /></div>
+              </div>
 
-    <div className={styles.formSection}>
-        <h4>4. ปีที่โอน</h4>
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-                <label>ปีที่โอน</label>
-                <select name="transferYear" value={formData.transferYear} onChange={handleChange}>
+              <h4>4. ปีที่โอน</h4>
+              <div className={styles.formRow + ' ' + styles.fullWidth}>
+                <div className={styles.formGroup}>
+                  <label>ปีที่โอน</label>
+                  <select name="transferYear" value={formData.transferYear} onChange={handleChange}>
                     <option value={1}>1</option>
                     <option value={2}>2</option>
                     <option value={3}>3</option>
-                </select>
-            </div>
-        </div>
-    </div>
+                  </select>
+                </div>
+              </div>
 
-    {/* 5. ผลลัพธ์ (Read-only Display) */}
-    {calculatedRentToOwnResults && (
-        <div className={styles.formSection}>
-            <h4>5. ผลลัพธ์การคำนวณเช่าออม</h4>
-            <div className={styles.formRow}>
-                <div className={styles.formGroup}><label>มูลค่าทรัพย์หลังหักส่วนลด</label><p>{formatNumber(calculatedRentToOwnResults.propertyAfterDiscount)}</p></div>
-                <div className={styles.formGroup}><label>ค่าเช่าผ่อนต่อเดือน</label><p>{formatNumber(calculatedRentToOwnResults.monthlyRent)}</p></div>
-            </div>
-            <div className={styles.formRow}>
-                <div className={styles.formGroup}><label>ยอดชำระรวม</label><p>{formatNumber(calculatedRentToOwnResults.totalPaid)}</p></div>
-                <div className={styles.formGroup}><label>ค่าประกัน</label><p>{formatNumber(calculatedRentToOwnResults.guarantee)}</p></div>
-            </div>
-            <div className={styles.formRow}>
-                <div className={styles.formGroup}><label>ค่าเช่าล่วงหน้า</label><p>{formatNumber(calculatedRentToOwnResults.prepaidRent)}</p></div>
-                <div className={styles.formGroup}><label>ชำระเพิ่มเติมวันทำสัญญา</label><p>{formatNumber(calculatedRentToOwnResults.additionalPayment)}</p></div>
-            </div>
-            <div className={styles.formRow}>
-                <div className={styles.formGroup}><label>ค่าบริการวันโอน</label><p>{formatNumber(calculatedRentToOwnResults.transferFee)}</p></div>
-                <div className={styles.formGroup}><label>เงินออมสะสม</label><p>{formatNumber(calculatedRentToOwnResults.accumulatedSavings)}</p></div>
-            </div>
-            <div className={styles.formRow}>
-                <div className={styles.formGroup}><label>เงินต้นคงเหลือ</label><p>{formatNumber(calculatedRentToOwnResults.remainingPrincipal)}</p></div>
+              {calculatedRentToOwnResults && (
+                <div>
+                  <h4>5. ผลลัพธ์การคำนวณเช่าออม</h4>
+                  <div className={styles.resultsDisplay}>
+                    <div className={styles.formRow}>
+                      <div className={styles.formGroup}><label>มูลค่าทรัพย์หลังหักส่วนลด</label><p>{formatNumber(calculatedRentToOwnResults.propertyAfterDiscount)} บาท</p></div>
+                      <div className={styles.formGroup}><label>ค่าเช่าผ่อนต่อเดือน</label><p>{formatNumber(calculatedRentToOwnResults.monthlyRent)} บาท</p></div>
+                    </div>
+                    <div className={styles.formRow}>
+                      <div className={styles.formGroup}><label>ยอดชำระรวม</label><p>{formatNumber(calculatedRentToOwnResults.totalPaid)} บาท</p></div>
+                      <div className={styles.formGroup}><label>ค่าประกัน</label><p>{formatNumber(calculatedRentToOwnResults.guarantee)} บาท</p></div>
+                    </div>
+                    <div className={styles.formRow}>
+                      <div className={styles.formGroup}><label>ค่าเช่าล่วงหน้า</label><p>{formatNumber(calculatedRentToOwnResults.prepaidRent)} บาท</p></div>
+                      <div className={styles.formGroup}><label>ชำระเพิ่มเติมวันทำสัญญา</label><p>{formatNumber(calculatedRentToOwnResults.additionalPayment)} บาท</p></div>
+                    </div>
+                    <div className={styles.formRow}>
+                      <div className={styles.formGroup}><label>ค่าบริการวันโอน</label><p>{formatNumber(calculatedRentToOwnResults.transferFee)} บาท</p></div>
+                      <div className={styles.formGroup}><label>เงินออมสะสม</label><p>{formatNumber(calculatedRentToOwnResults.accumulatedSavings)} บาท</p></div>
+                    </div>
+                    <div className={styles.formRow + ' ' + styles.fullWidth}>
+                      <div className={styles.formGroup}><label>เงินต้นคงเหลือ</label><p>{formatNumber(calculatedRentToOwnResults.remainingPrincipal)} บาท</p></div>
+                    </div>
+                  </div>
+                  {calculatedRentToOwnResults.amortizationTable && calculatedRentToOwnResults.amortizationTable.length > 0 && (
+                    <RentToOwnTable data={calculatedRentToOwnResults.amortizationTable} />
+                  )}
+                </div>
+              )}
             </div>
 
-            {calculatedRentToOwnResults.amortizationTable && calculatedRentToOwnResults.amortizationTable.length > 0 && (
-                <RentToOwnTable data={calculatedRentToOwnResults.amortizationTable} />
-            )}
-        </div>
-    )}
+            <div className={styles.formSection}>
+              <h3>💳 ข้อมูลการเงินและสินเชื่อ</h3>
+              <div className={styles.formGroup}>
+                <label>ปัญหาด้านสินเชื่อ</label>
+                {formData.loanProblem.map((problem, index) => (
+                  <div key={index} className={styles.dynamicInputGroup}>
+                    <textarea
+                      value={problem}
+                      onChange={(e) => handleDynamicInputChange(e, index, 'loanProblem')}
+                      rows="2"
+                      placeholder="อธิบายปัญหาด้านสินเชื่อ..."
+                    ></textarea>
+                    <button type="button" onClick={() => removeDynamicInput(index, 'loanProblem')}>ลบ</button>
+                  </div>
+                ))}
+                <button type="button" className={styles.addButton} onClick={() => addDynamicInput('loanProblem')}>+ เพิ่มปัญหา</button>
+              </div>
 
-    
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>รายได้ (บาท/เดือน)<span className={styles.required}>*</span></label><input type="text" name="income" value={formatNumber(formData.income)} onChange={handleNumberChange} required /></div>
+                <div className={styles.formGroup}><label>ภาระหนี้ (บาท/เดือน)<span className={styles.required}>*</span></label><input type="text" name="debt" value={formatNumber(formData.debt)} onChange={handleNumberChange} required /></div>
+              </div>
 
-    <div className={styles.formGroup}>
-      <label>ปัญหาด้านสินเชื่อ</label>
-          {formData.loanProblem.map((problem, index) => (
-            <div key={index} className={styles.dynamicInputGroup}>
-              <textarea
-                value={problem}
-                onChange={(e) => handleDynamicInputChange(e, index, 'loanProblem')}
-                rows="2"
-              ></textarea>
-              <button type="button" onClick={() => removeDynamicInput(index, 'loanProblem')}>ลบ</button>
+              <div className={styles.formGroup}>
+                <label>แผนการดำเนินการ (Action Plan)</label>
+                {formData.actionPlan.map((plan, index) => (
+                  <div key={index} className={styles.dynamicInputGroup}>
+                    <textarea
+                      value={plan}
+                      onChange={(e) => handleDynamicInputChange(e, index, 'actionPlan')}
+                      rows="2"
+                      placeholder="อธิบายแผนการดำเนินการ..."
+                    ></textarea>
+                    <button type="button" onClick={() => removeDynamicInput(index, 'actionPlan')}>ลบ</button>
+                  </div>
+                ))}
+                <button type="button" className={styles.addButton} onClick={() => addDynamicInput('actionPlan')}>+ เพิ่มแผน</button>
+              </div>
+
+              <div className={styles.formRow + ' ' + styles.fullWidth}>
+                <div className={styles.formGroup}>
+                  <label>เป้าหมายยื่นกู้ (เดือน/ปี)<span className={styles.required}>*</span></label>
+                  <input type="date" name="targetDate" value={formData.targetDate} onChange={handleChange} required />
+                </div>
+              </div>
             </div>
-          ))}
-          <button type="button" onClick={() => addDynamicInput('loanProblem')}>+ เพิ่มปัญหา</button>
-        </div>
 
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}><label>รายได้ (บาท/เดือน)<span className={styles.required}>*</span></label><input type="text" name="income" value={formatNumber(formData.income)} onChange={handleNumberChange} required /></div>
-            <div className={styles.formGroup}><label>ภาระหนี้ (บาท/เดือน)<span className={styles.required}>*</span></label><input type="text" name="debt" value={formatNumber(formData.debt)} onChange={handleNumberChange} required /></div>
-        </div>
-
-        <div className={styles.formGroup}>
-            <label>แผนการดำเนินการ (Action Plan)</label>
-            {formData.actionPlan.map((plan, index) => (
-            <div key={index} className={styles.dynamicInputGroup}>
-              <textarea
-                value={plan}
-                onChange={(e) => handleDynamicInputChange(e, index, 'actionPlan')}
-                rows="2"
-              ></textarea>
-              <button type="button" onClick={() => removeDynamicInput(index, 'actionPlan')}>ลบ</button>
-            </div>
-          ))}
-          <button type="button" onClick={() => addDynamicInput('actionPlan')}>+ เพิ่มแผน</button>
-        </div>
-
-        <div className={styles.formGroup}>
-            <label>เป้าหมายยื่นกู้ (เดือน/ปี)<span className={styles.required}>*</span></label>
-            <input type="date" name="targetDate" value={formData.targetDate} onChange={handleChange} required />
-        </div>
-
-        <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-                <label>ธนาคารเป้าหมาย (สำหรับคำนวณ Loan Band)<span className={styles.required}>*</span></label>
-                <select name="targetBank" value={formData.targetBank} onChange={handleChange} required>
+            <div className={styles.formSection}>
+              <h3>🏦 ข้อมูลธนาคารและคำแนะนำ</h3>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>ธนาคารเป้าหมาย (สำหรับคำนวณ Loan Band)<span className={styles.required}>*</span></label>
+                  <select name="targetBank" value={formData.targetBank} onChange={handleChange} required>
                     <option value="">-- เลือกธนาคาร --</option>
                     <option value="KTB">KTB</option>
                     <option value="GHB">GHB</option>
@@ -350,17 +360,30 @@ function CustomerForm() {
                     <option value="TISCO">TISCO</option>
                     <option value="KKP">KKP</option>
                     <option value="LH BANK">LH BANK</option>
-                </select>
+                  </select>
+                </div>
+                <div className={styles.formGroup}><label>ธนาคารที่ลูกค้าควรเลือก</label><input type="text" name="selectedBank" value={formData.selectedBank} onChange={handleChange} /></div>
+              </div>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>ระยะเวลาผ่อนที่แนะนำ (ปี)</label><input type="number" name="recommendedLoanTerm" value={formData.recommendedLoanTerm} onChange={handleChange} /></div>
+                <div className={styles.formGroup}><label>อัตราผ่อนที่แนะนำ (บาท/เดือน)</label><input type="text" name="recommendedInstallment" value={formatNumber(formData.recommendedInstallment)} onChange={handleNumberChange} /></div>
+              </div>
             </div>
-            <div className={styles.formGroup}><label>ธนาคารที่ลูกค้าควรเลือก</label><input type="text" name="selectedBank" value={formData.selectedBank} onChange={handleChange} /></div>
-            <div className={styles.formGroup}><label>ระยะเวลาผ่อนที่แนะนำ (ปี)</label><input type="number" name="recommendedLoanTerm" value={formData.recommendedLoanTerm} onChange={handleChange} /></div>
-        </div>
-        <div className={styles.formGroup}><label>อัตราผ่อนที่แนะนำ (บาท/เดือน)</label><input type="text" name="recommendedInstallment" value={formatNumber(formData.recommendedInstallment)} onChange={handleNumberChange} /></div>
 
-        <button type="submit" className={styles.submitButton}>{isEditing ? 'บันทึกการเปลี่ยนแปลง' : 'บันทึกข้อมูลลูกค้า'}</button>
-        <button type="button" onClick={() => navigate(-1)} className={styles.cancelButton}>ยกเลิก</button>
-        <button type="button" onClick={() => navigate('/')} className={styles.cancelButton}>กลับหน้าแรก</button>
-      </form>
+            <div className={styles.buttonGroup}>
+              <button type="submit" className={styles.submitButton}>
+                {isEditing ? '💾 บันทึกการเปลี่ยนแปลง' : '💾 บันทึกข้อมูลลูกค้า'}
+              </button>
+              <button type="button" onClick={() => navigate(-1)} className={styles.cancelButton}>
+                ↩️ ยกเลิก
+              </button>
+              <button type="button" onClick={() => navigate('/')} className={styles.cancelButton}>
+                🏠 กลับหน้าแรก
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

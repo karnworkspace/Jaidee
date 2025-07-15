@@ -27,63 +27,86 @@ function CustomerDetail() {
 
   return (
     <div className={styles.detailContainer}>
-      <div className={styles.header}>
-        <h1>
-          {customer.name}
-          <span>ดูแลโดย: {customer.officer}</span>
-        </h1>
-        <Link to={`/edit-customer/${customerId}`} className={styles.editButton}>แก้ไขข้อมูล</Link>
-      </div>
-
-      <div className={styles.kpiGrid}>
-        <div className={styles.kpiCard}><div className={styles.value}>{customer.potentialScore || 0}%</div><div className={styles.label}>Potential Score</div></div>
-        <div className={styles.kpiCard}><div className={styles.value}>{customer.degreeOfOwnership || 0}%</div><div className={styles.label}>Ownership</div></div>
-        <div className={styles.kpiCard}><div className={styles.value}>{customer.actionPlanProgress || 0}%</div><div className={styles.label}>Plan Progress</div></div>
-      </div>
-
-      <div className={styles.infoGrid}>
-        <div className={styles.infoSection}>
-          <h2>รายละเอียดและแผนการดำเนินการ</h2>
-          <div className={styles.infoGroup}><label>สถานะทางการเงิน</label><p>{customer.financialStatus}</p></div>
-          <div className={styles.infoGroup}><label>รายได้ปัจจุบัน</label><p>{formatNumber(customer.income)} THB</p></div>
-          <div className={styles.infoGroup}><label>ภาระหนี้ปัจจุบัน</label><p>{formatNumber(customer.debt)} THB</p></div>
-          <div className={styles.infoGroup}><label>แผนการดำเนินการ</label>
-            {customer.actionPlan && customer.actionPlan.length > 0 ? (
-              <ul>
-                {customer.actionPlan.map((plan, index) => (
-                  <li key={index}>{plan}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>ไม่มี</p>
-            )}
-          </div>
-          <div className={styles.infoGroup}><label>เป้าหมายยื่นกู้</label><p>{customer.targetDate}</p></div>
+      <div className={styles.contentWrapper}>
+        <div className={styles.header}>
+          <h1>
+            {customer.name}
+            <span>ดูแลโดย: {customer.officer}</span>
+          </h1>
+          <Link to={`/edit-customer/${customerId}`} className={styles.editButton}>แก้ไขข้อมูล</Link>
         </div>
-        <div className={styles.infoSection}>
-          <h2>ข้อมูลส่วนตัวและสินทรัพย์</h2>
-          <div className={styles.infoGroup}><label>ประวัติการชำระเงิน</label><p>{customer.paymentHistory}</p></div>
-          <div className={styles.infoGroup}><label>อาชีพ</label><p>{customer.job}</p></div>
-          <div className={styles.infoGroup}><label>ตำแหน่ง</label><p>{customer.position}</p></div>
-          {customer.businessOwnerType === 'เจ้าของธุรกิจส่วนตัว' && (
-            <div className={styles.infoGroup}><label>ประเภทธุรกิจส่วนตัว</label><p>{customer.privateBusinessType}</p></div>
-          )}
-          <div className={styles.infoGroup}><label>โครงการ</label><p>{customer.projectName}</p></div>
-          <div className={styles.infoGroup}><label>เลขห้อง</label><p>{customer.roomNumber}</p></div>
-          <div className={styles.infoGroup}><label>มูลค่าทรัพย์</label><p>{formatNumber(customer.propertyValue)} THB</p></div>
-          <div className={styles.infoGroup}><label>ปัญหาด้านสินเชื่อ</label>
-            {customer.loanProblem && customer.loanProblem.length > 0 ? (
-              <ul>
-                {customer.loanProblem.map((problem, index) => (
-                  <li key={index}>{problem}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>ไม่มี</p>
-            )}
+
+        <div className={styles.kpiGrid}>
+          <div className={styles.kpiCard}>
+            <div className={styles.value}>{customer.potentialScore || 0}%</div>
+            <div className={styles.label}>Potential Score</div>
+            <div className={styles.subtitle}>คะแนนศักยภาพ</div>
+          </div>
+          <div className={styles.kpiCard}>
+            <div className={styles.value}>{customer.degreeOfOwnership || 0}%</div>
+            <div className={styles.label}>Ownership</div>
+            <div className={styles.subtitle}>ระดับความเป็นเจ้าของ</div>
+          </div>
+          <div className={styles.kpiCard}>
+            <div className={styles.value}>{customer.actionPlanProgress || 0}%</div>
+            <div className={styles.label}>Plan Progress</div>
+            <div className={styles.subtitle}>ความคืบหน้าแผน</div>
           </div>
         </div>
-      </div>
+
+        <div className={styles.infoGrid}>
+          <div className={styles.infoSection}>
+            <h2>💼 รายละเอียดและแผนการดำเนินการ</h2>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}><label>สถานะทางการเงิน</label><p>{customer.financialStatus}</p></div>
+              <div className={styles.infoGroup}><label>รายได้ปัจจุบัน</label><p>{formatNumber(customer.income)} บาท</p></div>
+            </div>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}><label>ภาระหนี้ปัจจุบัน</label><p>{formatNumber(customer.debt)} บาท</p></div>
+              <div className={styles.infoGroup}><label>เป้าหมายยื่นกู้</label><p>{customer.targetDate ? new Date(customer.targetDate).toLocaleDateString('th-TH') : '-'}</p></div>
+            </div>
+            <div className={styles.infoGroup}><label>แผนการดำเนินการ</label>
+              {customer.actionPlan && customer.actionPlan.length > 0 ? (
+                <ul>
+                  {customer.actionPlan.map((plan, index) => (
+                    <li key={index}>{plan}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>ไม่มี</p>
+              )}
+            </div>
+            <div className={styles.infoGroup}><label>ปัญหาด้านสินเชื่อ</label>
+              {customer.loanProblem && customer.loanProblem.length > 0 ? (
+                <ul>
+                  {customer.loanProblem.map((problem, index) => (
+                    <li key={index}>{problem}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>ไม่มี</p>
+              )}
+            </div>
+          </div>
+          <div className={styles.infoSection}>
+            <h2>👤 ข้อมูลส่วนตัวและสินทรัพย์</h2>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}><label>อาชีพ</label><p>{customer.job}</p></div>
+              <div className={styles.infoGroup}><label>ตำแหน่ง</label><p>{customer.position}</p></div>
+            </div>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}><label>โครงการ</label><p>{customer.projectName}</p></div>
+              <div className={styles.infoGroup}><label>เลขห้อง</label><p>{customer.unit || customer.roomNumber}</p></div>
+            </div>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}><label>มูลค่าทรัพย์</label><p>{formatNumber(customer.propertyValue)} บาท</p></div>
+              <div className={styles.infoGroup}><label>ประวัติการชำระเงิน</label><p>{customer.paymentHistory}</p></div>
+            </div>
+            {customer.businessOwnerType === 'เจ้าของธุรกิจส่วนตัว' && (
+              <div className={styles.infoGroup}><label>ประเภทธุรกิจส่วนตัว</label><p>{customer.privateBusinessType}</p></div>
+            )}
+          </div>
+        </div>
 
       <div className={styles.loanTable}>
         <h2>ประมาณการวงเงินที่จะสามารถกู้ได้ (ธนาคาร: {customer.targetBank || 'N/A'})</h2>
@@ -181,10 +204,10 @@ function CustomerDetail() {
         </div>
       )}
 
-      <div className={styles.footerButtons}>
-        <Link to="/" className={styles.editButton}>กลับหน้าแรก</Link>
+        <div className={styles.footerButtons}>
+          <Link to="/" className={styles.editButton}>กลับหน้าแรก</Link>
+        </div>
       </div>
-
     </div>
   );
 }
