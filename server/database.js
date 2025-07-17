@@ -57,6 +57,12 @@ const initializeDatabase = () => {
           actionPlanProgress REAL,
           paymentHistory TEXT,
           
+          -- Credit Bureau fields
+          creditScore REAL,
+          accountStatuses TEXT,
+          livnexCompleted BOOLEAN DEFAULT 0,
+          creditNotes TEXT,
+          
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -96,11 +102,82 @@ const initializeDatabase = () => {
         if (err) {
           console.error('Error creating action_plans table:', err);
           reject(err);
-        } else {
-          console.log('Database initialized successfully');
-          resolve();
+          return;
         }
+
+        // Create bank_rules table
+        db.run(`
+          CREATE TABLE IF NOT EXISTS bank_rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bank_code TEXT UNIQUE NOT NULL,
+            bank_name TEXT NOT NULL,
+            criteria TEXT,
+            dsr_high REAL,
+            dsr_low REAL,
+            min_income_for_dsr_high INTEGER,
+            age_min INTEGER,
+            age_max INTEGER,
+            max_term INTEGER,
+            ltv_type1 REAL,
+            ltv_type2_over_2years REAL,
+            ltv_type2_under_2years REAL,
+            ltv_type3 REAL,
+            installment_rates TEXT,
+            interest_rates TEXT,
+            partnership_type TEXT DEFAULT 'Standard_Commercial',
+            min_credit_score INTEGER DEFAULT 600,
+            max_ltv_rent_to_own REAL DEFAULT 80,
+            preferred_interest_rate REAL DEFAULT 4.5,
+            max_term_rent_to_own INTEGER DEFAULT 25,
+            special_programs TEXT,
+            livnex_bonus INTEGER DEFAULT 0,
+            exclude_status TEXT,
+            acceptable_grades TEXT,
+            loan_weight REAL DEFAULT 0.4,
+            rent_to_own_weight REAL DEFAULT 0.3,
+            credit_weight REAL DEFAULT 0.3,
+            is_active BOOLEAN DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `, (err) => {
+          if (err) {
+            console.error('Error creating bank_rules table:', err);
+            reject(err);
+          } else {
+            // Add migration for Credit Bureau fields
+            addCreditBureauFields(() => {
+              console.log('Database initialized successfully');
+              resolve();
+            });
+          }
+        });
       });
+    });
+  });
+};
+
+// Migration function to add Credit Bureau fields to existing tables
+const addCreditBureauFields = (callback) => {
+  const migrations = [
+    'ALTER TABLE customers ADD COLUMN creditScore REAL',
+    'ALTER TABLE customers ADD COLUMN accountStatuses TEXT',
+    'ALTER TABLE customers ADD COLUMN livnexCompleted BOOLEAN DEFAULT 0',
+    'ALTER TABLE customers ADD COLUMN creditNotes TEXT'
+  ];
+  
+  let completed = 0;
+  
+  migrations.forEach((migration) => {
+    db.run(migration, (err) => {
+      if (err && !err.message.includes('duplicate column')) {
+        console.log('Migration note:', err.message);
+      }
+      completed++;
+      if (completed === migrations.length) {
+        console.log('Credit Bureau fields migration completed');
+        callback();
+      }
     });
   });
 };
@@ -154,12 +231,32 @@ const insertCustomerWithDetails = (customerData) => {
     db.serialize(() => {
       db.run('BEGIN TRANSACTION');
 
-      // Insert customer
+      // Insert customer - only include fields that exist in the customers table
       const {
         loanProblem = [],
         actionPlan = [],
-        ...customerFields
+        ...allFields
       } = customerData;
+
+      // Define allowed fields that exist in customers table
+      const allowedFields = [
+        'date', 'name', 'age', 'phone', 'job', 'position', 'businessOwnerType', 'privateBusinessType',
+        'projectName', 'unit', 'readyToTransfer', 'propertyValue', 'rentToOwnValue', 'monthlyRentToOwnRate',
+        'propertyPrice', 'discount', 'installmentMonths', 'overpaidRent', 'rentRatePerMillion',
+        'guaranteeMultiplier', 'prepaidRentMultiplier', 'transferYear', 'annualInterestRate',
+        'income', 'debt', 'maxDebtAllowed', 'loanTerm', 'ltv', 'ltvNote', 'maxLoanAmount',
+        'targetDate', 'officer', 'selectedBank', 'targetBank', 'recommendedLoanTerm', 'recommendedInstallment',
+        'potentialScore', 'degreeOfOwnership', 'financialStatus', 'actionPlanProgress', 'paymentHistory',
+        'creditScore', 'accountStatuses', 'livnexCompleted', 'creditNotes'
+      ];
+
+      // Filter only allowed fields
+      const customerFields = {};
+      allowedFields.forEach(field => {
+        if (allFields.hasOwnProperty(field)) {
+          customerFields[field] = allFields[field];
+        }
+      });
 
       const columns = Object.keys(customerFields);
       const placeholders = columns.map(() => '?').join(',');
@@ -219,12 +316,33 @@ const updateCustomerWithDetails = (customerId, customerData) => {
     db.serialize(() => {
       db.run('BEGIN TRANSACTION');
 
-      // Update customer
+      // Update customer - only include fields that exist in the customers table
       const {
         loanProblem = [],
         actionPlan = [],
-        ...customerFields
+        id, // Exclude id from customerFields
+        ...allFields
       } = customerData;
+
+      // Define allowed fields that exist in customers table
+      const allowedFields = [
+        'date', 'name', 'age', 'phone', 'job', 'position', 'businessOwnerType', 'privateBusinessType',
+        'projectName', 'unit', 'readyToTransfer', 'propertyValue', 'rentToOwnValue', 'monthlyRentToOwnRate',
+        'propertyPrice', 'discount', 'installmentMonths', 'overpaidRent', 'rentRatePerMillion',
+        'guaranteeMultiplier', 'prepaidRentMultiplier', 'transferYear', 'annualInterestRate',
+        'income', 'debt', 'maxDebtAllowed', 'loanTerm', 'ltv', 'ltvNote', 'maxLoanAmount',
+        'targetDate', 'officer', 'selectedBank', 'targetBank', 'recommendedLoanTerm', 'recommendedInstallment',
+        'potentialScore', 'degreeOfOwnership', 'financialStatus', 'actionPlanProgress', 'paymentHistory',
+        'creditScore', 'accountStatuses', 'livnexCompleted', 'creditNotes'
+      ];
+
+      // Filter only allowed fields
+      const customerFields = {};
+      allowedFields.forEach(field => {
+        if (allFields.hasOwnProperty(field)) {
+          customerFields[field] = allFields[field];
+        }
+      });
 
       // Add updated_at timestamp
       customerFields.updated_at = new Date().toISOString();
@@ -355,6 +473,181 @@ const deleteCustomer = (customerId) => {
   });
 };
 
+// Bank Rules Helper Functions
+const getAllBankRules = () => {
+  return new Promise((resolve, reject) => {
+    db.all('SELECT * FROM bank_rules WHERE is_active = 1 ORDER BY bank_name', (err, rows) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      
+      // Parse JSON fields
+      const bankRules = rows.map(row => ({
+        ...row,
+        criteria: row.criteria ? JSON.parse(row.criteria) : {},
+        installment_rates: row.installment_rates ? JSON.parse(row.installment_rates) : {},
+        interest_rates: row.interest_rates ? JSON.parse(row.interest_rates) : {},
+        special_programs: row.special_programs ? JSON.parse(row.special_programs) : [],
+        exclude_status: row.exclude_status ? JSON.parse(row.exclude_status) : [],
+        acceptable_grades: row.acceptable_grades ? JSON.parse(row.acceptable_grades) : []
+      }));
+      
+      resolve(bankRules);
+    });
+  });
+};
+
+const getBankRuleByCode = (bankCode) => {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT * FROM bank_rules WHERE bank_code = ? AND is_active = 1', [bankCode], (err, row) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      
+      if (!row) {
+        resolve(null);
+        return;
+      }
+      
+      // Parse JSON fields
+      const bankRule = {
+        ...row,
+        criteria: row.criteria ? JSON.parse(row.criteria) : {},
+        installment_rates: row.installment_rates ? JSON.parse(row.installment_rates) : {},
+        interest_rates: row.interest_rates ? JSON.parse(row.interest_rates) : {},
+        special_programs: row.special_programs ? JSON.parse(row.special_programs) : [],
+        exclude_status: row.exclude_status ? JSON.parse(row.exclude_status) : [],
+        acceptable_grades: row.acceptable_grades ? JSON.parse(row.acceptable_grades) : []
+      };
+      
+      resolve(bankRule);
+    });
+  });
+};
+
+const insertBankRule = (bankData) => {
+  return new Promise((resolve, reject) => {
+    const {
+      bank_code,
+      bank_name,
+      criteria = {},
+      dsr_high,
+      dsr_low,
+      min_income_for_dsr_high,
+      age_min,
+      age_max,
+      max_term,
+      ltv_type1,
+      ltv_type2_over_2years,
+      ltv_type2_under_2years,
+      ltv_type3,
+      installment_rates = {},
+      interest_rates = {},
+      partnership_type = 'Standard_Commercial',
+      min_credit_score = 600,
+      max_ltv_rent_to_own = 80,
+      preferred_interest_rate = 4.5,
+      max_term_rent_to_own = 25,
+      special_programs = [],
+      livnex_bonus = 0,
+      exclude_status = [],
+      acceptable_grades = [],
+      loan_weight = 0.4,
+      rent_to_own_weight = 0.3,
+      credit_weight = 0.3
+    } = bankData;
+
+    const sql = `
+      INSERT INTO bank_rules (
+        bank_code, bank_name, criteria, dsr_high, dsr_low, min_income_for_dsr_high,
+        age_min, age_max, max_term, ltv_type1, ltv_type2_over_2years, ltv_type2_under_2years, ltv_type3,
+        installment_rates, interest_rates, partnership_type, min_credit_score, max_ltv_rent_to_own,
+        preferred_interest_rate, max_term_rent_to_own, special_programs, livnex_bonus, exclude_status,
+        acceptable_grades, loan_weight, rent_to_own_weight, credit_weight
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [
+      bank_code, bank_name, JSON.stringify(criteria), dsr_high, dsr_low, min_income_for_dsr_high,
+      age_min, age_max, max_term, ltv_type1, ltv_type2_over_2years, ltv_type2_under_2years, ltv_type3,
+      JSON.stringify(installment_rates), JSON.stringify(interest_rates), partnership_type, min_credit_score, max_ltv_rent_to_own,
+      preferred_interest_rate, max_term_rent_to_own, JSON.stringify(special_programs), livnex_bonus, JSON.stringify(exclude_status),
+      JSON.stringify(acceptable_grades), loan_weight, rent_to_own_weight, credit_weight
+    ];
+
+    db.run(sql, values, function(err) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(this.lastID);
+    });
+  });
+};
+
+const updateBankRule = (bankCode, bankData) => {
+  return new Promise((resolve, reject) => {
+    const {
+      bank_name,
+      criteria = {},
+      dsr_high,
+      dsr_low,
+      min_income_for_dsr_high,
+      age_min,
+      age_max,
+      max_term,
+      ltv_type1,
+      ltv_type2_over_2years,
+      ltv_type2_under_2years,
+      ltv_type3,
+      installment_rates = {},
+      interest_rates = {},
+      partnership_type,
+      min_credit_score,
+      max_ltv_rent_to_own,
+      preferred_interest_rate,
+      max_term_rent_to_own,
+      special_programs = [],
+      livnex_bonus,
+      exclude_status = [],
+      acceptable_grades = [],
+      loan_weight,
+      rent_to_own_weight,
+      credit_weight
+    } = bankData;
+
+    const sql = `
+      UPDATE bank_rules SET 
+        bank_name = ?, criteria = ?, dsr_high = ?, dsr_low = ?, min_income_for_dsr_high = ?,
+        age_min = ?, age_max = ?, max_term = ?, ltv_type1 = ?, ltv_type2_over_2years = ?, 
+        ltv_type2_under_2years = ?, ltv_type3 = ?, installment_rates = ?, interest_rates = ?,
+        partnership_type = ?, min_credit_score = ?, max_ltv_rent_to_own = ?, preferred_interest_rate = ?,
+        max_term_rent_to_own = ?, special_programs = ?, livnex_bonus = ?, exclude_status = ?,
+        acceptable_grades = ?, loan_weight = ?, rent_to_own_weight = ?, credit_weight = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE bank_code = ? AND is_active = 1
+    `;
+
+    const values = [
+      bank_name, JSON.stringify(criteria), dsr_high, dsr_low, min_income_for_dsr_high,
+      age_min, age_max, max_term, ltv_type1, ltv_type2_over_2years, ltv_type2_under_2years, ltv_type3,
+      JSON.stringify(installment_rates), JSON.stringify(interest_rates), partnership_type, min_credit_score, max_ltv_rent_to_own,
+      preferred_interest_rate, max_term_rent_to_own, JSON.stringify(special_programs), livnex_bonus, JSON.stringify(exclude_status),
+      JSON.stringify(acceptable_grades), loan_weight, rent_to_own_weight, credit_weight, bankCode
+    ];
+
+    db.run(sql, values, function(err) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(this.changes > 0);
+    });
+  });
+};
+
 module.exports = {
   db,
   initializeDatabase,
@@ -362,5 +655,9 @@ module.exports = {
   insertCustomerWithDetails,
   updateCustomerWithDetails,
   getAllCustomers,
-  deleteCustomer
+  deleteCustomer,
+  getAllBankRules,
+  getBankRuleByCode,
+  insertBankRule,
+  updateBankRule
 };

@@ -6,6 +6,8 @@ import styles from './CustomerDetail.module.css';
 function CustomerDetail() {
   const { customerId } = useParams();
   const [customer, setCustomer] = useState(null);
+  const [activeSection, setActiveSection] = useState('overview');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (customerId) {
@@ -20,6 +22,66 @@ function CustomerDetail() {
     return <div>Loading...</div>;
   }
 
+  const navigationSections = [
+    {
+      id: 'overview',
+      title: 'OVERVIEW',
+      items: [
+        { id: 'kpi', label: '📊 KPI Dashboard', icon: '📊' },
+        { id: 'personal', label: '👤 ข้อมูลส่วนบุคคล', icon: '👤' },
+        { id: 'property', label: '🏠 ข้อมูลทรัพย์สิน', icon: '🏠' }
+      ]
+    },
+    {
+      id: 'financial',
+      title: 'FINANCIAL',
+      items: [
+        { id: 'financialInfo', label: '💳 ข้อมูลการเงิน', icon: '💳' },
+        { id: 'creditBureau', label: '📊 Credit Bureau', icon: '📊' }
+      ]
+    },
+    {
+      id: 'bankAnalysis',
+      title: 'BANK ANALYSIS',
+      items: [
+        { id: 'bankMatching', label: '🏦 Bank Matching', icon: '🏦' },
+        { id: 'selectedBank', label: '🎯 Selected Bank', icon: '🎯' }
+      ]
+    },
+    {
+      id: 'loanEstimation',
+      title: 'LOAN ESTIMATION',
+      items: [
+        { id: 'loanTable', label: '📈 Loan Table', icon: '📈' }
+      ]
+    },
+    {
+      id: 'rentToOwn',
+      title: 'RENT-TO-OWN',
+      items: [
+        { id: 'rentResults', label: '🏘️ Rent Results', icon: '🏘️' },
+        { id: 'amortization', label: '📋 Amortization', icon: '📋' }
+      ]
+    }
+  ];
+
+  const handleNavClick = (sectionId) => {
+    setActiveSection(sectionId);
+    setIsMobileMenuOpen(false);
+    
+    // Smooth scroll to section
+    setTimeout(() => {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
   const formatNumber = (num) => {
     if (num === null || num === undefined || num === '') return '-';
     return parseFloat(num).toLocaleString('en-US');
@@ -27,30 +89,84 @@ function CustomerDetail() {
 
   return (
     <div className={styles.detailContainer}>
+      {/* Mobile Menu Toggle */}
+      <button className={styles.mobileMenuToggle} onClick={toggleMobileMenu}>
+        ☰
+      </button>
+      
+      {/* Sidebar Overlay for Mobile */}
+      <div 
+        className={`${styles.sidebarOverlay} ${isMobileMenuOpen ? styles.open : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+      
+      {/* Sidebar */}
+      <div className={`${styles.sidebar} ${isMobileMenuOpen ? styles.open : ''}`}>
+        <div className={styles.sidebarContent}>
+          <div className={styles.sidebarTitle}>
+            {customer.name}
+          </div>
+          
+          {navigationSections.map((section) => (
+            <div key={section.id} className={styles.navSection}>
+              <div className={styles.navSectionTitle}>{section.title}</div>
+              {section.items.map((item) => (
+                <div
+                  key={item.id}
+                  className={`${styles.navItem} ${activeSection === item.id ? styles.active : ''}`}
+                  onClick={() => handleNavClick(item.id)}
+                >
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          ))}
+          
+          <div className={styles.navSection}>
+            <div className={styles.navSectionTitle}>ACTIONS</div>
+            <Link 
+              to={`/edit-customer/${customerId}`} 
+              className={styles.navItem}
+            >
+              ✏️ แก้ไขข้อมูล
+            </Link>
+            <Link 
+              to="/" 
+              className={styles.navItem}
+            >
+              🏠 กลับหน้าแรก
+            </Link>
+          </div>
+        </div>
+      </div>
+      
+      {/* Main Content */}
       <div className={styles.contentWrapper}>
         <div className={styles.header}>
           <h1>
             {customer.name}
             <span>ดูแลโดย: {customer.officer}</span>
           </h1>
-          <Link to={`/edit-customer/${customerId}`} className={styles.editButton}>แก้ไขข้อมูล</Link>
         </div>
 
-        <div className={styles.kpiGrid}>
-          <div className={styles.kpiCard}>
-            <div className={styles.value}>{customer.potentialScore || 0}%</div>
-            <div className={styles.label}>Potential Score</div>
-            <div className={styles.subtitle}>คะแนนศักยภาพ</div>
-          </div>
-          <div className={styles.kpiCard}>
-            <div className={styles.value}>{customer.degreeOfOwnership || 0}%</div>
-            <div className={styles.label}>Ownership</div>
-            <div className={styles.subtitle}>ระดับความเป็นเจ้าของ</div>
-          </div>
-          <div className={styles.kpiCard}>
-            <div className={styles.value}>{customer.actionPlanProgress || 0}%</div>
-            <div className={styles.label}>Plan Progress</div>
-            <div className={styles.subtitle}>ความคืบหน้าแผน</div>
+        {/* KPI Dashboard Section */}
+        <div id="kpi" className={styles.section}>
+          <div className={styles.kpiGrid}>
+            <div className={styles.kpiCard}>
+              <div className={styles.value}>{customer.potentialScore || 0}%</div>
+              <div className={styles.label}>Potential Score</div>
+              <div className={styles.subtitle}>คะแนนศักยภาพ</div>
+            </div>
+            <div className={styles.kpiCard}>
+              <div className={styles.value}>{customer.degreeOfOwnership || 0}%</div>
+              <div className={styles.label}>Ownership</div>
+              <div className={styles.subtitle}>ระดับความเป็นเจ้าของ</div>
+            </div>
+            <div className={styles.kpiCard}>
+              <div className={styles.value}>{customer.actionPlanProgress || 0}%</div>
+              <div className={styles.label}>Plan Progress</div>
+              <div className={styles.subtitle}>ความคืบหน้าแผน</div>
+            </div>
           </div>
         </div>
 
@@ -117,7 +233,217 @@ function CustomerDetail() {
           </div>
         </div>
 
-      {customer.loanEstimation && customer.targetBank && (
+        {/* Credit Bureau Analysis Section */}
+        <div id="creditBureau" className={styles.section}>
+        {customer.creditBureauAnalysis ? (
+        <div className={styles.creditBureauSection}>
+          <h2>📊 Credit Bureau Analysis</h2>
+          
+          <div className={styles.creditSummary}>
+            <div className={styles.creditCard}>
+              <h3>เครดิตสกอร์</h3>
+              <div className={styles.creditScore}>
+                <span className={styles.scoreNumber}>
+                  {customer.creditBureauAnalysis.creditInterpretation.score}
+                </span>
+                <span className={styles.creditGrade}>
+                  {customer.creditBureauAnalysis.creditInterpretation.grade}
+                </span>
+              </div>
+              <div className={styles.creditStatus}>
+                {customer.creditBureauAnalysis.creditInterpretation.status}
+              </div>
+            </div>
+            
+            <div className={styles.livnexCard}>
+              <h3>LivNex Recommendation</h3>
+              <div className={styles.livnexEligible}>
+                {customer.creditBureauAnalysis.livnexCompatibility.eligible ? 
+                  '✅ เหมาะสมเข้าโปรแกรม' : 
+                  '❌ ไม่เหมาะสมขณะนี้'}
+              </div>
+              {customer.creditBureauAnalysis.livnexCompatibility.eligible && (
+                <div className={styles.livnexDetails}>
+                  <div>ระยะเวลา: {customer.creditBureauAnalysis.livnexCompatibility.duration} เดือน</div>
+                  <div>ระดับความสำคัญ: {customer.creditBureauAnalysis.livnexCompatibility.priority}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.problemsAnalysis}>
+            <h3>3B Problems Analysis</h3>
+            <div className={styles.problemsGrid}>
+              <div className={styles.problemCard}>
+                <h4>Bad Credit</h4>
+                <div className={`${styles.severityBadge} ${styles[customer.creditBureauAnalysis.problems3B.badCredit.severity]}`}>
+                  {customer.creditBureauAnalysis.problems3B.badCredit.severity}
+                </div>
+                <ul>
+                  {customer.creditBureauAnalysis.problems3B.badCredit.indicators.map((indicator, index) => (
+                    <li key={index}>{indicator}</li>
+                  ))}
+                </ul>
+              </div>
+              
+              <div className={styles.problemCard}>
+                <h4>Bad Income</h4>
+                <div className={`${styles.severityBadge} ${styles[customer.creditBureauAnalysis.problems3B.badIncome.severity]}`}>
+                  {customer.creditBureauAnalysis.problems3B.badIncome.severity}
+                </div>
+                <ul>
+                  {customer.creditBureauAnalysis.problems3B.badIncome.indicators.map((indicator, index) => (
+                    <li key={index}>{indicator}</li>
+                  ))}
+                </ul>
+              </div>
+              
+              <div className={styles.problemCard}>
+                <h4>Bad Confidence</h4>
+                <div className={`${styles.severityBadge} ${styles[customer.creditBureauAnalysis.problems3B.badConfidence.severity]}`}>
+                  {customer.creditBureauAnalysis.problems3B.badConfidence.severity}
+                </div>
+                <ul>
+                  {customer.creditBureauAnalysis.problems3B.badConfidence.indicators.map((indicator, index) => (
+                    <li key={index}>{indicator}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {customer.creditBureauAnalysis.livnexCompatibility.recommendations && (
+            <div className={styles.recommendationsSection}>
+              <h3>คำแนะนำ</h3>
+              <ul className={styles.recommendationsList}>
+                {customer.creditBureauAnalysis.livnexCompatibility.recommendations.map((rec, index) => (
+                  <li key={index}>{rec}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+        ) : (
+          <div className={styles.noData}>
+            <p>ไม่มีข้อมูล Credit Bureau Analysis</p>
+          </div>
+        )}
+        </div>
+
+        {/* Enhanced Bank Matching Section */}
+        <div id="bankMatching" className={styles.section}>
+        {customer.enhancedBankMatching && Object.keys(customer.enhancedBankMatching).length > 0 ? (
+        <div className={styles.bankMatchingSection}>
+          <h2>🏦 Enhanced Bank Matching Analysis</h2>
+          <div className={styles.bankMatchingGrid}>
+            {Object.entries(customer.enhancedBankMatching).map(([bankName, data]) => (
+              <div key={bankName} className={`${styles.bankCard} ${styles[data.eligibility]}`}>
+                <div className={styles.bankHeader}>
+                  <h3>{bankName}</h3>
+                  <div className={styles.partnershipBadge}>
+                    {data.partnership.replace('_', ' ')}
+                  </div>
+                </div>
+                
+                <div className={styles.bankScore}>
+                  <div className={styles.totalScore}>
+                    <span className={styles.scoreNumber}>{data.totalScore}</span>
+                    <span className={styles.scoreLabel}>คะแนนรวม</span>
+                  </div>
+                  <div className={styles.scoreBar}>
+                    <div 
+                      className={styles.scoreProgress}
+                      style={{width: `${data.totalScore}%`}}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className={styles.componentScores}>
+                  <div className={styles.componentScore}>
+                    <span className={styles.componentLabel}>Loan Band</span>
+                    <span className={styles.componentValue}>{data.componentScores.loanBand}</span>
+                  </div>
+                  <div className={styles.componentScore}>
+                    <span className={styles.componentLabel}>Rent-to-Own</span>
+                    <span className={styles.componentValue}>{data.componentScores.rentToOwn}</span>
+                  </div>
+                  <div className={styles.componentScore}>
+                    <span className={styles.componentLabel}>Credit Bureau</span>
+                    <span className={styles.componentValue}>{data.componentScores.creditBureau}</span>
+                  </div>
+                </div>
+
+                <div className={styles.bankDetails}>
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>สถานะ:</span>
+                    <span className={`${styles.eligibilityStatus} ${styles[data.eligibility]}`}>
+                      {data.eligibility === 'eligible' ? 'ผ่านเกณฑ์' : 'ไม่ผ่านเกณฑ์'}
+                    </span>
+                  </div>
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>โอกาสอนุมัติ:</span>
+                    <span className={styles.detailValue}>{data.approvalProbability}</span>
+                  </div>
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>เวลาประมาณ:</span>
+                    <span className={styles.detailValue}>{data.estimatedApprovalTime}</span>
+                  </div>
+                </div>
+
+                {data.creditBureauInsights && (
+                  <div className={styles.creditInsights}>
+                    <h4>Credit Bureau Insights</h4>
+                    <div className={styles.insightRow}>
+                      <span className={styles.insightLabel}>เครดิตเกรด:</span>
+                      <span className={styles.insightValue}>{data.creditBureauInsights.creditGrade}</span>
+                    </div>
+                    <div className={styles.insightRow}>
+                      <span className={styles.insightLabel}>LivNex:</span>
+                      <span className={styles.insightValue}>{data.creditBureauInsights.livnexRecommendation}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className={styles.recommendedTerms}>
+                  <h4>เงื่อนไขที่แนะนำ</h4>
+                  <div className={styles.termRow}>
+                    <span className={styles.termLabel}>ดอกเบี้ย:</span>
+                    <span className={styles.termValue}>{data.recommendedTerms.interestRate}%</span>
+                  </div>
+                  <div className={styles.termRow}>
+                    <span className={styles.termLabel}>LTV สูงสุด:</span>
+                    <span className={styles.termValue}>{data.recommendedTerms.maxLTV}%</span>
+                  </div>
+                  <div className={styles.termRow}>
+                    <span className={styles.termLabel}>ระยะเวลา:</span>
+                    <span className={styles.termValue}>{data.recommendedTerms.maxTerm} ปี</span>
+                  </div>
+                </div>
+
+                {data.specialPrograms && data.specialPrograms.length > 0 && (
+                  <div className={styles.specialPrograms}>
+                    <h4>โปรแกรมพิเศษ</h4>
+                    <ul>
+                      {data.specialPrograms.map((program, index) => (
+                        <li key={index}>{program}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        ) : (
+          <div className={styles.noData}>
+            <p>ไม่มีข้อมูล Bank Matching</p>
+          </div>
+        )}
+        </div>
+
+        {/* Loan Table Section */}
+        <div id="loanTable" className={styles.section}>
+        {customer.loanEstimation && customer.targetBank ? (
         <div className={styles.loanTable}>
           <h2>ประมาณการวงเงินที่จะสามารถกู้ได้ (ธนาคาร: {customer.targetBank})</h2>
           <table>
@@ -146,11 +472,16 @@ function CustomerDetail() {
             </tbody>
           </table>
         </div>
-      )}
+        ) : (
+          <div className={styles.noData}>
+            <p>ไม่มีข้อมูลประมาณการวงเงิน</p>
+          </div>
+        )}
+        </div>
 
-      
-
-      {customer.detailedRentToOwnEstimation && (
+        {/* Rent Results Section */}
+        <div id="rentResults" className={styles.section}>
+        {customer.detailedRentToOwnEstimation ? (
         <div className={styles.loanTable}>
           <h2>ผลลัพธ์การประเมินเช่าออม</h2>
           <table>
@@ -200,20 +531,44 @@ function CustomerDetail() {
             </tbody>
           </table>
         </div>
-      )}
-
-      {customer.detailedRentToOwnEstimation && customer.detailedRentToOwnEstimation.amortizationTable && customer.detailedRentToOwnEstimation.amortizationTable.length > 0 && (
-        <RentToOwnTable data={customer.detailedRentToOwnEstimation.amortizationTable} />
-      )}
-
-      {customer.selectedBank && (
-        <div className={styles.infoSection}>
-          <h2>อัตราผ่อนของธนาคารที่ลูกค้าควรเลือกสินเชื่อ</h2>
-          <div className={styles.infoGroup}><label>ธนาคาร</label><p>{customer.selectedBank}</p></div>
-          <div className={styles.infoGroup}><label>ระยะเวลาผ่อนที่แนะนำ</label><p>{customer.recommendedLoanTerm} ปี</p></div>
-          <div className={styles.infoGroup}><label>อัตราผ่อนที่แนะนำ</label><p>{customer.recommendedInstallment} บาท/เดือน</p></div>
+        ) : (
+          <div className={styles.noData}>
+            <p>ไม่มีข้อมูลการประเมินเช่าออม</p>
+          </div>
+        )}
         </div>
-      )}
+
+        {/* Amortization Section */}
+        <div id="amortization" className={styles.section}>
+        {customer.detailedRentToOwnEstimation && customer.detailedRentToOwnEstimation.amortizationTable && customer.detailedRentToOwnEstimation.amortizationTable.length > 0 ? (
+        <div className={styles.amortizationSection}>
+          <h2>📋 ตารางรายละเอียดการผ่อนชำระ</h2>
+          <RentToOwnTable data={customer.detailedRentToOwnEstimation.amortizationTable} />
+        </div>
+        ) : (
+          <div className={styles.noData}>
+            <p>ไม่มีข้อมูลตารางการผ่อนชำระ</p>
+          </div>
+        )}
+        </div>
+
+        {/* Selected Bank Section */}
+        <div id="selectedBank" className={styles.section}>
+        {customer.selectedBank ? (
+        <div className={styles.selectedBankSection}>
+          <h2>🎯 อัตราผ่อนของธนาคารที่ลูกค้าควรเลือกสินเชื่อ</h2>
+          <div className={styles.infoSection}>
+            <div className={styles.infoGroup}><label>ธนาคาร</label><p>{customer.selectedBank}</p></div>
+            <div className={styles.infoGroup}><label>ระยะเวลาผ่อนที่แนะนำ</label><p>{customer.recommendedLoanTerm} ปี</p></div>
+            <div className={styles.infoGroup}><label>อัตราผ่อนที่แนะนำ</label><p>{customer.recommendedInstallment} บาท/เดือน</p></div>
+          </div>
+        </div>
+        ) : (
+          <div className={styles.noData}>
+            <p>ไม่มีข้อมูลธนาคารที่แนะนำ</p>
+          </div>
+        )}
+        </div>
 
         <div className={styles.footerButtons}>
           <Link to="/" className={styles.editButton}>กลับหน้าแรก</Link>

@@ -10,12 +10,23 @@ function Dashboard() {
 
   useEffect(() => {
     fetch('http://localhost:3001/api/customers')
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then(data => {
+        console.log('Fetched customers:', data);
         setCustomers(data);
         setFilteredCustomers(data);
       })
-      .catch(error => console.error('Error fetching customers:', error));
+      .catch(error => {
+        console.error('Error fetching customers:', error);
+        // Set empty array as fallback
+        setCustomers([]);
+        setFilteredCustomers([]);
+      });
   }, []);
 
   useEffect(() => {
@@ -81,7 +92,10 @@ function Dashboard() {
       <div className={styles.contentWrapper}>
         <div className={styles.header}>
           <h1 className={styles.title}>Customer Dashboard</h1>
-          <Link to="/add-customer" className={styles.addButton}>เพิ่มลูกค้าใหม่</Link>
+          <div className={styles.headerActions}>
+            <Link to="/admin/banks" className={styles.adminButton}>🏦 จัดการธนาคาร</Link>
+            <Link to="/add-customer" className={styles.addButton}>เพิ่มลูกค้าใหม่</Link>
+          </div>
         </div>
 
         {/* Stats Section */}

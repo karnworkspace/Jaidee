@@ -100,8 +100,15 @@ function CustomerForm() {
   ]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    let processedValue = value;
+    
+    // Handle boolean values for select elements
+    if (type === 'select-one' && (value === 'true' || value === 'false')) {
+      processedValue = value === 'true';
+    }
+    
+    setFormData(prev => ({ ...prev, [name]: processedValue }));
   };
 
   const handleNumberChange = (e) => {
@@ -147,12 +154,20 @@ function CustomerForm() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),
     })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
         console.log('Save success:', data);
         navigate(isEditing ? `/customer/${customerId}` : '/');
       })
-      .catch(error => console.error('Error saving customer:', error));
+      .catch(error => {
+        console.error('Error saving customer:', error);
+        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + error.message);
+      });
   };
 
   return (
@@ -245,6 +260,57 @@ function CustomerForm() {
                 <div className={styles.formGroup}>
                   <label>เป้าหมายยื่นกู้ (เดือน/ปี)<span className={styles.required}>*</span></label>
                   <input type="date" name="targetDate" value={formData.targetDate} onChange={handleChange} required />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.formSection}>
+              <h3>📊 ข้อมูล Credit Bureau</h3>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>เครดิตสกอร์</label>
+                  <input
+                    type="number"
+                    name="creditScore"
+                    value={formData.creditScore || ''}
+                    onChange={handleChange}
+                    placeholder="เครดิตสกอร์ (300-900)"
+                    min="300"
+                    max="900"
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>สถานะบัญชี (Account Status)</label>
+                  <input
+                    type="text"
+                    name="accountStatuses"
+                    value={formData.accountStatuses || ''}
+                    onChange={handleChange}
+                    placeholder="สถานะบัญชี เช่น 01,11,42 (คั่นด้วยเครื่องหมายจุลภาค)"
+                  />
+                </div>
+              </div>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>LivNex สำเร็จแล้ว</label>
+                  <select
+                    name="livnexCompleted"
+                    value={formData.livnexCompleted || false}
+                    onChange={handleChange}
+                  >
+                    <option value={false}>ยังไม่ได้เข้าโปรแกรม</option>
+                    <option value={true}>เข้าโปรแกรมแล้ว</option>
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label>ข้อมูลเพิ่มเติมเกี่ยวกับเครดิต</label>
+                  <textarea
+                    name="creditNotes"
+                    value={formData.creditNotes || ''}
+                    onChange={handleChange}
+                    placeholder="ข้อมูลเพิ่มเติมเกี่ยวกับประวัติเครดิต"
+                    rows="3"
+                  />
                 </div>
               </div>
             </div>
