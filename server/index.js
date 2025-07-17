@@ -1,12 +1,29 @@
 const express = require('express');
 const cors = require('cors');
+const { 
+  initializeDatabase, 
+  getCustomerWithDetails, 
+  insertCustomerWithDetails, 
+  updateCustomerWithDetails, 
+  getAllCustomers,
+  deleteCustomer 
+} = require('./database');
+
 const app = express();
 const port = 3001;
 
 app.use(cors());
 app.use(express.json());
 
-let customers = [];
+// Initialize database on startup
+initializeDatabase()
+  .then(() => {
+    console.log('Database initialized successfully');
+  })
+  .catch(err => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
+  });
 
 const refbank = {
   "KTB": {"40": 4100, "30": 4700, "20": 5200, "10": 10100},
@@ -55,6 +72,56 @@ const calculateKPIs = (customerData) => {
     actionPlanProgress: Math.round(actionPlanProgress),
     paymentHistory: customerData.paymentHistory || 'ไม่มีข้อมูล',
   };
+};
+
+const calculateLoanEstimationAllBanks = (income, currentDebt, propertyPrice, discount, ltv) => {
+  const allBanksResults = {};
+  const loanTerms = [40, 30, 20, 10];
+  const debtReductionSteps = [0, -0.1, -0.2, -0.3, -0.4, -0.5, -0.6, -0.7, -1]; // -1 represents "ไม่มีหนี้"
+
+  const propertyAfterDiscount = (parseFloat(propertyPrice) || 0) - (parseFloat(discount) || 0);
+  const ltvPercentage = parseFloat(ltv) / 100 || 0;
+  const ltvLimit = propertyAfterDiscount * ltvPercentage;
+
+  // Calculate for all banks
+  Object.keys(refbank).forEach(bankName => {
+    const bankRates = refbank[bankName];
+    const results = [];
+
+    debtReductionSteps.forEach(reduction => {
+      const scenario = {};
+      let reducedDebt;
+      if (reduction === -1) {
+        reducedDebt = 0;
+        scenario.label = 'ไม่มีหนี้';
+      } else {
+        reducedDebt = currentDebt * (1 + reduction);
+        scenario.label = reduction === 0 ? 'ปัจจุบัน' : `${reduction * 100}%`;
+      }
+      scenario.debt = Math.round(reducedDebt);
+
+      scenario.loanAmounts = {};
+      loanTerms.forEach(term => {
+        const ratePerMillion = bankRates[term];
+        if (ratePerMillion) {
+          const dsrPayment = (income * INCOME_PERCENTAGE_FOR_LOAN) - reducedDebt;
+          let loanAmount = 0;
+          if (dsrPayment > 0) {
+            loanAmount = (dsrPayment / ratePerMillion) * 1000000;
+          }
+          const finalLoan = ltvLimit > 0 ? Math.min(loanAmount, ltvLimit) : loanAmount;
+          scenario.loanAmounts[term] = Math.round(finalLoan);
+        } else {
+          scenario.loanAmounts[term] = "N/A";
+        }
+      });
+      results.push(scenario);
+    });
+
+    allBanksResults[bankName] = results;
+  });
+
+  return allBanksResults;
 };
 
 const calculateLoanEstimation = (income, currentDebt, propertyPrice, discount, ltv, targetBank) => {
@@ -287,82 +354,163 @@ app.post('/api/calculate-rent-to-own', (req, res) => {
   res.status(200).json(response);
 });
 
-app.get('/api/customers', (req, res) => {
-  res.json(customers);
-});
-
-app.get('/api/customers/:id', (req, res) => {
-  const customerId = parseInt(req.params.id);
-  const customer = customers.find(c => c.id === customerId);
-  if (customer) {
-    res.json(customer);
-  } else {
-    res.status(404).json({ message: 'Customer not found' });
+app.get('/api/customers', async (req, res) => {
+  try {
+    const customers = await getAllCustomers();
+    res.json(customers);
+  } catch (error) {
+    console.error('Error fetching customers:', error);
+    res.status(500).json({ message: 'Error fetching customers', error: error.message });
   }
 });
 
-app.post('/api/customers', (req, res) => {
-  const kpis = calculateKPIs(req.body);
-  const loanEstimation = calculateLoanEstimation(
-    parseFloat(req.body.income) || 0,
-    parseFloat(req.body.debt) || 0,
-    parseFloat(req.body.propertyPrice) || 0, // Use propertyPrice
-    parseFloat(req.body.discount) || 0,      // Use discount
-    parseFloat(req.body.ltv) || 0,
-    req.body.targetBank || 'KTB'
-  );
-  const rentToOwnEstimation = calculateRentToOwnEstimation(
-    parseFloat(req.body.rentToOwnValue) || 0,
-    parseFloat(req.body.monthlyRentToOwnRate) || 0
-  );
-  const detailedRentToOwnEstimation = calculateRentToOwnAmortizationTable(req.body);
-  const newCustomer = {
-    id: customers.length > 0 ? Math.max(...customers.map(c => c.id)) + 1 : 1,
-    ...req.body,
-    projectName: req.body.projectName || '',
-    unit: req.body.unit || '',
-    readyToTransfer: req.body.readyToTransfer || '',
-    loanProblem: req.body.loanProblem || [],
-    actionPlan: req.body.actionPlan || [],
-    ...kpis,
-    loanEstimation,
-    rentToOwnEstimation,
-    detailedRentToOwnEstimation,
-  };
-  customers.push(newCustomer);
-  res.status(201).json({ message: 'Customer added successfully', customer: newCustomer });
+app.get('/api/customers/:id', async (req, res) => {
+  try {
+    const customerId = parseInt(req.params.id);
+    const customer = await getCustomerWithDetails(customerId);
+    
+    if (customer) {
+      // Calculate loan estimations for all banks
+      const loanEstimation = calculateLoanEstimation(
+        parseFloat(customer.income) || 0,
+        parseFloat(customer.debt) || 0,
+        parseFloat(customer.propertyPrice) || 0,
+        parseFloat(customer.discount) || 0,
+        parseFloat(customer.ltv) || 0,
+        customer.targetBank || 'KTB'
+      );
+      const allBanksLoanEstimation = calculateLoanEstimationAllBanks(
+        parseFloat(customer.income) || 0,
+        parseFloat(customer.debt) || 0,
+        parseFloat(customer.propertyPrice) || 0,
+        parseFloat(customer.discount) || 0,
+        parseFloat(customer.ltv) || 0
+      );
+      const rentToOwnEstimation = calculateRentToOwnEstimation(
+        parseFloat(customer.rentToOwnValue) || 0,
+        parseFloat(customer.monthlyRentToOwnRate) || 0
+      );
+      const detailedRentToOwnEstimation = calculateRentToOwnAmortizationTable(customer);
+      
+      // Add calculated data
+      customer.loanEstimation = loanEstimation;
+      customer.allBanksLoanEstimation = allBanksLoanEstimation;
+      customer.rentToOwnEstimation = rentToOwnEstimation;
+      customer.detailedRentToOwnEstimation = detailedRentToOwnEstimation;
+      
+      res.json(customer);
+    } else {
+      res.status(404).json({ message: 'Customer not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching customer:', error);
+    res.status(500).json({ message: 'Error fetching customer', error: error.message });
+  }
 });
 
-app.put('/api/customers/:id', (req, res) => {
-  const customerId = parseInt(req.params.id);
-  const customerIndex = customers.findIndex(c => c.id === customerId);
+app.post('/api/customers', async (req, res) => {
+  try {
+    const kpis = calculateKPIs(req.body);
+    const loanEstimation = calculateLoanEstimation(
+      parseFloat(req.body.income) || 0,
+      parseFloat(req.body.debt) || 0,
+      parseFloat(req.body.propertyPrice) || 0,
+      parseFloat(req.body.discount) || 0,
+      parseFloat(req.body.ltv) || 0,
+      req.body.targetBank || 'KTB'
+    );
+    const allBanksLoanEstimation = calculateLoanEstimationAllBanks(
+      parseFloat(req.body.income) || 0,
+      parseFloat(req.body.debt) || 0,
+      parseFloat(req.body.propertyPrice) || 0,
+      parseFloat(req.body.discount) || 0,
+      parseFloat(req.body.ltv) || 0
+    );
+    const rentToOwnEstimation = calculateRentToOwnEstimation(
+      parseFloat(req.body.rentToOwnValue) || 0,
+      parseFloat(req.body.monthlyRentToOwnRate) || 0
+    );
+    const detailedRentToOwnEstimation = calculateRentToOwnAmortizationTable(req.body);
+    
+    const customerData = {
+      ...req.body,
+      projectName: req.body.projectName || '',
+      unit: req.body.unit || '',
+      readyToTransfer: req.body.readyToTransfer || '',
+      loanProblem: req.body.loanProblem || [],
+      actionPlan: req.body.actionPlan || [],
+      ...kpis
+    };
 
-  if (customerIndex !== -1) {
-    const updatedCustomerData = { ...customers[customerIndex], ...req.body, id: customerId };
+    const customerId = await insertCustomerWithDetails(customerData);
+    const newCustomer = await getCustomerWithDetails(customerId);
+    
+    // Add calculated data that's not stored in DB
+    newCustomer.loanEstimation = loanEstimation;
+    newCustomer.allBanksLoanEstimation = allBanksLoanEstimation;
+    newCustomer.rentToOwnEstimation = rentToOwnEstimation;
+    newCustomer.detailedRentToOwnEstimation = detailedRentToOwnEstimation;
+    
+    res.status(201).json({ message: 'Customer added successfully', customer: newCustomer });
+  } catch (error) {
+    console.error('Error adding customer:', error);
+    res.status(500).json({ message: 'Error adding customer', error: error.message });
+  }
+});
+
+app.put('/api/customers/:id', async (req, res) => {
+  try {
+    const customerId = parseInt(req.params.id);
+    
+    // Check if customer exists
+    const existingCustomer = await getCustomerWithDetails(customerId);
+    if (!existingCustomer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    const updatedCustomerData = { ...existingCustomer, ...req.body };
     const kpis = calculateKPIs(updatedCustomerData);
     const loanEstimation = calculateLoanEstimation(
       parseFloat(updatedCustomerData.income) || 0,
       parseFloat(updatedCustomerData.debt) || 0,
-      parseFloat(updatedCustomerData.propertyPrice) || 0, // Use propertyPrice
-      parseFloat(updatedCustomerData.discount) || 0,      // Use discount
+      parseFloat(updatedCustomerData.propertyPrice) || 0,
+      parseFloat(updatedCustomerData.discount) || 0,
       parseFloat(updatedCustomerData.ltv) || 0,
       updatedCustomerData.targetBank || 'KTB'
+    );
+    const allBanksLoanEstimation = calculateLoanEstimationAllBanks(
+      parseFloat(updatedCustomerData.income) || 0,
+      parseFloat(updatedCustomerData.debt) || 0,
+      parseFloat(updatedCustomerData.propertyPrice) || 0,
+      parseFloat(updatedCustomerData.discount) || 0,
+      parseFloat(updatedCustomerData.ltv) || 0
     );
     const rentToOwnEstimation = calculateRentToOwnEstimation(
       parseFloat(updatedCustomerData.rentToOwnValue) || 0,
       parseFloat(updatedCustomerData.monthlyRentToOwnRate) || 0
     );
     const detailedRentToOwnEstimation = calculateRentToOwnAmortizationTable(updatedCustomerData);
-    customers[customerIndex] = { 
-      ...updatedCustomerData, 
-      ...kpis, 
-      loanEstimation,
-      rentToOwnEstimation,
-      detailedRentToOwnEstimation,
+    
+    const customerData = {
+      ...updatedCustomerData,
+      ...kpis,
+      loanProblem: req.body.loanProblem || [],
+      actionPlan: req.body.actionPlan || []
     };
-    res.json({ message: 'Customer updated successfully', customer: customers[customerIndex] });
-  } else {
-    res.status(404).json({ message: 'Customer not found' });
+
+    await updateCustomerWithDetails(customerId, customerData);
+    const updatedCustomer = await getCustomerWithDetails(customerId);
+    
+    // Add calculated data that's not stored in DB
+    updatedCustomer.loanEstimation = loanEstimation;
+    updatedCustomer.allBanksLoanEstimation = allBanksLoanEstimation;
+    updatedCustomer.rentToOwnEstimation = rentToOwnEstimation;
+    updatedCustomer.detailedRentToOwnEstimation = detailedRentToOwnEstimation;
+    
+    res.json({ message: 'Customer updated successfully', customer: updatedCustomer });
+  } catch (error) {
+    console.error('Error updating customer:', error);
+    res.status(500).json({ message: 'Error updating customer', error: error.message });
   }
 });
 

@@ -203,6 +203,53 @@ function CustomerForm() {
             </div>
 
             <div className={styles.formSection}>
+              <h3>💳 ข้อมูลการเงินและสินเชื่อ</h3>
+              <div className={styles.formGroup}>
+                <label>ปัญหาด้านสินเชื่อ</label>
+                {formData.loanProblem.map((problem, index) => (
+                  <div key={index} className={styles.dynamicInputGroup}>
+                    <textarea
+                      value={problem}
+                      onChange={(e) => handleDynamicInputChange(e, index, 'loanProblem')}
+                      rows="2"
+                      placeholder="อธิบายปัญหาด้านสินเชื่อ..."
+                    ></textarea>
+                    <button type="button" onClick={() => removeDynamicInput(index, 'loanProblem')}>ลบ</button>
+                  </div>
+                ))}
+                <button type="button" className={styles.addButton} onClick={() => addDynamicInput('loanProblem')}>+ เพิ่มปัญหา</button>
+              </div>
+
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>รายได้ (บาท/เดือน)<span className={styles.required}>*</span></label><input type="text" name="income" value={formatNumber(formData.income)} onChange={handleNumberChange} required /></div>
+                <div className={styles.formGroup}><label>ภาระหนี้ (บาท/เดือน)<span className={styles.required}>*</span></label><input type="text" name="debt" value={formatNumber(formData.debt)} onChange={handleNumberChange} required /></div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>แผนการดำเนินการ (Action Plan)</label>
+                {formData.actionPlan.map((plan, index) => (
+                  <div key={index} className={styles.dynamicInputGroup}>
+                    <textarea
+                      value={plan}
+                      onChange={(e) => handleDynamicInputChange(e, index, 'actionPlan')}
+                      rows="2"
+                      placeholder="อธิบายแผนการดำเนินการ..."
+                    ></textarea>
+                    <button type="button" onClick={() => removeDynamicInput(index, 'actionPlan')}>ลบ</button>
+                  </div>
+                ))}
+                <button type="button" className={styles.addButton} onClick={() => addDynamicInput('actionPlan')}>+ เพิ่มแผน</button>
+              </div>
+
+              <div className={styles.formRow + ' ' + styles.fullWidth}>
+                <div className={styles.formGroup}>
+                  <label>เป้าหมายยื่นกู้ (เดือน/ปี)<span className={styles.required}>*</span></label>
+                  <input type="date" name="targetDate" value={formData.targetDate} onChange={handleChange} required />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.formSection}>
               <h3>🏠 ข้อมูลทรัพย์สิน</h3>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}><label>โครงการ<span className={styles.required}>*</span></label><input type="text" name="projectName" value={formData.projectName} onChange={handleChange} required /></div>
@@ -292,53 +339,6 @@ function CustomerForm() {
                   )}
                 </div>
               )}
-            </div>
-
-            <div className={styles.formSection}>
-              <h3>💳 ข้อมูลการเงินและสินเชื่อ</h3>
-              <div className={styles.formGroup}>
-                <label>ปัญหาด้านสินเชื่อ</label>
-                {formData.loanProblem.map((problem, index) => (
-                  <div key={index} className={styles.dynamicInputGroup}>
-                    <textarea
-                      value={problem}
-                      onChange={(e) => handleDynamicInputChange(e, index, 'loanProblem')}
-                      rows="2"
-                      placeholder="อธิบายปัญหาด้านสินเชื่อ..."
-                    ></textarea>
-                    <button type="button" onClick={() => removeDynamicInput(index, 'loanProblem')}>ลบ</button>
-                  </div>
-                ))}
-                <button type="button" className={styles.addButton} onClick={() => addDynamicInput('loanProblem')}>+ เพิ่มปัญหา</button>
-              </div>
-
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}><label>รายได้ (บาท/เดือน)<span className={styles.required}>*</span></label><input type="text" name="income" value={formatNumber(formData.income)} onChange={handleNumberChange} required /></div>
-                <div className={styles.formGroup}><label>ภาระหนี้ (บาท/เดือน)<span className={styles.required}>*</span></label><input type="text" name="debt" value={formatNumber(formData.debt)} onChange={handleNumberChange} required /></div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>แผนการดำเนินการ (Action Plan)</label>
-                {formData.actionPlan.map((plan, index) => (
-                  <div key={index} className={styles.dynamicInputGroup}>
-                    <textarea
-                      value={plan}
-                      onChange={(e) => handleDynamicInputChange(e, index, 'actionPlan')}
-                      rows="2"
-                      placeholder="อธิบายแผนการดำเนินการ..."
-                    ></textarea>
-                    <button type="button" onClick={() => removeDynamicInput(index, 'actionPlan')}>ลบ</button>
-                  </div>
-                ))}
-                <button type="button" className={styles.addButton} onClick={() => addDynamicInput('actionPlan')}>+ เพิ่มแผน</button>
-              </div>
-
-              <div className={styles.formRow + ' ' + styles.fullWidth}>
-                <div className={styles.formGroup}>
-                  <label>เป้าหมายยื่นกู้ (เดือน/ปี)<span className={styles.required}>*</span></label>
-                  <input type="date" name="targetDate" value={formData.targetDate} onChange={handleChange} required />
-                </div>
-              </div>
             </div>
 
             <div className={styles.formSection}>

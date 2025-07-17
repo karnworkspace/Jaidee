@@ -54,88 +54,99 @@ function CustomerDetail() {
           </div>
         </div>
 
-        <div className={styles.infoGrid}>
-          <div className={styles.infoSection}>
-            <h2>💼 รายละเอียดและแผนการดำเนินการ</h2>
-            <div className={styles.infoGroupGrid}>
-              <div className={styles.infoGroup}><label>สถานะทางการเงิน</label><p>{customer.financialStatus}</p></div>
-              <div className={styles.infoGroup}><label>รายได้ปัจจุบัน</label><p>{formatNumber(customer.income)} บาท</p></div>
-            </div>
-            <div className={styles.infoGroupGrid}>
-              <div className={styles.infoGroup}><label>ภาระหนี้ปัจจุบัน</label><p>{formatNumber(customer.debt)} บาท</p></div>
-              <div className={styles.infoGroup}><label>เป้าหมายยื่นกู้</label><p>{customer.targetDate ? new Date(customer.targetDate).toLocaleDateString('th-TH') : '-'}</p></div>
-            </div>
-            <div className={styles.infoGroup}><label>แผนการดำเนินการ</label>
-              {customer.actionPlan && customer.actionPlan.length > 0 ? (
-                <ul>
-                  {customer.actionPlan.map((plan, index) => (
-                    <li key={index}>{plan}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>ไม่มี</p>
+        <div className={styles.mainContent}>
+          <div className={styles.leftColumn}>
+            <div className={styles.infoSection}>
+              <h2>👤 ข้อมูลส่วนบุคคล</h2>
+              <div className={styles.infoGroupGrid}>
+                <div className={styles.infoGroup}><label>อาชีพ</label><p>{customer.job}</p></div>
+                <div className={styles.infoGroup}><label>ตำแหน่ง</label><p>{customer.position}</p></div>
+              </div>
+              {customer.businessOwnerType === 'เจ้าของธุรกิจส่วนตัว' && (
+                <div className={styles.infoGroup}><label>ประเภทธุรกิจส่วนตัว</label><p>{customer.privateBusinessType}</p></div>
               )}
             </div>
-            <div className={styles.infoGroup}><label>ปัญหาด้านสินเชื่อ</label>
-              {customer.loanProblem && customer.loanProblem.length > 0 ? (
-                <ul>
-                  {customer.loanProblem.map((problem, index) => (
-                    <li key={index}>{problem}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>ไม่มี</p>
-              )}
+
+            <div className={styles.infoSection}>
+              <h2>🏠 ข้อมูลทรัพย์สิน</h2>
+              <div className={styles.infoGroupGrid}>
+                <div className={styles.infoGroup}><label>โครงการ</label><p>{customer.projectName}</p></div>
+                <div className={styles.infoGroup}><label>เลขห้อง</label><p>{customer.unit || customer.roomNumber}</p></div>
+              </div>
+              <div className={styles.infoGroupGrid}>
+                <div className={styles.infoGroup}><label>มูลค่าทรัพย์</label><p>{formatNumber(customer.propertyValue)} บาท</p></div>
+                <div className={styles.infoGroup}><label>ประวัติการชำระเงิน</label><p>{customer.paymentHistory}</p></div>
+              </div>
             </div>
           </div>
-          <div className={styles.infoSection}>
-            <h2>👤 ข้อมูลส่วนตัวและสินทรัพย์</h2>
-            <div className={styles.infoGroupGrid}>
-              <div className={styles.infoGroup}><label>อาชีพ</label><p>{customer.job}</p></div>
-              <div className={styles.infoGroup}><label>ตำแหน่ง</label><p>{customer.position}</p></div>
+
+          <div className={styles.rightColumn}>
+            <div className={styles.infoSection}>
+              <h2>💳 ข้อมูลการเงินและสินเชื่อ</h2>
+              <div className={styles.infoGroupGrid}>
+                <div className={styles.infoGroup}><label>รายได้ปัจจุบัน</label><p>{formatNumber(customer.income)} บาท</p></div>
+                <div className={styles.infoGroup}><label>ภาระหนี้ปัจจุบัน</label><p>{formatNumber(customer.debt)} บาท</p></div>
+              </div>
+              <div className={styles.infoGroupGrid}>
+                <div className={styles.infoGroup}><label>สถานะทางการเงิน</label><p>{customer.financialStatus}</p></div>
+                <div className={styles.infoGroup}><label>เป้าหมายยื่นกู้</label><p>{customer.targetDate ? new Date(customer.targetDate).toLocaleDateString('th-TH') : '-'}</p></div>
+              </div>
+              <div className={styles.infoGroup}><label>ปัญหาด้านสินเชื่อ</label>
+                {customer.loanProblem && customer.loanProblem.length > 0 ? (
+                  <ul>
+                    {customer.loanProblem.map((problem, index) => (
+                      <li key={index}>{problem}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>ไม่มี</p>
+                )}
+              </div>
+              <div className={styles.infoGroup}><label>แผนการดำเนินการ</label>
+                {customer.actionPlan && customer.actionPlan.length > 0 ? (
+                  <ul>
+                    {customer.actionPlan.map((plan, index) => (
+                      <li key={index}>{plan}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>ไม่มี</p>
+                )}
+              </div>
             </div>
-            <div className={styles.infoGroupGrid}>
-              <div className={styles.infoGroup}><label>โครงการ</label><p>{customer.projectName}</p></div>
-              <div className={styles.infoGroup}><label>เลขห้อง</label><p>{customer.unit || customer.roomNumber}</p></div>
-            </div>
-            <div className={styles.infoGroupGrid}>
-              <div className={styles.infoGroup}><label>มูลค่าทรัพย์</label><p>{formatNumber(customer.propertyValue)} บาท</p></div>
-              <div className={styles.infoGroup}><label>ประวัติการชำระเงิน</label><p>{customer.paymentHistory}</p></div>
-            </div>
-            {customer.businessOwnerType === 'เจ้าของธุรกิจส่วนตัว' && (
-              <div className={styles.infoGroup}><label>ประเภทธุรกิจส่วนตัว</label><p>{customer.privateBusinessType}</p></div>
-            )}
           </div>
         </div>
 
-      <div className={styles.loanTable}>
-        <h2>ประมาณการวงเงินที่จะสามารถกู้ได้ (ธนาคาร: {customer.targetBank || 'N/A'})</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>สถานการณ์ภาระหนี้ (บาท/เดือน)</th>
-              {[40, 30, 20, 10].map(term => (
-                <th key={term}>วงเงินกู้สูงสุด ({term} ปี)</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {customer.loanEstimation && customer.loanEstimation.map((scenario, index) => (
-              <tr key={index}>
-                <td>{scenario.label} ({formatNumber(scenario.debt)})</td>
-                {[40, 30, 20, 10].map(term => {
-                  const amount = scenario.loanAmounts[term];
-                  return (
-                    <td key={term}>
-                      {amount === 'N/A' || amount === null || amount === undefined ? '-' : formatNumber(amount)}
-                    </td>
-                  );
-                })}
+      {customer.loanEstimation && customer.targetBank && (
+        <div className={styles.loanTable}>
+          <h2>ประมาณการวงเงินที่จะสามารถกู้ได้ (ธนาคาร: {customer.targetBank})</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>สถานการณ์ภาระหนี้ (บาท/เดือน)</th>
+                {[40, 30, 20, 10].map(term => (
+                  <th key={term}>วงเงินกู้สูงสุด ({term} ปี)</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {customer.loanEstimation.map((scenario, index) => (
+                <tr key={index}>
+                  <td>{scenario.label} ({formatNumber(scenario.debt)})</td>
+                  {[40, 30, 20, 10].map(term => {
+                    const amount = scenario.loanAmounts[term];
+                    return (
+                      <td key={term}>
+                        {amount === 'N/A' || amount === null || amount === undefined ? '-' : formatNumber(amount)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       
 
