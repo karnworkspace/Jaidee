@@ -639,14 +639,15 @@ const calculateEnhancedBankMatching = async (customerData) => {
   const calculateLoanBandScore = (customerData, bankCriteria) => {
     const income = parseFloat(customerData.income) || 0;
     const debt = parseFloat(customerData.debt) || 0;
+    const age = parseInt(customerData.age) || 25;
     const dsr = income > 0 ? (debt / income) * 100 : 100;
     
     let score = 0;
     
-    // Income Score (0-40 points)
+    // Income Score (0-30 points)
     if (income >= bankCriteria.minIncome) {
       const incomeRatio = income / bankCriteria.minIncome;
-      score += Math.min(40, incomeRatio * 20);
+      score += Math.min(30, incomeRatio * 15);
     }
     
     // DSR Score (0-40 points)
@@ -655,9 +656,19 @@ const calculateEnhancedBankMatching = async (customerData) => {
       score += Math.max(0, dsrScore);
     }
     
-    // Stability Score (0-20 points)
+    // Age Score (0-15 points)
+    if (age >= bankCriteria.ageMin && age <= bankCriteria.ageMax) {
+      // Optimal age range gets full points
+      const ageRange = bankCriteria.ageMax - bankCriteria.ageMin;
+      const agePosition = (age - bankCriteria.ageMin) / ageRange;
+      // Peak score at middle age range
+      const ageScore = 15 * (1 - Math.abs(agePosition - 0.5) * 2);
+      score += Math.max(5, ageScore);
+    }
+    
+    // Stability Score (0-15 points)
     if (bankCriteria.stableIncome && customerData.job && customerData.job !== 'ธุรกิจส่วนตัว') {
-      score += 20;
+      score += 15;
     } else if (!bankCriteria.stableIncome) {
       score += 10;
     }
@@ -715,24 +726,50 @@ const calculateEnhancedBankMatching = async (customerData) => {
     
     let score = 0;
     
-    // Credit Score (0-60 points)
+    // Credit Score (0-50 points)
     if (creditScore >= bankCriteria.minCreditScore) {
-      const creditRatio = creditScore / 850; // Assume max credit score is 850
-      score += creditRatio * 60;
+      // Progressive scoring based on credit score ranges
+      if (creditScore >= 750) {
+        score += 50;
+      } else if (creditScore >= 700) {
+        score += 45;
+      } else if (creditScore >= 650) {
+        score += 40;
+      } else if (creditScore >= 600) {
+        score += 30;
+      } else {
+        score += 20;
+      }
+    } else {
+      // Penalty for below minimum credit score
+      score += Math.max(0, 10 - ((bankCriteria.minCreditScore - creditScore) / 10));
     }
     
-    // Financial Status Score (0-20 points)
+    // Account Status Penalty/Bonus (0-25 points)
+    let statusScore = 25;
+    accountStatuses.forEach(status => {
+      if (['30', '31', '33', '44'].includes(status)) {
+        statusScore -= 10; // Heavy penalty for bad statuses
+      } else if (['20', '21', '43'].includes(status)) {
+        statusScore -= 5; // Medium penalty for overdue
+      } else if (['01', '11', '12', '42'].includes(status)) {
+        statusScore = Math.max(statusScore, 20); // Good status maintains score
+      }
+    });
+    score += Math.max(0, statusScore);
+    
+    // Financial Status Score (0-15 points)
     if (financialStatus === 'ดีเยี่ยม') {
-      score += 20;
-    } else if (financialStatus === 'ดีขึ้น') {
       score += 15;
-    } else if (financialStatus === 'ต้องปรับปรุง') {
+    } else if (financialStatus === 'ดีขึ้น') {
       score += 10;
+    } else if (financialStatus === 'ต้องปรับปรุง') {
+      score += 5;
     }
     
-    // LivNex Bonus (0-20 points)
+    // LivNex Bonus (0-10 points)
     if (livnexCompleted) {
-      score += bankCriteria.livnexBonus / 5; // Scale down the bonus to fit 0-20 range
+      score += Math.min(10, bankCriteria.livnexBonus / 10);
     }
     
     return Math.min(100, score);
@@ -758,31 +795,38 @@ const calculateEnhancedBankMatching = async (customerData) => {
   
     // Calculate for each bank from database
     bankRules.forEach(bankRule => {
-      // Map database fields to expected format
+      // Map database fields to expected format using actual bank data
       const loanCriteria = {
-        minIncome: 12000, // Default minimum income
+        minIncome: bankRule.min_income || 12000, // Use actual minimum income from database
         maxDSR: (bankRule.dsr_high || bankRule.dsr_low) * 100, // Convert to percentage
-        stableIncome: bankRule.partnership_type !== 'LivNex_Primary'
+        stableIncome: bankRule.partnership_type !== 'LivNex_Primary',
+        ageMin: bankRule.age_min || 18,
+        ageMax: bankRule.age_max || 65,
+        maxTerm: bankRule.max_term || 30
       };
       
       const rentToOwnTerms = {
-        maxLTV: bankRule.max_ltv_rent_to_own,
-        preferredInterestRate: bankRule.preferred_interest_rate,
-        maxTerm: bankRule.max_term_rent_to_own,
-        specialProgram: bankRule.special_programs?.[0]
+        maxLTV: bankRule.max_ltv_rent_to_own || 80,
+        preferredInterestRate: bankRule.preferred_interest_rate || 4.5,
+        maxTerm: bankRule.max_term_rent_to_own || 25,
+        specialProgram: bankRule.special_programs?.[0],
+        ltvType1: bankRule.ltv_type1 || 0.90,
+        ltvType2Over2Years: bankRule.ltv_type2_over_2years || 0.80,
+        ltvType2Under2Years: bankRule.ltv_type2_under_2years || 0.70,
+        ltvType3: bankRule.ltv_type3 || 0.60
       };
       
       const creditRequirements = {
-        minCreditScore: bankRule.min_credit_score,
-        livnexBonus: bankRule.livnex_bonus,
+        minCreditScore: bankRule.min_credit_score || 600,
+        livnexBonus: bankRule.livnex_bonus || 0,
         excludeStatus: bankRule.exclude_status || [],
         acceptableGrades: bankRule.acceptable_grades || []
       };
       
       const scoring = {
-        loanWeight: bankRule.loan_weight,
-        rentToOwnWeight: bankRule.rent_to_own_weight,
-        creditWeight: bankRule.credit_weight
+        loanWeight: bankRule.loan_weight || 0.4,
+        rentToOwnWeight: bankRule.rent_to_own_weight || 0.3,
+        creditWeight: bankRule.credit_weight || 0.3
       };
       
       // Calculate component scores
@@ -814,9 +858,55 @@ const calculateEnhancedBankMatching = async (customerData) => {
         recommendedTerms: {
           interestRate: rentToOwnTerms.preferredInterestRate,
           maxLTV: rentToOwnTerms.maxLTV,
-          maxTerm: rentToOwnTerms.maxTerm
+          maxTerm: rentToOwnTerms.maxTerm,
+          dsrHigh: parseFloat(bankRule.dsr_high) || 0.5,
+          dsrLow: parseFloat(bankRule.dsr_low) || 0.5,
+          ageRange: `${bankRule.age_min || 18}-${bankRule.age_max || 65}`,
+          ltvType1: parseFloat(bankRule.ltv_type1) || 0.9,
+          ltvType2Over2Years: parseFloat(bankRule.ltv_type2_over_2years) || 0.8,
+          ltvType2Under2Years: parseFloat(bankRule.ltv_type2_under_2years) || 0.7,
+          ltvType3: parseFloat(bankRule.ltv_type3) || 0.6
+        },
+        
+        // Add customer DSR/LTV analysis
+        customerAnalysis: {
+          currentDSR: (() => {
+            const income = parseFloat(customerData.income) || 0;
+            const debt = parseFloat(customerData.debt) || 0;
+            if (income === 0) return 'N/A';
+            return ((debt / income) * 100).toFixed(1);
+          })(),
+          requestedLTV: parseFloat(customerData.ltv) || 0,
+          customerAge: parseInt(customerData.age) || 0,
+          dsrStatus: (() => {
+            const income = parseFloat(customerData.income) || 0;
+            const debt = parseFloat(customerData.debt) || 0;
+            if (income === 0) return 'ไม่สามารถคำนวณได้';
+            const dsr = (debt / income) * 100;
+            const dsrHigh = (parseFloat(bankRule.dsr_high) || 0.5) * 100;
+            const dsrLow = (parseFloat(bankRule.dsr_low) || 0.5) * 100;
+            if (dsr <= dsrLow) return 'ผ่านเกณฑ์ (DSR ต่ำ)';
+            if (dsr <= dsrHigh) return 'ผ่านเกณฑ์ (DSR สูง)';
+            return 'ไม่ผ่านเกณฑ์';
+          })(),
+          ltvStatus: (() => {
+            const requestedLTV = parseFloat(customerData.ltv) || 0;
+            const maxLTV = (parseFloat(bankRule.ltv_type1) || 0.9) * 100;
+            if (requestedLTV === 0) return 'ไม่มีข้อมูล';
+            if (requestedLTV <= maxLTV) return 'ผ่านเกณฑ์';
+            return 'ไม่ผ่านเกณฑ์';
+          })(),
+          ageStatus: (() => {
+            const age = parseInt(customerData.age) || 0;
+            const ageMin = bankRule.age_min || 18;
+            const ageMax = bankRule.age_max || 65;
+            if (age === 0) return 'ไม่มีข้อมูล';
+            if (age >= ageMin && age <= ageMax) return 'ผ่านเกณฑ์';
+            return 'ไม่ผ่านเกณฑ์';
+          })()
         },
         partnership: bankRule.partnership_type,
+        bankName: bankRule.bank_name,
         creditBureauInsights: {
           creditGrade: interpretCreditScore(customerData.creditScore).grade,
           creditStatus: interpretCreditScore(customerData.creditScore).status,

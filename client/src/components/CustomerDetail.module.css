@@ -153,6 +153,19 @@
   font-weight: 600;
 }
 
+.termSection {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.termSection h5 {
+  margin: 0 0 0.5rem 0;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -798,6 +811,73 @@
   border-bottom: none;
 }
 
+/* Customer Analysis Styles */
+.customerAnalysis {
+  background: #f0f9ff;
+  padding: 16px;
+  margin: 16px;
+  border-radius: 12px;
+  border: 2px solid #0ea5e9;
+}
+
+.customerAnalysis h4 {
+  color: #0c4a6e;
+  margin-bottom: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.analysisGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.analysisCard {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #e0e7ff;
+}
+
+.analysisLabel {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.analysisValue {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 6px;
+}
+
+.analysisStatus {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.analysisStatus.pass {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.analysisStatus.fail {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.analysisStatus.nodata {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
 /* Enhanced Bank Matching Styles */
 .bankMatchingSection {
   background: rgba(255, 255, 255, 0.95);
@@ -1120,6 +1200,11 @@
   
   .scoreNumber {
     font-size: 2.5rem;
+  }
+  
+  .analysisGrid {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 }
 

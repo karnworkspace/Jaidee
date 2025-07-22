@@ -87,6 +87,23 @@ function CustomerDetail() {
     return parseFloat(num).toLocaleString('en-US');
   };
 
+  const formatPercentage = (value) => {
+    if (value === null || value === undefined || value === '' || isNaN(parseFloat(value))) {
+      return '-';
+    }
+    const numValue = parseFloat(value);
+    if (numValue === 0) {
+      return '0';
+    }
+    if (numValue <= 1) {
+      // If value is decimal (0.5 = 50%), multiply by 100
+      return (numValue * 100).toFixed(0);
+    } else {
+      // If value is already percentage (50), use as is
+      return numValue.toFixed(0);
+    }
+  };
+
   return (
     <div className={styles.detailContainer}>
       {/* Mobile Menu Toggle */}
@@ -339,9 +356,12 @@ function CustomerDetail() {
             {Object.entries(customer.enhancedBankMatching).map(([bankName, data]) => (
               <div key={bankName} className={`${styles.bankCard} ${styles[data.eligibility]}`}>
                 <div className={styles.bankHeader}>
-                  <h3>{bankName}</h3>
+                  <h3>{data.bankName || bankName}</h3>
                   <div className={styles.partnershipBadge}>
-                    {data.partnership.replace('_', ' ')}
+                    {data.partnership === 'Government_Backing' ? 'รัฐบาล' : 
+                     data.partnership === 'Premium_Commercial' ? 'พรีเมียม' : 
+                     data.partnership === 'Standard_Commercial' ? 'มาตรฐาน' : 
+                     data.partnership === 'LivNex_Primary' ? 'LivNex' : data.partnership}
                   </div>
                 </div>
                 
@@ -404,19 +424,96 @@ function CustomerDetail() {
                   </div>
                 )}
 
+                {data.customerAnalysis && (
+                  <div className={styles.customerAnalysis}>
+                    <h4>วิเคราะห์ข้อมูลลูกค้า</h4>
+                    <div className={styles.analysisGrid}>
+                      <div className={styles.analysisCard}>
+                        <div className={styles.analysisLabel}>DSR ปัจจุบัน</div>
+                        <div className={styles.analysisValue}>
+                          {data.customerAnalysis.currentDSR !== 'N/A' ? 
+                            `${data.customerAnalysis.currentDSR}%` : 'N/A'}
+                        </div>
+                        <div className={`${styles.analysisStatus} ${
+                          data.customerAnalysis.dsrStatus.includes('ผ่านเกณฑ์') ? styles.pass : 
+                          data.customerAnalysis.dsrStatus === 'ไม่สามารถคำนวณได้' ? styles.nodata : styles.fail
+                        }`}>
+                          {data.customerAnalysis.dsrStatus}
+                        </div>
+                      </div>
+                      <div className={styles.analysisCard}>
+                        <div className={styles.analysisLabel}>LTV ที่ต้องการ</div>
+                        <div className={styles.analysisValue}>
+                          {data.customerAnalysis.requestedLTV > 0 ? 
+                            `${data.customerAnalysis.requestedLTV}%` : 'N/A'}
+                        </div>
+                        <div className={`${styles.analysisStatus} ${
+                          data.customerAnalysis.ltvStatus === 'ผ่านเกณฑ์' ? styles.pass : 
+                          data.customerAnalysis.ltvStatus === 'ไม่มีข้อมูล' ? styles.nodata : styles.fail
+                        }`}>
+                          {data.customerAnalysis.ltvStatus}
+                        </div>
+                      </div>
+                      <div className={styles.analysisCard}>
+                        <div className={styles.analysisLabel}>อายุ</div>
+                        <div className={styles.analysisValue}>
+                          {data.customerAnalysis.customerAge || customer.age || 'N/A'} {data.customerAnalysis.customerAge || customer.age ? 'ปี' : ''}
+                        </div>
+                        <div className={`${styles.analysisStatus} ${
+                          data.customerAnalysis.ageStatus === 'ผ่านเกณฑ์' ? styles.pass : 
+                          data.customerAnalysis.ageStatus === 'ไม่มีข้อมูล' ? styles.nodata : styles.fail
+                        }`}>
+                          {data.customerAnalysis.ageStatus}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className={styles.recommendedTerms}>
-                  <h4>เงื่อนไขที่แนะนำ</h4>
+                  <h4>เงื่อนไขจริงของธนาคาร</h4>
                   <div className={styles.termRow}>
-                    <span className={styles.termLabel}>ดอกเบี้ย:</span>
+                    <span className={styles.termLabel}>ดอกเบี้ยเช่าออม:</span>
                     <span className={styles.termValue}>{data.recommendedTerms.interestRate}%</span>
                   </div>
                   <div className={styles.termRow}>
-                    <span className={styles.termLabel}>LTV สูงสุด:</span>
+                    <span className={styles.termLabel}>LTV เช่าออม:</span>
                     <span className={styles.termValue}>{data.recommendedTerms.maxLTV}%</span>
                   </div>
                   <div className={styles.termRow}>
-                    <span className={styles.termLabel}>ระยะเวลา:</span>
+                    <span className={styles.termLabel}>ระยะเวลาเช่าออม:</span>
                     <span className={styles.termValue}>{data.recommendedTerms.maxTerm} ปี</span>
+                  </div>
+                  <div className={styles.termRow}>
+                    <span className={styles.termLabel}>DSR สูง:</span>
+                    <span className={styles.termValue}>{formatPercentage(data.recommendedTerms.dsrHigh)}%</span>
+                  </div>
+                  <div className={styles.termRow}>
+                    <span className={styles.termLabel}>DSR ต่ำ:</span>
+                    <span className={styles.termValue}>{formatPercentage(data.recommendedTerms.dsrLow)}%</span>
+                  </div>
+                  <div className={styles.termRow}>
+                    <span className={styles.termLabel}>ช่วงอายุ:</span>
+                    <span className={styles.termValue}>{data.recommendedTerms.ageRange} ปี</span>
+                  </div>
+                  <div className={styles.termSection}>
+                    <h5>เกณฑ์ LTV ตามประเภทบ้าน</h5>
+                    <div className={styles.termRow}>
+                      <span className={styles.termLabel}>บ้านหลังที่ 1:</span>
+                      <span className={styles.termValue}>{formatPercentage(data.recommendedTerms.ltvType1)}%</span>
+                    </div>
+                    <div className={styles.termRow}>
+                      <span className={styles.termLabel}>บ้านหลังที่ 2 (>2ปี):</span>
+                      <span className={styles.termValue}>{formatPercentage(data.recommendedTerms.ltvType2Over2Years)}%</span>
+                    </div>
+                    <div className={styles.termRow}>
+                      <span className={styles.termLabel}>บ้านหลังที่ 2 (&lt;2ปี):</span>
+                      <span className={styles.termValue}>{formatPercentage(data.recommendedTerms.ltvType2Under2Years)}%</span>
+                    </div>
+                    <div className={styles.termRow}>
+                      <span className={styles.termLabel}>บ้านหลังที่ 3+:</span>
+                      <span className={styles.termValue}>{formatPercentage(data.recommendedTerms.ltvType3)}%</span>
+                    </div>
                   </div>
                 </div>
 
