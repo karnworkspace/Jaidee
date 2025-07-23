@@ -52,7 +52,8 @@ function BankAdmin() {
         livnex_bonus: bankData.livnex_bonus,
         loan_weight: bankData.loan_weight,
         rent_to_own_weight: bankData.rent_to_own_weight,
-        credit_weight: bankData.credit_weight
+        credit_weight: bankData.credit_weight,
+        special_programs: bankData.special_programs || []
       });
       setIsEditing(false);
     } catch (error) {
@@ -64,6 +65,37 @@ function BankAdmin() {
     const { name, value, type } = e.target;
     const processedValue = type === 'number' ? parseFloat(value) || 0 : value;
     setFormData(prev => ({ ...prev, [name]: processedValue }));
+  };
+
+  const handleAddSpecialProgram = () => {
+    const newProgram = window.prompt('เพิ่มโปรแกรมพิเศษใหม่:');
+    if (newProgram && newProgram.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        special_programs: [...(prev.special_programs || []), newProgram.trim()]
+      }));
+    }
+  };
+
+  const handleRemoveSpecialProgram = (index) => {
+    if (window.confirm('ต้องการลบโปรแกรมนี้หรือไม่?')) {
+      setFormData(prev => ({
+        ...prev,
+        special_programs: prev.special_programs.filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  const handleEditSpecialProgram = (index, currentValue) => {
+    const newValue = window.prompt('แก้ไขโปรแกรมพิเศษ:', currentValue);
+    if (newValue && newValue.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        special_programs: prev.special_programs.map((program, i) => 
+          i === index ? newValue.trim() : program
+        )
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -424,7 +456,7 @@ function BankAdmin() {
                       value={formData.loan_weight || ''}
                       onChange={handleInputChange}
                       disabled={!isEditing}
-                      step="0.1"
+                      step="0.01"
                       min="0"
                       max="1"
                     />
@@ -437,7 +469,7 @@ function BankAdmin() {
                       value={formData.rent_to_own_weight || ''}
                       onChange={handleInputChange}
                       disabled={!isEditing}
-                      step="0.1"
+                      step="0.01"
                       min="0"
                       max="1"
                     />
@@ -450,7 +482,7 @@ function BankAdmin() {
                       value={formData.credit_weight || ''}
                       onChange={handleInputChange}
                       disabled={!isEditing}
-                      step="0.1"
+                      step="0.01"
                       min="0"
                       max="1"
                     />
@@ -461,6 +493,56 @@ function BankAdmin() {
                     หมายเหตุ: ผลรวมของน้ำหนักทั้ง 3 ควรเท่ากับ 1.0
                   </div>
                 )}
+              </div>
+
+              {/* Special Programs Section */}
+              <div className={styles.formSection}>
+                <h3>⭐ โปรแกรมพิเศษ</h3>
+                <div className={styles.specialProgramsContainer}>
+                  {(formData.special_programs || []).length === 0 ? (
+                    <div className={styles.noPrograms}>
+                      ไม่มีโปรแกรมพิเศษ
+                    </div>
+                  ) : (
+                    <div className={styles.programsList}>
+                      {(formData.special_programs || []).map((program, index) => (
+                        <div key={index} className={styles.programItem}>
+                          <span className={styles.programText}>⭐ {program}</span>
+                          {isEditing && (
+                            <div className={styles.programActions}>
+                              <button
+                                type="button"
+                                onClick={() => handleEditSpecialProgram(index, program)}
+                                className={styles.editProgramBtn}
+                                title="แก้ไข"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveSpecialProgram(index)}
+                                className={styles.removeProgramBtn}
+                                title="ลบ"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={handleAddSpecialProgram}
+                      className={styles.addProgramBtn}
+                    >
+                      ➕ เพิ่มโปรแกรมพิเศษ
+                    </button>
+                  )}
+                </div>
               </div>
 
               {isEditing && (

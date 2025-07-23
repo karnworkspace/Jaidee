@@ -304,18 +304,68 @@ const classify3BProblems = (customerData) => {
     problems.badCredit.severity = problems.badCredit.severity === 'high' ? 'high' : 'medium';
   }
   
-  // Bad Income Analysis (simplified)
+  // Enhanced Bad Income Analysis
   const income = parseFloat(customerData.income) || 0;
+  const debt = parseFloat(customerData.debt) || 0;
   const job = customerData.job || '';
+  const position = customerData.position || '';
+  const businessOwnerType = customerData.businessOwnerType || '';
   
-  if (income < 15000) {
+  // 1. Income Level Analysis
+  if (income <= 15000) {
+    problems.badIncome.indicators.push('criticallyLowIncome');
+    problems.badIncome.severity = 'high';
+  } else if (income <= 25000) {
     problems.badIncome.indicators.push('lowIncome');
-    problems.badIncome.severity = 'medium';
+    problems.badIncome.severity = problems.badIncome.severity === 'high' ? 'high' : 'medium';
+  } else if (income <= 40000) {
+    problems.badIncome.indicators.push('belowAverageIncome');
+    problems.badIncome.severity = problems.badIncome.severity !== 'none' ? problems.badIncome.severity : 'low';
   }
   
-  if (job === 'ธุรกิจส่วนตัว' || job.includes('อิสระ')) {
-    problems.badIncome.indicators.push('unstableIncome');
-    problems.badIncome.severity = problems.badIncome.severity === 'medium' ? 'medium' : 'low';
+  // 2. Debt-to-Income Ratio Analysis
+  if (income > 0) {
+    const dsr = (debt / income);
+    if (dsr > 0.8) {
+      problems.badIncome.indicators.push('excessiveDebtBurden');
+      problems.badIncome.severity = 'high';
+    } else if (dsr > 0.6) {
+      problems.badIncome.indicators.push('highDebtBurden');
+      problems.badIncome.severity = problems.badIncome.severity === 'high' ? 'high' : 'medium';
+    } else if (dsr > 0.4) {
+      problems.badIncome.indicators.push('moderateDebtBurden');
+      problems.badIncome.severity = problems.badIncome.severity !== 'none' ? problems.badIncome.severity : 'low';
+    }
+  }
+  
+  // 3. Employment Stability Analysis
+  if (job === 'ธุรกิจส่วนตัว' || job.includes('อิสระ') || job.includes('Freelance')) {
+    problems.badIncome.indicators.push('unstableIncomeSource');
+    problems.badIncome.severity = problems.badIncome.severity === 'high' ? 'high' : 
+                                 problems.badIncome.severity === 'medium' ? 'medium' : 'low';
+  }
+  
+  if (businessOwnerType === 'เจ้าของธุรกิจส่วนตัว') {
+    problems.badIncome.indicators.push('privateBusinessOwner');
+    problems.badIncome.severity = problems.badIncome.severity === 'high' ? 'high' : 
+                                 problems.badIncome.severity === 'medium' ? 'medium' : 'low';
+  }
+  
+  // 4. Job Position Analysis
+  if (position && (position.includes('ชั่วคราว') || position.includes('สัญญาจ้าง') || 
+                   position.includes('พาร์ทไทม์') || position.includes('ลูกจ้างรายวัน'))) {
+    problems.badIncome.indicators.push('temporaryEmployment');
+    problems.badIncome.severity = problems.badIncome.severity === 'high' ? 'high' : 'medium';
+  }
+  
+  // 5. Income Adequacy for Property Purchase
+  const propertyValue = parseFloat(customerData.propertyValue) || 0;
+  if (propertyValue > 0 && income > 0) {
+    const incomeToPropertyRatio = (income * 12) / propertyValue;
+    if (incomeToPropertyRatio < 0.15) { // รายได้ต่อปีน้อยกว่า 15% ของมูลค่าทรัพย์
+      problems.badIncome.indicators.push('insufficientIncomeForProperty');
+      problems.badIncome.severity = problems.badIncome.severity === 'high' ? 'high' : 'medium';
+    }
   }
   
   // Bad Confidence Analysis
@@ -336,8 +386,36 @@ const classify3BProblems = (customerData) => {
   }
   
   if (problems.badIncome.severity !== 'none') {
-    problems.badIncome.recommendations.push('หาแหล่งรายได้เสริม');
-    problems.badIncome.recommendations.push('จัดเตรียมเอกสารรายได้ที่ชัดเจน');
+    // General recommendations
+    problems.badIncome.recommendations.push('จัดเตรียมเอกสารรายได้ที่ชัดเจนและครบถ้วน');
+    
+    // Specific recommendations based on indicators
+    if (problems.badIncome.indicators.includes('criticallyLowIncome') || 
+        problems.badIncome.indicators.includes('lowIncome')) {
+      problems.badIncome.recommendations.push('หาแหล่งรายได้เสริมหรือเพิ่มรายได้หลัก');
+      problems.badIncome.recommendations.push('พิจารณาพักการสมัครสินเชื่อจนกว่ารายได้จะเพิ่มขึ้น');
+    }
+    
+    if (problems.badIncome.indicators.includes('excessiveDebtBurden') || 
+        problems.badIncome.indicators.includes('highDebtBurden')) {
+      problems.badIncome.recommendations.push('ลดภาระหนี้ให้อยู่ในระดับที่เหมาะสม (DSR < 60%)');
+      problems.badIncome.recommendations.push('ปรับโครงสร้างหนี้หรือรวมหนี้');
+    }
+    
+    if (problems.badIncome.indicators.includes('unstableIncomeSource') || 
+        problems.badIncome.indicators.includes('privateBusinessOwner')) {
+      problems.badIncome.recommendations.push('เตรียมเอกสารการเงินธุรกิจย้อนหลัง 2-3 ปี');
+      problems.badIncome.recommendations.push('แสดงหลักฐานความมั่นคงของธุรกิจ');
+    }
+    
+    if (problems.badIncome.indicators.includes('temporaryEmployment')) {
+      problems.badIncome.recommendations.push('หางานประจำที่มั่นคงก่อนสมัครสินเชื่อ');
+    }
+    
+    if (problems.badIncome.indicators.includes('insufficientIncomeForProperty')) {
+      problems.badIncome.recommendations.push('พิจารณาทรัพย์สินที่มีราคาเหมาะสมกับรายได้');
+      problems.badIncome.recommendations.push('เพิ่มเงินดาวน์เพื่อลดวงเงินกู้');
+    }
   }
   
   if (problems.badConfidence.severity !== 'none') {
@@ -942,15 +1020,29 @@ const calculateRentToOwnAmortizationTable = (data) => {
   const prepaidMultiplier = parseFloat(data.prepaidRentMultiplier) || 0;
   const annualInterestRate = parseFloat(data.annualInterestRate) || 0;
   const installmentMonths = parseInt(data.installmentMonths) || 0;
+  const transferYear = parseInt(data.transferYear) || 1;
 
   // Step 1: Pre-Calculation
   const propertyAfterDiscount = propertyPrice - discount;
+  
+  // Validation: Ensure propertyAfterDiscount is positive
+  if (propertyAfterDiscount <= 0) {
+    return {
+      error: true,
+      message: 'Property price after discount must be greater than 0',
+      propertyAfterDiscount: propertyAfterDiscount,
+      amortizationTable: []
+    };
+  }
+  
   const rawMonthlyRent = (propertyAfterDiscount * rentRatePerMillion) / 1000000;
   const monthlyRent = Math.ceil(rawMonthlyRent / 100) * 100; // Round up to nearest hundred
 
   const guarantee = monthlyRent * guaranteeMultiplier;
   const prepaidRent = monthlyRent * prepaidMultiplier;
-  const initialPayment = (guarantee + prepaidRent) - overpaidRent;
+  const totalRequired = guarantee + prepaidRent;
+  const initialPayment = Math.max(0, totalRequired - overpaidRent); // Ensure payment is not negative
+  const actualOverpayment = Math.max(0, overpaidRent - totalRequired); // Calculate actual overpayment
 
   // Step 2: Initialize Result Array
   const amortizationTable = [];
@@ -961,9 +1053,11 @@ const calculateRentToOwnAmortizationTable = (data) => {
     let payment, interest, principalPaid;
 
     if (month === 1) {
-      payment = initialPayment + overpaidRent; // ชำระรวม ณ งวดแรก
+      payment = Math.max(initialPayment, 0); // ชำระเพิ่มเติมในงวดแรก (หากมี)
+      const totalFirstPayment = overpaidRent; // จำนวนเงินที่จ่ายจริงรวม overpaid
       interest = 0; // งวดแรกยังไม่มีดอกเบี้ย
-      principalPaid = payment - guarantee; // เงินต้น = ชำระ - ค่าประกัน
+      // คำนวณเงินต้นที่จ่าย = จำนวนที่จ่ายจริง - ค่าประกัน - ค่าเช่าล่วงหน้า + overpayment ที่เกิน
+      principalPaid = totalFirstPayment - guarantee - prepaidRent + actualOverpayment;
       remainingPrincipal = propertyAfterDiscount - principalPaid;
     } else {
       payment = monthlyRent;
@@ -989,8 +1083,9 @@ const calculateRentToOwnAmortizationTable = (data) => {
       if (previousMonthData) {
         const previousRemaining = previousMonthData.remainingPrincipal;
         const interestFinal = Math.round(previousRemaining * (annualInterestRate / 100) / 12 * 100) / 100;
-        const principalFinal = 0 - interestFinal; // As per pseudocode
-        const remainingFinal = previousRemaining;
+        // สิ้นงวด rows should show only interest payment, no principal payment
+        const principalFinal = 0; // No principal payment in end-of-period summary
+        const remainingFinal = previousRemaining; // Principal remains the same
 
         amortizationTable.push({
           installment: `สิ้นงวดที่ ${endMonth}`,
@@ -1005,8 +1100,19 @@ const calculateRentToOwnAmortizationTable = (data) => {
 
   // Summary results (from previous detailed calculation, adjusted for new logic)
   const totalPaid = monthlyRent * installmentMonths;
-  const additionalPayment = (guarantee + prepaidRent) - overpaidRent;
-  const transferFee = 0; // Needs clarification if there's a formula for this in the new pseudocode
+  const additionalPayment = initialPayment; // Use the corrected initialPayment instead
+  
+  // Calculate transfer fee based on transfer year
+  let transferFeeRate = 0;
+  if (transferYear === 1) {
+    transferFeeRate = 0.01; // 1%
+  } else if (transferYear === 2) {
+    transferFeeRate = 0.015; // 1.5%
+  } else if (transferYear === 3) {
+    transferFeeRate = 0.02; // 2%
+  }
+  const transferFee = Math.max(0, propertyAfterDiscount * transferFeeRate); // Ensure positive value
+  
   const accumulatedSavings = totalPaid * 0.80; // Assuming 80% as per previous formula
 
   return {

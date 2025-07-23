@@ -104,6 +104,47 @@ function CustomerDetail() {
     }
   };
 
+  const translateIndicator = (indicator) => {
+    const translations = {
+      // Bad Credit indicators
+      'creditScore < 680': 'เครดิตสกอร์ต่ำกว่า 680',
+      'hasProblematicAccountStatus': 'มีบัญชีที่มีปัญหา',
+      'hasOverduePayments': 'มีประวัติการชำระเงินล่าช้า',
+      
+      // Enhanced Bad Income indicators
+      'criticallyLowIncome': 'รายได้ต่ำมาก (น้อยกว่า 15,000 บาท)',
+      'lowIncome': 'รายได้ต่ำ (15,000-24,999 บาท)',
+      'belowAverageIncome': 'รายได้ต่ำกว่าเกณฑ์ (25,000-39,999 บาท)',
+      'excessiveDebtBurden': 'ภาระหนี้สูงเกินไป (DSR > 80%)',
+      'highDebtBurden': 'ภาระหนี้สูง (DSR 60-80%)',
+      'moderateDebtBurden': 'ภาระหนี้ปานกลาง (DSR 40-60%)',
+      'unstableIncomeSource': 'แหล่งรายได้ไม่มั่นคง (ธุรกิจส่วนตัว/อิสระ)',
+      'privateBusinessOwner': 'เจ้าของธุรกิจส่วนตัว',
+      'temporaryEmployment': 'งานชั่วคราวหรือไม่มั่นคง',
+      'insufficientIncomeForProperty': 'รายได้ไม่เพียงพอสำหรับทรัพย์สินที่ต้องการ',
+      
+      // Legacy Bad Income indicators (for backward compatibility)
+      'unstableIncome': 'รายได้ไม่มั่นคง (ธุรกิจส่วนตัว/อิสระ)',
+      
+      // Bad Confidence indicators
+      'pastCreditIssues': 'มีปัญหาเครดิตในอดีต',
+      'currentFinancialStress': 'มีความเครียดทางการเงินในปัจจุบัน'
+    };
+    
+    return translations[indicator] || indicator;
+  };
+
+  const translateSeverity = (severity) => {
+    const translations = {
+      'high': 'สูง',
+      'medium': 'ปานกลาง', 
+      'low': 'ต่ำ',
+      'none': 'ไม่มี'
+    };
+    
+    return translations[severity] || severity;
+  };
+
   return (
     <div className={styles.detailContainer}>
       {/* Mobile Menu Toggle */}
@@ -292,37 +333,37 @@ function CustomerDetail() {
             <h3>3B Problems Analysis</h3>
             <div className={styles.problemsGrid}>
               <div className={styles.problemCard}>
-                <h4>Bad Credit</h4>
+                <h4>Bad Credit (เครดิตไม่ดี)</h4>
                 <div className={`${styles.severityBadge} ${styles[customer.creditBureauAnalysis.problems3B.badCredit.severity]}`}>
-                  {customer.creditBureauAnalysis.problems3B.badCredit.severity}
+                  {translateSeverity(customer.creditBureauAnalysis.problems3B.badCredit.severity)}
                 </div>
                 <ul>
                   {customer.creditBureauAnalysis.problems3B.badCredit.indicators.map((indicator, index) => (
-                    <li key={index}>{indicator}</li>
+                    <li key={index}>{translateIndicator(indicator)}</li>
                   ))}
                 </ul>
               </div>
               
               <div className={styles.problemCard}>
-                <h4>Bad Income</h4>
+                <h4>Bad Income (รายได้ไม่ดี)</h4>
                 <div className={`${styles.severityBadge} ${styles[customer.creditBureauAnalysis.problems3B.badIncome.severity]}`}>
-                  {customer.creditBureauAnalysis.problems3B.badIncome.severity}
+                  {translateSeverity(customer.creditBureauAnalysis.problems3B.badIncome.severity)}
                 </div>
                 <ul>
                   {customer.creditBureauAnalysis.problems3B.badIncome.indicators.map((indicator, index) => (
-                    <li key={index}>{indicator}</li>
+                    <li key={index}>{translateIndicator(indicator)}</li>
                   ))}
                 </ul>
               </div>
               
               <div className={styles.problemCard}>
-                <h4>Bad Confidence</h4>
+                <h4>Bad Confidence (ความมั่นใจไม่ดี)</h4>
                 <div className={`${styles.severityBadge} ${styles[customer.creditBureauAnalysis.problems3B.badConfidence.severity]}`}>
-                  {customer.creditBureauAnalysis.problems3B.badConfidence.severity}
+                  {translateSeverity(customer.creditBureauAnalysis.problems3B.badConfidence.severity)}
                 </div>
                 <ul>
                   {customer.creditBureauAnalysis.problems3B.badConfidence.indicators.map((indicator, index) => (
-                    <li key={index}>{indicator}</li>
+                    <li key={index}>{translateIndicator(indicator)}</li>
                   ))}
                 </ul>
               </div>
