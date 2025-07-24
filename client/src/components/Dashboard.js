@@ -16,6 +16,7 @@ function Dashboard() {
     financialStatus: 'all',
     officer: 'all'
   });
+  const [importStatus, setImportStatus] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -207,6 +208,39 @@ function Dashboard() {
 
   const stats = getStats();
 
+  const handleImportCSV = async () => {
+    if (!window.confirm('คุณต้องการนำเข้าข้อมูลจาก CSV หรือไม่?\n\nการดำเนินการนี้จะเพิ่มข้อมูลลูกค้าใหม่เข้าสู่ระบบ')) {
+      return;
+    }
+
+    setImportStatus('🔄 กำลังนำเข้าข้อมูล...');
+    
+    try {
+      const response = await fetch('http://localhost:3001/api/import-csv', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        setImportStatus(`✅ นำเข้าสำเร็จ: ${result.summary.successful}/${result.summary.totalRows} รายการ`);
+        
+        // Refresh customer data
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        setImportStatus(`❌ เกิดข้อผิดพลาด: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      setImportStatus(`❌ เกิดข้อผิดพลาด: ${error.message}`);
+    }
+  };
+
   return (
     <div className={styles.dashboardContainer}>
       <div className={styles.contentWrapper}>
@@ -214,9 +248,17 @@ function Dashboard() {
           <h1 className={styles.title}>Customer Dashboard</h1>
           <div className={styles.headerActions}>
             <Link to="/admin/banks" className={styles.adminButton}>🏦 จัดการธนาคาร</Link>
+            <button onClick={handleImportCSV} className={styles.importButton}>📁 นำเข้า CSV</button>
             <Link to="/add-customer" className={styles.addButton}>เพิ่มลูกค้าใหม่</Link>
           </div>
         </div>
+
+        {/* Import Status */}
+        {importStatus && (
+          <div className={styles.importStatus}>
+            {importStatus}
+          </div>
+        )}
 
         {/* Stats Section */}
         <div className={styles.statsSection}>

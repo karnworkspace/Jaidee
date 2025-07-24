@@ -1,5 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const csv = require('csv-parser');
+const fs = require('fs');
+const path = require('path');
 const { 
   initializeDatabase, 
   getCustomerWithDetails, 
@@ -232,7 +235,18 @@ const bankMatchingRules = {
 
 // Credit Bureau Analysis Functions
 const interpretCreditScore = (score) => {
-  const creditScore = parseFloat(score) || 500;
+  const creditScore = parseFloat(score) || null;
+  
+  // Return null interpretation if no score available
+  if (creditScore === null || isNaN(creditScore)) {
+    return {
+      score: null,
+      grade: null,
+      status: 'ไม่มีข้อมูล',
+      livnexDuration: null,
+      priority: 'unknown'
+    };
+  }
   
   for (const [grade, range] of Object.entries(creditGradeRanges)) {
     if (creditScore >= range.min && creditScore <= range.max) {
@@ -257,7 +271,7 @@ const interpretCreditScore = (score) => {
 };
 
 const classify3BProblems = (customerData) => {
-  const creditScore = parseFloat(customerData.creditScore) || 500;
+  const creditScore = parseFloat(customerData.creditScore) || null;
   const accountStatuses = customerData.accountStatuses ? 
     (Array.isArray(customerData.accountStatuses) ? 
       customerData.accountStatuses : 
@@ -284,7 +298,7 @@ const classify3BProblems = (customerData) => {
   };
   
   // Bad Credit Analysis
-  if (creditScore < 680) {
+  if (creditScore !== null && !isNaN(creditScore) && creditScore < 680) {
     problems.badCredit.indicators.push('creditScore < 680');
     problems.badCredit.severity = creditScore < 600 ? 'high' : 'medium';
   }
@@ -706,6 +720,37 @@ const calculateRentToOwnEstimation = (rentToOwnValue, monthlyRentToOwnRate) => {
   return results;
 };
 
+// Helper function to check if customer has valid credit bureau data
+const hasValidCreditBureauData = (customer) => {
+  const hasCreditScore = customer.creditScore && !isNaN(parseFloat(customer.creditScore));
+  const hasAccountStatuses = customer.accountStatuses && (
+    Array.isArray(customer.accountStatuses) ? 
+    customer.accountStatuses.length > 0 : 
+    customer.accountStatuses.trim().length > 0
+  );
+  const hasPaymentHistory = customer.paymentHistory && 
+    customer.paymentHistory !== 'ไม่มีข้อมูล' && 
+    customer.paymentHistory.trim().length > 0;
+  const hasFinancialStatus = customer.financialStatus && 
+    customer.financialStatus !== 'ไม่มีข้อมูล' && 
+    customer.financialStatus.trim().length > 0;
+  
+  return hasCreditScore || hasAccountStatuses || hasPaymentHistory || hasFinancialStatus;
+};
+
+// Updated function to create credit bureau analysis only when data exists
+const createCreditBureauAnalysis = (customer) => {
+  if (!hasValidCreditBureauData(customer)) {
+    return null;
+  }
+  
+  return {
+    creditInterpretation: interpretCreditScore(customer.creditScore),
+    problems3B: classify3BProblems(customer),
+    livnexCompatibility: calculateLivNexCompatibility(customer)
+  };
+};
+
 // Enhanced Bank Matching Algorithm - Updated to use database
 const calculateEnhancedBankMatching = async (customerData) => {
   try {
@@ -714,6 +759,7 @@ const calculateEnhancedBankMatching = async (customerData) => {
     const bankResults = {};
   
   // Helper functions for scoring
+
   const calculateLoanBandScore = (customerData, bankCriteria) => {
     const income = parseFloat(customerData.income) || 0;
     const debt = parseFloat(customerData.debt) || 0;
@@ -794,7 +840,7 @@ const calculateEnhancedBankMatching = async (customerData) => {
   
   const calculateCreditBureauScore = (customerData, bankCriteria) => {
     // Use enhanced credit scoring with Credit Bureau data
-    const creditScore = parseFloat(customerData.creditScore) || 500;
+    const creditScore = parseFloat(customerData.creditScore) || null;
     const financialStatus = customerData.financialStatus || 'ไม่มีข้อมูล';
     const livnexCompleted = customerData.livnexCompleted || false;
     const accountStatuses = customerData.accountStatuses ? 
@@ -805,22 +851,27 @@ const calculateEnhancedBankMatching = async (customerData) => {
     let score = 0;
     
     // Credit Score (0-50 points)
-    if (creditScore >= bankCriteria.minCreditScore) {
-      // Progressive scoring based on credit score ranges
-      if (creditScore >= 750) {
-        score += 50;
-      } else if (creditScore >= 700) {
-        score += 45;
-      } else if (creditScore >= 650) {
-        score += 40;
-      } else if (creditScore >= 600) {
-        score += 30;
+    if (creditScore !== null && !isNaN(creditScore)) {
+      if (creditScore >= bankCriteria.minCreditScore) {
+        // Progressive scoring based on credit score ranges
+        if (creditScore >= 750) {
+          score += 50;
+        } else if (creditScore >= 700) {
+          score += 45;
+        } else if (creditScore >= 650) {
+          score += 40;
+        } else if (creditScore >= 600) {
+          score += 30;
+        } else {
+          score += 20;
+        }
       } else {
-        score += 20;
+        // Penalty for below minimum credit score
+        score += Math.max(0, 10 - ((bankCriteria.minCreditScore - creditScore) / 10));
       }
     } else {
-      // Penalty for below minimum credit score
-      score += Math.max(0, 10 - ((bankCriteria.minCreditScore - creditScore) / 10));
+      // No credit score available - neutral scoring
+      score += 25; // Give a neutral score when no data is available
     }
     
     // Account Status Penalty/Bonus (0-25 points)
@@ -1232,12 +1283,7 @@ app.get('/api/customers/:id', async (req, res) => {
         parseFloat(customer.ltv) || 0
       );
       const enhancedBankMatching = await calculateBankMatchingWithCreditBureau(customer);
-      const livnexCompatibility = calculateLivNexCompatibility(customer);
-      const creditBureauAnalysis = {
-        creditInterpretation: interpretCreditScore(customer.creditScore),
-        problems3B: classify3BProblems(customer),
-        livnexCompatibility: livnexCompatibility
-      };
+      const creditBureauAnalysis = createCreditBureauAnalysis(customer);
       const rentToOwnEstimation = calculateRentToOwnEstimation(
         parseFloat(customer.rentToOwnValue) || 0,
         parseFloat(customer.monthlyRentToOwnRate) || 0
@@ -1281,12 +1327,7 @@ app.post('/api/customers', async (req, res) => {
       parseFloat(req.body.ltv) || 0
     );
     const enhancedBankMatching = await calculateBankMatchingWithCreditBureau(req.body);
-    const livnexCompatibility = calculateLivNexCompatibility(req.body);
-    const creditBureauAnalysis = {
-      creditInterpretation: interpretCreditScore(req.body.creditScore),
-      problems3B: classify3BProblems(req.body),
-      livnexCompatibility: livnexCompatibility
-    };
+    const creditBureauAnalysis = createCreditBureauAnalysis(req.body);
     const rentToOwnEstimation = calculateRentToOwnEstimation(
       parseFloat(req.body.rentToOwnValue) || 0,
       parseFloat(req.body.monthlyRentToOwnRate) || 0
@@ -1349,12 +1390,7 @@ app.put('/api/customers/:id', async (req, res) => {
       parseFloat(updatedCustomerData.ltv) || 0
     );
     const enhancedBankMatching = await calculateBankMatchingWithCreditBureau(updatedCustomerData);
-    const livnexCompatibility = calculateLivNexCompatibility(updatedCustomerData);
-    const creditBureauAnalysis = {
-      creditInterpretation: interpretCreditScore(updatedCustomerData.creditScore),
-      problems3B: classify3BProblems(updatedCustomerData),
-      livnexCompatibility: livnexCompatibility
-    };
+    const creditBureauAnalysis = createCreditBureauAnalysis(updatedCustomerData);
     const rentToOwnEstimation = calculateRentToOwnEstimation(
       parseFloat(updatedCustomerData.rentToOwnValue) || 0,
       parseFloat(updatedCustomerData.monthlyRentToOwnRate) || 0
@@ -1495,6 +1531,297 @@ app.put('/api/bank-rules/:bankCode', async (req, res) => {
   } catch (error) {
     console.error('Error updating bank rule:', error);
     res.status(500).json({ message: 'Error updating bank rule', error: error.message });
+  }
+});
+
+// CSV Import Functions
+const parseCSVProblems = (problemsData) => {
+  const problems = [];
+  for (let i = 1; i <= 6; i++) {
+    const problem = problemsData[`ปัญหาที่ทำให้ขอสินเชื่อไม่ได้ ปัญหาที่ ${i}`];
+    if (problem && problem.trim() && problem.trim() !== '') {
+      problems.push(problem.trim());
+    }
+  }
+  return problems;
+};
+
+const parseCSVActionPlans = (actionPlansData) => {
+  const plans = [];
+  for (let i = 1; i <= 6; i++) {
+    const planNote = actionPlansData[`แผนแกเคส รายการที่ ${i}`];
+    if (planNote && planNote.trim() && planNote.trim() !== '') {
+      plans.push(planNote.trim());
+    }
+  }
+  return plans;
+};
+
+const convertCSVToCustomerData = (csvRow) => {
+  // Parse basic information
+  const basicData = {
+    date: csvRow['วันที่ CA'] || new Date().toISOString().split('T')[0],
+    name: `${csvRow['คำนำหน้า'] || ''} ${csvRow['ชื่อ'] || ''} ${csvRow['สกุล'] || ''}`.trim(),
+    age: parseInt(csvRow['อายุ']) || null,
+    phone: csvRow['เบอร์โทร'] || '',
+    job: csvRow['อาชีพ'] || '',
+    position: csvRow['ตำแหน่ง'] || '',
+    businessOwnerType: csvRow['เจ้าของธุรกิจ'] ? 'เจ้าของธุรกิจ' : 'ไม่ใช่เจ้าของธุรกิจ',
+    privateBusinessType: csvRow['เจ้าของธุรกิจ'] || '',
+    projectName: csvRow['โครงการ'] || '',
+    unit: csvRow['เลขห้อง'] || '',
+    propertyValue: parseFloat(csvRow['มูลค่าเช่าออม']) || 0,
+    monthlyRentToOwnRate: parseFloat(csvRow['อัตราเช่าออม']) || 0,
+    officer: csvRow['ผู้วิเคราะห์'] || 'ณัฐพงศ์ ไหมพรม'
+  };
+
+  // Parse financial data using correct column names from CSV structure
+  const financialData = {
+    income: parseFloat(csvRow['รายได้ ติดตาม 0']) || 0,
+    debt: parseFloat(csvRow['ภาระหนี้ ติดตาม 0']) || 0,
+    maxDebtAllowed: parseFloat(csvRow['หนี้ไม่ควรเกิน']) || 0,
+    loanTerm: parseFloat(csvRow['ระยะเวลาขอสินเชื่อ ติดตาม 0']) || 0,
+    ltv: parseFloat(csvRow['LTV ติดตาม 0']) || 0,
+    ltvNote: csvRow['LTV เหตผล ติดตาม 0'] || '',
+    selectedBank: csvRow['ธนาคารที่ควรยื่นขอสินเชื่อ ติดตาม 0'] || '',
+    targetBank: csvRow['ธนาคารที่ควรยื่นขอสินเชื่อ ติดตาม 0'] || '',
+    targetDate: csvRow['ระยะเวลากู้ Target'] || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0]
+  };
+
+  // Parse problems and action plans
+  const loanProblem = parseCSVProblems(csvRow);
+  const actionPlan = parseCSVActionPlans(csvRow);
+
+  // Calculate KPIs (simplified version)
+  const actionPlanProgress = Math.min(100, loanProblem.length > 0 ? (actionPlan.length / loanProblem.length) * 100 : 100);
+  const dsr = financialData.income > 0 ? (financialData.debt / financialData.income) * 100 : 0;
+  let dsrScore = 50;
+  let financialStatus = 'ต้องปรับปรุง';
+  
+  if (dsr < 40) { 
+    financialStatus = 'ดีเยี่ยม'; 
+    dsrScore = 100; 
+  } else if (dsr < 60) { 
+    financialStatus = 'ดีขึ้น'; 
+    dsrScore = 75; 
+  }
+
+  const potentialScore = Math.round((actionPlanProgress * 0.5) + (dsrScore * 0.5));
+
+  const kpiData = {
+    potentialScore,
+    financialStatus,
+    actionPlanProgress: Math.round(actionPlanProgress),
+    paymentHistory: 'นำเข้าจาก CSV'
+  };
+
+  return {
+    ...basicData,
+    ...financialData,
+    ...kpiData,
+    loanProblem,
+    actionPlan
+  };
+};
+
+// CSV Import API Endpoint
+app.post('/api/import-csv', async (req, res) => {
+  try {
+    const csvPath = path.join(__dirname, '../CV/database from ca cl fixed.csv');
+    
+    if (!fs.existsSync(csvPath)) {
+      return res.status(404).json({ message: 'CSV file not found' });
+    }
+
+    const results = [];
+    const errors = [];
+    let processedCount = 0;
+    let successCount = 0;
+
+    // Read and parse CSV
+    const csvData = [];
+    
+    fs.createReadStream(csvPath)
+      .pipe(csv({ 
+        skipEmptyLines: true,
+        skipLinesWithError: true
+      }))
+      .on('data', (data) => {
+        csvData.push(data);
+      })
+      .on('end', async () => {
+        console.log(`Found ${csvData.length} rows in CSV`);
+        
+        // Skip header rows (first 3 rows are headers)
+        const dataRows = csvData.slice(3);
+        
+        for (const row of dataRows) {
+          try {
+            processedCount++;
+            
+            // Skip empty rows
+            if (!row['ชื่อ'] || !row['สกุล']) {
+              continue;
+            }
+
+            const customerData = convertCSVToCustomerData(row);
+            const customerId = await insertCustomerWithDetails(customerData);
+            
+            results.push({
+              id: customerId,
+              name: customerData.name,
+              status: 'success'
+            });
+            successCount++;
+            
+          } catch (error) {
+            console.error(`Error processing row ${processedCount}:`, error);
+            errors.push({
+              row: processedCount,
+              name: `${row['ชื่อ']} ${row['สกุล']}`,
+              error: error.message
+            });
+          }
+        }
+
+        res.json({
+          message: 'CSV import completed',
+          summary: {
+            totalRows: dataRows.length,
+            processed: processedCount,
+            successful: successCount,
+            errors: errors.length
+          },
+          results,
+          errors
+        });
+      })
+      .on('error', (error) => {
+        console.error('Error reading CSV file:', error);
+        res.status(500).json({ message: 'Error reading CSV file', error: error.message });
+      });
+
+  } catch (error) {
+    console.error('Error importing CSV:', error);
+    res.status(500).json({ message: 'Error importing CSV', error: error.message });
+  }
+});
+
+// Debug CSV parsing endpoint  
+app.get('/api/debug-csv-parsing', (req, res) => {
+  try {
+    const fs = require('fs');
+    const csv = require('csv-parser');
+    const csvPath = path.join(__dirname, '../CV/database from ca cl fixed.csv');
+    
+    const results = [];
+    let rowCount = 0;
+    
+    fs.createReadStream(csvPath)
+      .pipe(csv())
+      .on('data', (row) => {
+        if (rowCount < 5) { // Only process first 5 rows for debugging
+          const problems = parseCSVProblems(row);
+          const plans = parseCSVActionPlans(row);
+          
+          results.push({
+            row: rowCount,
+            name: `${row['คำนำหน้า'] || ''} ${row['ชื่อ'] || ''} ${row['สกุล'] || ''}`.trim(),
+            problems: problems,
+            plans: plans,
+            sampleColumns: {
+              'ปัญหาที่ทำให้ขอสินเชื่อไม่ได้ ปัญหาที่ 1': row['ปัญหาที่ทำให้ขอสินเชื่อไม่ได้ ปัญหาที่ 1'],
+              'ปัญหาที่ทำให้ขอสินเชื่อไม่ได้ ปัญหาที่ 2': row['ปัญหาที่ทำให้ขอสินเชื่อไม่ได้ ปัญหาที่ 2'],
+              'แผนแกเคส รายการที่ 1': row['แผนแกเคส รายการที่ 1'],
+              'แผนแกเคส รายการที่ 2': row['แผนแกเคส รายการที่ 2']
+            }
+          });
+        }
+        rowCount++;
+      })
+      .on('end', () => {
+        res.json({
+          totalRows: rowCount,
+          debugResults: results
+        });
+      })
+      .on('error', (error) => {
+        console.error('Error reading CSV file:', error);
+        res.status(500).json({ message: 'Error reading CSV file', error: error.message });
+      });
+
+  } catch (error) {
+    console.error('Error debugging CSV:', error);
+    res.status(500).json({ message: 'Error debugging CSV', error: error.message });
+  }
+});
+
+// Clear all customers API
+app.post('/api/clear-customers', async (req, res) => {
+  try {
+    const { db } = require('./database');
+    
+    // Clear all customer-related data
+    await new Promise((resolve, reject) => {
+      db.serialize(() => {
+        db.run('DELETE FROM loan_problems', (err) => {
+          if (err) reject(err);
+        });
+        db.run('DELETE FROM action_plans', (err) => {
+          if (err) reject(err);
+        });
+        db.run('DELETE FROM customers', (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    });
+    
+    res.json({ message: 'All customer data cleared successfully' });
+  } catch (error) {
+    console.error('Error clearing customers:', error);
+    res.status(500).json({ message: 'Error clearing customer data', error: error.message });
+  }
+});
+
+// Test API to debug CSV structure
+app.get('/api/test-csv', async (req, res) => {
+  try {
+    const csvPath = path.join(__dirname, '../CV/database from ca cl fixed.csv');
+    const csvData = [];
+    
+    fs.createReadStream(csvPath)
+      .pipe(csv({ 
+        skipEmptyLines: true,
+        skipLinesWithError: true
+      }))
+      .on('data', (data) => {
+        csvData.push(data);
+      })
+      .on('end', () => {
+        const firstRow = csvData[3]; // Skip header rows
+        
+        // Get column names and their values
+        const columnInfo = {};
+        Object.keys(firstRow).forEach(key => {
+          columnInfo[key] = firstRow[key];
+        });
+        
+        res.json({
+          totalRows: csvData.length,
+          columnCount: Object.keys(firstRow).length,
+          sampleRow: columnInfo,
+          problemColumns: {
+            'ปัญหา 1': firstRow['ปัญหา 1'],
+            'ปัญหา 2': firstRow['ปัญหา 2'],
+            'รายได้ 0': firstRow['รายได้ 0'],
+            'หนี้ 0': firstRow['หนี้ 0'],
+            'CA แผน หมายเหตุ 1': firstRow['CA แผน หมายเหตุ 1']
+          }
+        });
+      });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

@@ -233,6 +233,10 @@ function CustomerDetail() {
             <div className={styles.infoSection}>
               <h2>👤 ข้อมูลส่วนบุคคล</h2>
               <div className={styles.infoGroupGrid}>
+                <div className={styles.infoGroup}><label>อายุ</label><p>{customer.age ? `${customer.age} ปี` : 'ไม่ระบุ'}</p></div>
+                <div className={styles.infoGroup}><label>เบอร์โทร</label><p>{customer.phone || 'ไม่ระบุ'}</p></div>
+              </div>
+              <div className={styles.infoGroupGrid}>
                 <div className={styles.infoGroup}><label>อาชีพ</label><p>{customer.job}</p></div>
                 <div className={styles.infoGroup}><label>ตำแหน่ง</label><p>{customer.position}</p></div>
               </div>
@@ -302,10 +306,10 @@ function CustomerDetail() {
               <h3>เครดิตสกอร์</h3>
               <div className={styles.creditScore}>
                 <span className={styles.scoreNumber}>
-                  {customer.creditBureauAnalysis.creditInterpretation.score}
+                  {customer.creditBureauAnalysis.creditInterpretation.score || 'ไม่มี'}
                 </span>
                 <span className={styles.creditGrade}>
-                  {customer.creditBureauAnalysis.creditInterpretation.grade}
+                  {customer.creditBureauAnalysis.creditInterpretation.grade || ''}
                 </span>
               </div>
               <div className={styles.creditStatus}>
@@ -544,7 +548,7 @@ function CustomerDetail() {
                       <span className={styles.termValue}>{formatPercentage(data.recommendedTerms.ltvType1)}%</span>
                     </div>
                     <div className={styles.termRow}>
-                      <span className={styles.termLabel}>บ้านหลังที่ 2 (>2ปี):</span>
+                      <span className={styles.termLabel}>บ้านหลังที่ 2 (&gt;2ปี):</span>
                       <span className={styles.termValue}>{formatPercentage(data.recommendedTerms.ltvType2Over2Years)}%</span>
                     </div>
                     <div className={styles.termRow}>
