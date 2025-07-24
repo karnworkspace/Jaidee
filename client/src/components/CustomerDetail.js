@@ -392,6 +392,151 @@ function CustomerDetail() {
         )}
         </div>
 
+
+        {/* Loan Table Section */}
+        <div id="loanTable" className={styles.section}>
+        {customer.loanEstimation && customer.targetBank ? (
+        <div className={styles.loanTable}>
+          <h2>ประมาณการวงเงินที่จะสามารถกู้ได้ (ธนาคาร: {customer.targetBank})</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>สถานการณ์ภาระหนี้ (บาท/เดือน)</th>
+                {[40, 30, 20, 10].map(term => (
+                  <th key={term}>วงเงินกู้สูงสุด ({term} ปี)</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {customer.loanEstimation.map((scenario, index) => {
+                // LTV limit: ตีความค่า LTV ตามหลักการที่ถูกต้อง
+                let ltvValue = parseFloat(customer.ltv) || 1.0;
+                let ltvLimit;
+                
+                // ตีความค่า LTV:
+                // 1 = 100% (บ้านหลังที่ 1)
+                // 0.9 = 90% (บ้านหลังที่ 2 มากกว่า 2 ปี)
+                // 0.8 = 80% (บ้านหลังที่ 2 น้อยกว่า 2 ปี)
+                // 0.7 = 70% (บ้านหลังที่ 3+)
+                if (ltvValue >= 0.5 && ltvValue <= 1.0) {
+                  // ค่าระหว่าง 0.5-1.0 ถือว่าเป็นเปอร์เซ็นต์ในรูป decimal
+                  ltvLimit = ltvValue;
+                } else if (ltvValue > 1 && ltvValue <= 100) {
+                  // ค่ามากกว่า 1 แต่ไม่เกิน 100 ถือว่าเป็นเปอร์เซ็นต์
+                  ltvLimit = ltvValue / 100;
+                } else {
+                  // ค่าผิดปกติ ใช้ค่าเริ่มต้น 100%
+                  ltvLimit = 1.0;
+                }
+                
+                // คำนวณมูลค่าทรัพย์หลังหักส่วนลด
+                const propertyPrice = parseFloat(customer.propertyPrice) || parseFloat(customer.propertyValue) || 0;
+                const discount = parseFloat(customer.discount) || 0;
+                const propertyAfterDiscount = propertyPrice - discount;
+                
+                return (
+                  <tr key={index}>
+                    <td>{scenario.label} ({formatNumber(scenario.debt)})</td>
+                    {[40, 30, 20, 10].map(term => {
+                      const amount = scenario.loanAmounts[term];
+                      // วงเงินกู้สูงสุดจริง = min(วงเงินกู้ที่คำนวณได้, propertyAfterDiscount * LTV)
+                      let maxLoan = amount;
+                      if (amount !== 'N/A' && amount !== null && amount !== undefined && !isNaN(amount)) {
+                        const ltvMax = propertyAfterDiscount * ltvLimit;
+                        maxLoan = Math.min(parseFloat(amount), ltvMax);
+                      }
+                      return (
+                        <td key={term}>
+                          {amount === 'N/A' || amount === null || amount === undefined ? '-' : formatNumber(maxLoan)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        ) : (
+          <div className={styles.noData}>
+            <p>ไม่มีข้อมูลประมาณการวงเงิน</p>
+          </div>
+        )}
+        </div>
+
+        {/* Rent Results Section */}
+        <div id="rentResults" className={styles.section}>
+        {customer.detailedRentToOwnEstimation ? (
+        <div className={styles.loanTable}>
+          <h2>ผลลัพธ์การประเมินเช่าออม</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>รายการ</th>
+                <th>มูลค่า (THB)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>มูลค่าทรัพย์หลังหักส่วนลด</td>
+                <td>{formatNumber(customer.detailedRentToOwnEstimation.propertyAfterDiscount)}</td>
+              </tr>
+              <tr>
+                <td>ค่าเช่าผ่อนต่อเดือน</td>
+                <td>{formatNumber(customer.detailedRentToOwnEstimation.monthlyRent)}</td>
+              </tr>
+              <tr>
+                <td>ยอดชำระรวม</td>
+                <td>{formatNumber(customer.detailedRentToOwnEstimation.totalPaid)}</td>
+              </tr>
+              <tr>
+                <td>ค่าประกัน</td>
+                <td>{formatNumber(customer.detailedRentToOwnEstimation.guarantee)}</td>
+              </tr>
+              <tr>
+                <td>ค่าเช่าล่วงหน้า</td>
+                <td>{formatNumber(customer.detailedRentToOwnEstimation.prepaidRent)}</td>
+              </tr>
+              <tr>
+                <td>ชำระเพิ่มเติมวันทำสัญญา</td>
+                <td>{formatNumber(customer.detailedRentToOwnEstimation.additionalPayment)}</td>
+              </tr>
+              <tr>
+                <td>ค่าบริการวันโอน</td>
+                <td>{formatNumber(customer.detailedRentToOwnEstimation.transferFee)}</td>
+              </tr>
+              <tr>
+                <td>เงินออมสะสม</td>
+                <td>{formatNumber(customer.detailedRentToOwnEstimation.accumulatedSavings)}</td>
+              </tr>
+              <tr>
+                <td>เงินต้นคงเหลือ</td>
+                <td>{formatNumber(customer.detailedRentToOwnEstimation.remainingPrincipal)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        ) : (
+          <div className={styles.noData}>
+            <p>ไม่มีข้อมูลการประเมินเช่าออม</p>
+          </div>
+        )}
+        </div>
+
+        {/* Amortization Section */}
+        <div id="amortization" className={styles.section}>
+        {customer.detailedRentToOwnEstimation && customer.detailedRentToOwnEstimation.amortizationTable && customer.detailedRentToOwnEstimation.amortizationTable.length > 0 ? (
+        <div className={styles.amortizationSection}>
+          <h2>📋 ตารางรายละเอียดการผ่อนชำระ</h2>
+          <RentToOwnTable data={customer.detailedRentToOwnEstimation.amortizationTable} />
+        </div>
+        ) : (
+          <div className={styles.noData}>
+            <p>ไม่มีข้อมูลตารางการผ่อนชำระ</p>
+          </div>
+        )}
+        </div>
+
         {/* Enhanced Bank Matching Section */}
         <div id="bankMatching" className={styles.section}>
         {customer.enhancedBankMatching && Object.keys(customer.enhancedBankMatching).length > 0 ? (
@@ -583,120 +728,9 @@ function CustomerDetail() {
         )}
         </div>
 
-        {/* Loan Table Section */}
-        <div id="loanTable" className={styles.section}>
-        {customer.loanEstimation && customer.targetBank ? (
-        <div className={styles.loanTable}>
-          <h2>ประมาณการวงเงินที่จะสามารถกู้ได้ (ธนาคาร: {customer.targetBank})</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>สถานการณ์ภาระหนี้ (บาท/เดือน)</th>
-                {[40, 30, 20, 10].map(term => (
-                  <th key={term}>วงเงินกู้สูงสุด ({term} ปี)</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {customer.loanEstimation.map((scenario, index) => (
-                <tr key={index}>
-                  <td>{scenario.label} ({formatNumber(scenario.debt)})</td>
-                  {[40, 30, 20, 10].map(term => {
-                    const amount = scenario.loanAmounts[term];
-                    return (
-                      <td key={term}>
-                        {amount === 'N/A' || amount === null || amount === undefined ? '-' : formatNumber(amount)}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        ) : (
-          <div className={styles.noData}>
-            <p>ไม่มีข้อมูลประมาณการวงเงิน</p>
-          </div>
-        )}
-        </div>
-
-        {/* Rent Results Section */}
-        <div id="rentResults" className={styles.section}>
-        {customer.detailedRentToOwnEstimation ? (
-        <div className={styles.loanTable}>
-          <h2>ผลลัพธ์การประเมินเช่าออม</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>รายการ</th>
-                <th>มูลค่า (THB)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>มูลค่าทรัพย์หลังหักส่วนลด</td>
-                <td>{formatNumber(customer.detailedRentToOwnEstimation.propertyAfterDiscount)}</td>
-              </tr>
-              <tr>
-                <td>ค่าเช่าผ่อนต่อเดือน</td>
-                <td>{formatNumber(customer.detailedRentToOwnEstimation.monthlyRent)}</td>
-              </tr>
-              <tr>
-                <td>ยอดชำระรวม</td>
-                <td>{formatNumber(customer.detailedRentToOwnEstimation.totalPaid)}</td>
-              </tr>
-              <tr>
-                <td>ค่าประกัน</td>
-                <td>{formatNumber(customer.detailedRentToOwnEstimation.guarantee)}</td>
-              </tr>
-              <tr>
-                <td>ค่าเช่าล่วงหน้า</td>
-                <td>{formatNumber(customer.detailedRentToOwnEstimation.prepaidRent)}</td>
-              </tr>
-              <tr>
-                <td>ชำระเพิ่มเติมวันทำสัญญา</td>
-                <td>{formatNumber(customer.detailedRentToOwnEstimation.additionalPayment)}</td>
-              </tr>
-              <tr>
-                <td>ค่าบริการวันโอน</td>
-                <td>{formatNumber(customer.detailedRentToOwnEstimation.transferFee)}</td>
-              </tr>
-              <tr>
-                <td>เงินออมสะสม</td>
-                <td>{formatNumber(customer.detailedRentToOwnEstimation.accumulatedSavings)}</td>
-              </tr>
-              <tr>
-                <td>เงินต้นคงเหลือ</td>
-                <td>{formatNumber(customer.detailedRentToOwnEstimation.remainingPrincipal)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        ) : (
-          <div className={styles.noData}>
-            <p>ไม่มีข้อมูลการประเมินเช่าออม</p>
-          </div>
-        )}
-        </div>
-
-        {/* Amortization Section */}
-        <div id="amortization" className={styles.section}>
-        {customer.detailedRentToOwnEstimation && customer.detailedRentToOwnEstimation.amortizationTable && customer.detailedRentToOwnEstimation.amortizationTable.length > 0 ? (
-        <div className={styles.amortizationSection}>
-          <h2>📋 ตารางรายละเอียดการผ่อนชำระ</h2>
-          <RentToOwnTable data={customer.detailedRentToOwnEstimation.amortizationTable} />
-        </div>
-        ) : (
-          <div className={styles.noData}>
-            <p>ไม่มีข้อมูลตารางการผ่อนชำระ</p>
-          </div>
-        )}
-        </div>
-
         {/* Selected Bank Section */}
         <div id="selectedBank" className={styles.section}>
-        {customer.selectedBank ? (
+        {customer.selectedBank && customer.recommendedLoanTerm && customer.recommendedInstallment ? (
         <div className={styles.selectedBankSection}>
           <h2>🎯 อัตราผ่อนของธนาคารที่ลูกค้าควรเลือกสินเชื่อ</h2>
           <div className={styles.infoSection}>

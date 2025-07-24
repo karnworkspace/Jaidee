@@ -31,42 +31,59 @@
   text-align: center;
 }
 
+/* --- Sidebar Section Group Card --- */
 .navSection {
-  margin-bottom: 2rem;
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.04);
+  margin-bottom: 1.5rem;
+  padding: 1rem 0.5rem;
+  border: 1px solid #e5e7eb;
+  transition: box-shadow 0.2s;
+}
+
+.navSection:last-child {
+  margin-bottom: 0;
 }
 
 .navSectionTitle {
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   margin-bottom: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.25rem;
   padding-left: 0.5rem;
 }
 
 .navItem {
-  display: block;
-  padding: 0.75rem 1rem;
-  color: #374151;
-  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
-  margin-bottom: 0.25rem;
-  transition: all 0.2s ease;
   cursor: pointer;
-  font-size: 0.875rem;
+  transition: background 0.2s, color 0.2s;
+  color: #374151;
+  font-size: 1rem;
   font-weight: 500;
+  margin-bottom: 0.25rem;
+  border-left: 4px solid transparent;
 }
 
 .navItem:hover {
-  background: rgba(50, 188, 173, 0.1);
-  color: #32BCAD;
+  background: #e0f2fe;
+  color: #0284c7;
+  border-left: 4px solid #38bdf8;
 }
 
 .navItem.active {
-  background: linear-gradient(135deg, #32BCAD 0%, #2A9D8F 100%);
-  color: white;
+  background: #bae6fd;
+  color: #0284c7;
   font-weight: 600;
+  border-left: 4px solid #0ea5e9;
 }
 
 .contentWrapper {

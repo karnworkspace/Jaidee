@@ -606,8 +606,24 @@ const calculateLoanEstimationAllBanks = (income, currentDebt, propertyPrice, dis
   const debtReductionSteps = [0, -0.1, -0.2, -0.3, -0.4, -0.5, -0.6, -0.7, -1]; // -1 represents "ไม่มีหนี้"
 
   const propertyAfterDiscount = (parseFloat(propertyPrice) || 0) - (parseFloat(discount) || 0);
-  const ltvPercentage = parseFloat(ltv) / 100 || 0;
-  const ltvLimit = propertyAfterDiscount * ltvPercentage;
+  let ltvValue = parseFloat(ltv) || 1.0;
+  let ltvLimit;
+  
+  // ตีความค่า LTV ตามหลักการที่ถูกต้อง:
+  // 1 = 100% (บ้านหลังที่ 1)
+  // 0.9 = 90% (บ้านหลังที่ 2 มากกว่า 2 ปี)
+  // 0.8 = 80% (บ้านหลังที่ 2 น้อยกว่า 2 ปี)  
+  // 0.7 = 70% (บ้านหลังที่ 3+)
+  if (ltvValue >= 0.5 && ltvValue <= 1.0) {
+    // ค่าระหว่าง 0.5-1.0 ถือว่าเป็นเปอร์เซ็นต์ในรูป decimal
+    ltvLimit = propertyAfterDiscount * ltvValue;
+  } else if (ltvValue > 1 && ltvValue <= 100) {
+    // ค่ามากกว่า 1 แต่ไม่เกิน 100 ถือว่าเป็นเปอร์เซ็นต์
+    ltvLimit = propertyAfterDiscount * (ltvValue / 100);
+  } else {
+    // ค่าผิดปกติ ใช้ค่าเริ่มต้น 100%
+    ltvLimit = propertyAfterDiscount * 1.0;
+  }
 
   // Calculate for all banks
   Object.keys(refbank).forEach(bankName => {
@@ -656,8 +672,24 @@ const calculateLoanEstimation = (income, currentDebt, propertyPrice, discount, l
   const debtReductionSteps = [0, -0.1, -0.2, -0.3, -0.4, -0.5, -0.6, -0.7, -1]; // -1 represents "ไม่มีหนี้"
 
   const propertyAfterDiscount = (parseFloat(propertyPrice) || 0) - (parseFloat(discount) || 0);
-  const ltvPercentage = parseFloat(ltv) / 100 || 0;
-  const ltvLimit = propertyAfterDiscount * ltvPercentage;
+  let ltvValue = parseFloat(ltv) || 1.0;
+  let ltvLimit;
+  
+  // ตีความค่า LTV ตามหลักการที่ถูกต้อง:
+  // 1 = 100% (บ้านหลังที่ 1)
+  // 0.9 = 90% (บ้านหลังที่ 2 มากกว่า 2 ปี)
+  // 0.8 = 80% (บ้านหลังที่ 2 น้อยกว่า 2 ปี)  
+  // 0.7 = 70% (บ้านหลังที่ 3+)
+  if (ltvValue >= 0.5 && ltvValue <= 1.0) {
+    // ค่าระหว่าง 0.5-1.0 ถือว่าเป็นเปอร์เซ็นต์ในรูป decimal
+    ltvLimit = propertyAfterDiscount * ltvValue;
+  } else if (ltvValue > 1 && ltvValue <= 100) {
+    // ค่ามากกว่า 1 แต่ไม่เกิน 100 ถือว่าเป็นเปอร์เซ็นต์
+    ltvLimit = propertyAfterDiscount * (ltvValue / 100);
+  } else {
+    // ค่าผิดปกติ ใช้ค่าเริ่มต้น 100%
+    ltvLimit = propertyAfterDiscount * 1.0;
+  }
 
   const bankRates = refbank[targetBank];
   if (!bankRates) {
@@ -804,13 +836,24 @@ const calculateEnhancedBankMatching = async (customerData) => {
     const propertyValue = parseFloat(customerData.propertyValue) || 0;
     const monthlyRent = parseFloat(customerData.monthlyRentToOwnRate) || 0;
     const income = parseFloat(customerData.income) || 0;
-    const ltv = parseFloat(customerData.ltv) || 0;
+    let ltvValue = parseFloat(customerData.ltv) || 1.0;
+    
+    // แปลง LTV ของลูกค้าให้เป็นทศนิยมเพื่อเปรียบเทียบกับ bankCriteria.maxLTV
+    let customerLtvDecimal;
+    if (ltvValue >= 0.5 && ltvValue <= 1.0) {
+      customerLtvDecimal = ltvValue;
+    } else if (ltvValue > 1 && ltvValue <= 100) {
+      customerLtvDecimal = ltvValue / 100;
+    } else {
+      customerLtvDecimal = 1.0;
+    }
     
     let score = 0;
     
     // LTV Score (0-30 points)
-    if (ltv <= bankCriteria.maxLTV) {
-      const ltvScore = ((bankCriteria.maxLTV - ltv) / bankCriteria.maxLTV) * 30;
+    const bankMaxLtvDecimal = bankCriteria.maxLTVDecimal || (bankCriteria.maxLTV || 80) / 100;
+    if (customerLtvDecimal <= bankMaxLtvDecimal) {
+      const ltvScore = ((bankMaxLtvDecimal - customerLtvDecimal) / bankMaxLtvDecimal) * 30;
       score += Math.max(0, ltvScore);
     }
     
@@ -935,7 +978,8 @@ const calculateEnhancedBankMatching = async (customerData) => {
       };
       
       const rentToOwnTerms = {
-        maxLTV: bankRule.max_ltv_rent_to_own || 80,
+        maxLTV: parseFloat(bankRule.max_ltv_rent_to_own) || 80, // เก็บเป็นเปอร์เซ็นต์ตามฐานข้อมูล
+        maxLTVDecimal: (parseFloat(bankRule.max_ltv_rent_to_own) || 80) / 100, // แปลงเป็นทศนิยมสำหรับการคำนวณ
         preferredInterestRate: bankRule.preferred_interest_rate || 4.5,
         maxTerm: bankRule.max_term_rent_to_own || 25,
         specialProgram: bankRule.special_programs?.[0],
@@ -970,8 +1014,37 @@ const calculateEnhancedBankMatching = async (customerData) => {
         creditBureauScore * scoring.creditWeight
       );
       
-      // Determine eligibility
-      const isEligible = totalScore >= 40; // Minimum threshold
+      // Determine eligibility - ต้องผ่านทั้ง totalScore และเงื่อนไขสำคัญ
+      const basicEligible = totalScore >= 40; // Minimum threshold
+      
+      // ตรวจสอบเงื่อนไขสำคัญ (DSR, LTV, Age)
+      const income = parseFloat(customerData.income) || 0;
+      const debt = parseFloat(customerData.debt) || 0;
+      const age = parseInt(customerData.age) || 0;
+      const ltvValue = parseFloat(customerData.ltv) || 1.0;
+      
+      let dsrPassed = true;
+      if (income > 0) {
+        const dsr = (debt / income) * 100;
+        const dsrHigh = (parseFloat(bankRule.dsr_high) || 0.5) * 100;
+        dsrPassed = dsr <= dsrHigh;
+      }
+      
+      let ltvPassed = true;
+      let customerLtvDecimal;
+      if (ltvValue >= 0.5 && ltvValue <= 1.0) {
+        customerLtvDecimal = ltvValue;
+      } else if (ltvValue > 1 && ltvValue <= 100) {
+        customerLtvDecimal = ltvValue / 100;
+      } else {
+        customerLtvDecimal = 1.0;
+      }
+      const maxLtvDecimal = parseFloat(bankRule.ltv_type1) || 0.9;
+      ltvPassed = customerLtvDecimal <= maxLtvDecimal;
+      
+      const agePassed = age >= (bankRule.age_min || 18) && age <= (bankRule.age_max || 65);
+      
+      const isEligible = basicEligible && dsrPassed && ltvPassed && agePassed;
       
       bankResults[bankRule.bank_code] = {
         totalScore: Math.round(totalScore),
@@ -981,12 +1054,21 @@ const calculateEnhancedBankMatching = async (customerData) => {
           creditBureau: Math.round(creditBureauScore)
         },
         eligibility: isEligible ? 'eligible' : 'not_eligible',
-        approvalProbability: calculateApprovalProbability(totalScore),
+        approvalProbability: isEligible ? calculateApprovalProbability(totalScore) : 'ต่ำมาก',
+        eligibilityReasons: (() => {
+          if (isEligible) return [];
+          const reasons = [];
+          if (!basicEligible) reasons.push('คะแนนรวมต่ำกว่าเกณฑ์ขั้นต่ำ (40)');
+          if (!dsrPassed) reasons.push('DSR เกินเกณฑ์ที่กำหนด');
+          if (!ltvPassed) reasons.push('LTV เกินเกณฑ์ที่กำหนด');
+          if (!agePassed) reasons.push('อายุไม่อยู่ในช่วงที่กำหนด');
+          return reasons;
+        })(),
         estimatedApprovalTime: calculateEstimatedApprovalTime(totalScore, { partnership: bankRule.partnership_type }),
         specialPrograms: bankRule.special_programs || [],
         recommendedTerms: {
           interestRate: rentToOwnTerms.preferredInterestRate,
-          maxLTV: rentToOwnTerms.maxLTV,
+          maxLTV: Math.round(rentToOwnTerms.maxLTV), // ใช้ค่าเปอร์เซ็นต์ตรงจากฐานข้อมูล
           maxTerm: rentToOwnTerms.maxTerm,
           dsrHigh: parseFloat(bankRule.dsr_high) || 0.5,
           dsrLow: parseFloat(bankRule.dsr_low) || 0.5,
@@ -1005,7 +1087,16 @@ const calculateEnhancedBankMatching = async (customerData) => {
             if (income === 0) return 'N/A';
             return ((debt / income) * 100).toFixed(1);
           })(),
-          requestedLTV: parseFloat(customerData.ltv) || 0,
+          requestedLTV: (() => {
+            const ltvValue = parseFloat(customerData.ltv) || 1.0;
+            if (ltvValue >= 0.5 && ltvValue <= 1.0) {
+              return Math.round(ltvValue * 100);
+            } else if (ltvValue > 1 && ltvValue <= 100) {
+              return Math.round(ltvValue);
+            } else {
+              return 100;
+            }
+          })(),
           customerAge: parseInt(customerData.age) || 0,
           dsrStatus: (() => {
             const income = parseFloat(customerData.income) || 0;
@@ -1019,10 +1110,19 @@ const calculateEnhancedBankMatching = async (customerData) => {
             return 'ไม่ผ่านเกณฑ์';
           })(),
           ltvStatus: (() => {
-            const requestedLTV = parseFloat(customerData.ltv) || 0;
-            const maxLTV = (parseFloat(bankRule.ltv_type1) || 0.9) * 100;
-            if (requestedLTV === 0) return 'ไม่มีข้อมูล';
-            if (requestedLTV <= maxLTV) return 'ผ่านเกณฑ์';
+            const ltvValue = parseFloat(customerData.ltv) || 1.0;
+            let customerLtvDecimal;
+            if (ltvValue >= 0.5 && ltvValue <= 1.0) {
+              customerLtvDecimal = ltvValue;
+            } else if (ltvValue > 1 && ltvValue <= 100) {
+              customerLtvDecimal = ltvValue / 100;
+            } else {
+              customerLtvDecimal = 1.0;
+            }
+            
+            const maxLtvDecimal = parseFloat(bankRule.ltv_type1) || 0.9;
+            if (ltvValue === 0) return 'ไม่มีข้อมูล';
+            if (customerLtvDecimal <= maxLtvDecimal) return 'ผ่านเกณฑ์';
             return 'ไม่ผ่านเกณฑ์';
           })(),
           ageStatus: (() => {
@@ -1267,10 +1367,11 @@ app.get('/api/customers/:id', async (req, res) => {
     
     if (customer) {
       // Calculate loan estimations for all banks
+      const propertyPrice = parseFloat(customer.propertyPrice) || parseFloat(customer.propertyValue) || 0;
       const loanEstimation = calculateLoanEstimation(
         parseFloat(customer.income) || 0,
         parseFloat(customer.debt) || 0,
-        parseFloat(customer.propertyPrice) || 0,
+        propertyPrice,
         parseFloat(customer.discount) || 0,
         parseFloat(customer.ltv) || 0,
         customer.targetBank || 'KTB'
@@ -1278,7 +1379,7 @@ app.get('/api/customers/:id', async (req, res) => {
       const allBanksLoanEstimation = calculateLoanEstimationAllBanks(
         parseFloat(customer.income) || 0,
         parseFloat(customer.debt) || 0,
-        parseFloat(customer.propertyPrice) || 0,
+        propertyPrice,
         parseFloat(customer.discount) || 0,
         parseFloat(customer.ltv) || 0
       );
