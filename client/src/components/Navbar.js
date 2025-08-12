@@ -42,6 +42,13 @@ function Navbar() {
               </Link>
             )}
             
+            <Link 
+              to="/supabase-customers" 
+              className={`${styles.navLink} ${isActive('/supabase-customers') ? styles.active : ''}`}
+            >
+              🌐 ข้อมูลลูกค้าเดิม
+            </Link>
+            
             {isAdmin() && (
               <Link 
                 to="/admin/banks" 

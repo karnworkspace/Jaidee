@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import CustomerDetail from './components/CustomerDetail';
 import CustomerForm from './components/CustomerForm';
 import BankAdmin from './components/BankAdmin';
+import SupabaseCustomers from './components/SupabaseCustomers';
 
 // Protected Route Component
 function ProtectedRoute({ children, requiredRoles = [], requiredDepartments = [] }) {
@@ -115,6 +116,14 @@ function AppContent() {
           element={
             <ProtectedRoute requiredRoles={['admin', 'data_entry']}>
               <CustomerForm />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/supabase-customers" 
+          element={
+            <ProtectedRoute>
+              <SupabaseCustomers />
             </ProtectedRoute>
           } 
         />

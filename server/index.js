@@ -34,6 +34,8 @@ const {
   getOtherProblemSolution,
   getAllProblemsFlat
 } = require('./problemsData');
+const { supabaseCustomerService } = require('./supabaseService');
+const { testConnection } = require('./supabaseClient');
 
 const app = express();
 const port = 3001;
@@ -58,6 +60,15 @@ initializeDatabase()
   })
   .then(() => {
     console.log('Default users initialized');
+    // Test Supabase connection
+    return testConnection();
+  })
+  .then((connected) => {
+    if (connected) {
+      console.log('🔗 Supabase connection established');
+    } else {
+      console.log('⚠️  Supabase connection failed, running in SQLite-only mode');
+    }
   })
   .catch(err => {
     console.error('Failed to initialize database:', err);
@@ -2119,6 +2130,164 @@ app.get('/api/test-csv', async (req, res) => {
       });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// SUPABASE API ENDPOINTS
+// ==========================================
+
+// GET /api/supabase/customers - ดึงข้อมูลลูกค้าทั้งหมดจาก Supabase
+app.get('/api/supabase/customers', async (req, res) => {
+  try {
+    const customers = await supabaseCustomerService.getAllCustomers();
+    res.json({ 
+      success: true, 
+      customers, 
+      count: customers.length,
+      source: 'supabase'
+    });
+  } catch (error) {
+    console.error('Supabase customers API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'supabase'
+    });
+  }
+});
+
+// GET /api/supabase/customers/:id - ดึงข้อมูลลูกค้าตาม ID จาก Supabase
+app.get('/api/supabase/customers/:id', async (req, res) => {
+  try {
+    const customer = await supabaseCustomerService.getCustomerById(req.params.id);
+    if (!customer) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Customer not found',
+        source: 'supabase'
+      });
+    }
+    res.json({ 
+      success: true, 
+      customer,
+      source: 'supabase'
+    });
+  } catch (error) {
+    console.error('Supabase customer by ID API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'supabase'
+    });
+  }
+});
+
+// GET /api/supabase/search - ค้นหาลูกค้าใน Supabase
+app.get('/api/supabase/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Search query is required',
+        source: 'supabase'
+      });
+    }
+    
+    const customers = await supabaseCustomerService.searchCustomers(q);
+    res.json({ 
+      success: true, 
+      customers, 
+      count: customers.length,
+      searchTerm: q,
+      source: 'supabase'
+    });
+  } catch (error) {
+    console.error('Supabase search API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'supabase'
+    });
+  }
+});
+
+// GET /api/supabase/projects - ดึงรายการโครงการที่ไม่ซ้ำจาก Supabase
+app.get('/api/supabase/projects', async (req, res) => {
+  try {
+    const projects = await supabaseCustomerService.getUniqueProjects();
+    res.json({ 
+      success: true, 
+      projects, 
+      count: projects.length,
+      source: 'supabase'
+    });
+  } catch (error) {
+    console.error('Supabase projects API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'supabase'
+    });
+  }
+});
+
+// GET /api/supabase/stats - สถิติข้อมูลลูกค้าจาก Supabase
+app.get('/api/supabase/stats', async (req, res) => {
+  try {
+    const stats = await supabaseCustomerService.getCustomerStats();
+    res.json({ 
+      success: true, 
+      stats,
+      source: 'supabase'
+    });
+  } catch (error) {
+    console.error('Supabase stats API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'supabase'
+    });
+  }
+});
+
+// GET /api/hybrid/customers - รวมข้อมูลจากทั้ง SQLite และ Supabase
+app.get('/api/hybrid/customers', async (req, res) => {
+  try {
+    // ดึงข้อมูลจาก SQLite
+    const sqliteCustomers = await getAllCustomers();
+    
+    // ดึงข้อมูลจาก Supabase
+    let supabaseCustomers = [];
+    try {
+      supabaseCustomers = await supabaseCustomerService.getAllCustomers();
+    } catch (supabaseError) {
+      console.warn('Supabase data unavailable:', supabaseError.message);
+    }
+    
+    res.json({ 
+      success: true, 
+      data: {
+        sqlite: {
+          customers: sqliteCustomers,
+          count: sqliteCustomers.length
+        },
+        supabase: {
+          customers: supabaseCustomers,
+          count: supabaseCustomers.length
+        }
+      },
+      totalCount: sqliteCustomers.length + supabaseCustomers.length,
+      source: 'hybrid'
+    });
+  } catch (error) {
+    console.error('Hybrid customers API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'hybrid'
+    });
   }
 });
 
