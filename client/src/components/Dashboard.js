@@ -77,8 +77,9 @@ function Dashboard() {
           
           // Date searches (partial matches)
           customer.date?.includes(searchTermLower) ||
-          customer.targetDate?.includes(searchTermLower) ||
-          customer.readyToTransfer?.includes(searchTermLower);
+          customer.readyToTransfer?.includes(searchTermLower) ||
+          customer.created_at?.includes(searchTermLower) ||
+          customer.updated_at?.includes(searchTermLower);
       }
       
       if (!matchesSearch) return false;
@@ -290,7 +291,7 @@ function Dashboard() {
           <div className={styles.searchRow}>
             <input
               type="text"
-              placeholder="🔍 Super Search: ชื่อ, โครงการ, ห้อง, เจ้าหน้าที่, เบอร์โทร, อาชีพ, ธนาคาร, รายได้, ปัญหา, แผนแก้ไข..."
+              placeholder="🔍 Super Search: ชื่อ, โครงการ, ห้อง, เจ้าหน้าที่, เบอร์โทร, อาชีพ, ธนาคาร, รายได้, ปัญหา, แผนแก้ไข, วันที่บันทึก..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={styles.searchInput}
@@ -402,9 +403,9 @@ function Dashboard() {
                       </span>
                     )}
                   </th>
-                  <th onClick={() => handleSort('targetDate')} className={styles.sortableHeader}>
-                    🎯 กำหนดการ
-                    {sortField === 'targetDate' && (
+                  <th onClick={() => handleSort('created_at')} className={styles.sortableHeader}>
+                    📅 วันที่บันทึก
+                    {sortField === 'created_at' && (
                       <span className={styles.sortIcon}>
                         {sortDirection === 'asc' ? ' ↑' : ' ↓'}
                       </span>
@@ -447,7 +448,7 @@ function Dashboard() {
                       </td>
                       <td>{customer.officer || '-'}</td>
                       <td className={styles.dateCell}>
-                        {customer.targetDate ? new Date(customer.targetDate).toLocaleDateString('th-TH') : '-'}
+                        {customer.created_at ? new Date(customer.created_at).toLocaleDateString('th-TH') : '-'}
                       </td>
                       <td>
                         <span className={`${styles.statusBadge} ${styles[statusBadge.class]}`}>

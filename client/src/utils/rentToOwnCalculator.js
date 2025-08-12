@@ -16,7 +16,9 @@ export function calculateRentToOwn({
 
   const guarantee = monthlyRent * guaranteeMultiplier;
   const prepaidRent = monthlyRent * prepaidRentMultiplier;
-  const initialPayment = (guarantee + prepaidRent + overpaidRent);
+  const totalRequired = guarantee + prepaidRent;
+  const initialPayment = Math.max(0, totalRequired - overpaidRent); // This is the actual payment made by user
+  const actualOverpayment = Math.max(0, overpaidRent - totalRequired); // This is the overpayment that contributes to principal
 
   // Step 2: Initialize Result Array
   const amortizationTable = [];
@@ -27,9 +29,16 @@ export function calculateRentToOwn({
     let payment, interest, principalPaid;
 
     if (month === 1) {
-      payment = initialPayment; // ชำระรวม ณ งวดแรก (รวม overpaidRent แล้ว)
+      payment = Math.max(initialPayment, 0); // ชำระเพิ่มเติมในงวดแรก (หากมี)
       interest = 0; // งวดแรกยังไม่มีดอกเบี้ย
-      principalPaid = payment - guarantee; // เงินต้น = ชำระ - ค่าประกัน
+      
+      // คำนวณเงินต้นที่จ่ายในงวดแรก
+      // เงินต้น = จำนวนที่จ่ายจริงทั้งหมด - ค่าประกัน - ค่าเช่าล่วงหน้า
+      const totalAmountPaid = initialPayment + overpaidRent;
+      principalPaid = totalAmountPaid - guarantee - prepaidRent;
+      
+      // ตรวจสอบให้แน่ใจว่า principalPaid ไม่เป็นค่าติดลบ
+      principalPaid = Math.max(0, principalPaid);
       currentRemainingPrincipal = propertyAfterDiscount - principalPaid;
     } else {
       payment = monthlyRent;
@@ -55,7 +64,7 @@ export function calculateRentToOwn({
       if (previousMonthData) {
         const previousRemaining = previousMonthData.remainingPrincipal;
         const interestFinal = Math.round(previousRemaining * (annualInterestRate / 100) / 12 * 100) / 100;
-        const principalFinal = 0 - interestFinal; // As per pseudocode
+        const principalFinal = 0; // ไม่มีการชำระเงินต้นในสิ้นงวด
         const remainingFinal = previousRemaining;
 
         amortizationTable.push({
@@ -71,7 +80,7 @@ export function calculateRentToOwn({
 
   // Summary results (from previous detailed calculation, adjusted for new logic)
   const totalPaid = monthlyRent * installmentMonths;
-  const additionalPayment = (guarantee + prepaidRent + overpaidRent);
+  const additionalPayment = initialPayment; // Use the corrected initialPayment instead
   let transferFeeRate = 0;
   if (transferYear === 1) transferFeeRate = 0.01;
   else if (transferYear === 2) transferFeeRate = 0.015;

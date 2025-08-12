@@ -61,6 +61,72 @@ function CustomerForm() {
   const [selectedProblems, setSelectedProblems] = useState([]);
   const [selectedSolutions, setSelectedSolutions] = useState([]);
   
+  // Project options for super search
+  const projectOptions = [
+    'เสนาคิทท์ เทพารักษ์ - บางบ่อ 2 เฟส 2',
+    'นิช โมโน เมกะ สเปซ บางนา',
+    'เสนา เวล่า สุขุมวิท-บางปู',
+    'เสนา วิลเลจ รัตนาธิเบศร์ - บางบัวทอง',
+    'เสนาวิลล์ บรมราชชนนี สาย 5',
+    'เสนา วีว่า รัตนาธิเบศร์ - บางบัวทอง',
+    'นิช โมโน รามคำแหง',
+    'เสนา เวล่า สิริโสธร',
+    'เสนาคิทท์ เพชรเกษม120 เฟส 1',
+    'เสนา คิทท์ พหลโยธิน นวนคร เฟส 1',
+    'เฟล็กซี่ สาทร - เจริญนคร เฟส 2',
+    'เสนาวิลล์ ลำลูกกา คลอง 6',
+    'เสนา วิลเลจ สุขุมวิท - แพรกษา 1',
+    'นิช โมโน สุขุมวิท - ปู่เจ้า',
+    'เฟล็กซี่ สาทร - เจริญนคร เฟส 1',
+    'เสนาคิทท์ รังสิต - ติวานนท์',
+    'เสนาคิทท์ เวสต์เกต - บางบัวทอง 2',
+    'เฟล็กซี่ สุขสวัสดิ์',
+    'เสนา คิทท์ รัตนาธิเบศร์ - บางบัวทอง',
+    'เสนา อีโค่ ทาวน์ รังสิต สเตชั่น เฟส 1',
+    'เสนาคิทท์ ศรีนครินทร์ ศรีด่าน',
+    'เฟล็กซี่ เตาปูน อินเตอร์เชนจ์',
+    'เฟล็กซี รัตนาธิเบศร์',
+    'เสนาคิทท์ บางนา กม.29 เฟส 2',
+    'เสนา วิลเลจ บางปะกง - บ้านโพธิ์',
+    'เสนาคิทท์ สาทร-กัลปพฤกษ์ เฟส 1',
+    'เสนา วีว่า ศรีราชา - อัสสัมชัญ',
+    'เดอะ ไมอามี่ บางปู 8',
+    'เดอะ ไมอามี่ บางปู 2',
+    'เสนา เวล่า เทพารักษ์ - บางบ่อ',
+    'เสนา วีว่า เพชรเกษม - พุทธมณฑล สาย 7',
+    'เสนาคิทท์ บางนา กม.29 เฟส 1',
+    'เสนาคิทท์ เอ็มอาร์ที - บางแค เฟส 2',
+    'นิช โมโน พระราม 9 เฟส 1',
+    'เสนา วิลเลจ บางนา กม.29',
+    'เสนา เวล่า รัตนาธิเบศร์ บางบัวทอง',
+    'เสนา เวล่า วงแหวน - บางบัวทอง',
+    'เสนาวีว่า ฉลองกรุง ลาดกระบัง',
+    'นิช โมโน แจ้งวัฒนะ เฟส 1',
+    'J Town Execlusive บางปะกง',
+    'เสนา วีว่า เทพารักษ์-บางบ่อ',
+    'เจ คอนโด สาทร-กัลปพฤกษ์',
+    'เสนา วีว่า วงแหวน-บางบัวทอง',
+    'เสนา วิลเลจ ติวานนท์ - บางกะดี',
+    'เสนา คิทท์ รังสิต คลอง 4',
+    'เสนาคิทท์ สำโรง อินเตอร์เชนจ์',
+    'เสนาคิทท์ ฉลองกรุง - ลาดกระบัง เฟส2',
+    'เสนา อเวนิว รัตนาธิเบศร์ - บางบัวทอง',
+    'ปีติ สุขุมวิท 101',
+    'เสนาวิลเลจ รังสิต - ติวานนท์',
+    'เสนาวิลเลจ รามอินทรา กม.9',
+    'เสนาพาร์ควิลล์ 2 รามอินทรา-วงแหวน',
+    'เสนาวิลล์ รามอินทรา เฟส 3',
+    'เสนา เวล่า รังสิต-คลอง 1',
+    'J EXCLUSIVE - วงแหวน-บางใหญ่',
+    'เสนาคิทท์ เวสต์เกต - บางบัวทอง 1',
+    'เสนาคิทท์ บีทีเอส สะพานใหม่'
+  ];
+  
+  // States for project search
+  const [projectSearchTerm, setProjectSearchTerm] = useState('');
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+  const [filteredProjects, setFilteredProjects] = useState(projectOptions);
+  
   // Job options from CR
   const jobOptions = [
     'พนักงานบริษัทเอกชน',
@@ -96,6 +162,9 @@ function CustomerForm() {
           // Load existing problems and solutions
           setSelectedProblems(data.loanProblem || []);
           setSelectedSolutions(data.actionPlan || []);
+          
+          // Set project search term for editing
+          setProjectSearchTerm(data.projectName || '');
         } catch (error) {
           console.error('Error fetching customer:', error);
         }
@@ -133,6 +202,7 @@ function CustomerForm() {
     formData.prepaidRentMultiplier,
     formData.transferYear,
     formData.propertyType,
+    formData.annualInterestRate,
   ]);
 
   // อัปเดต propertyValue เมื่อ propertyPrice หรือ discount เปลี่ยน
@@ -144,7 +214,7 @@ function CustomerForm() {
     if (calculatedValue !== parseFloat(formData.propertyValue)) {
       setFormData(prev => ({ ...prev, propertyValue: calculatedValue.toString() }));
     }
-  }, [formData.propertyPrice, formData.discount]);
+  }, [formData.propertyPrice, formData.discount, formData.propertyValue]);
 
   // อัปเดต rentRatePerMillion เมื่อ propertyType เปลี่ยน
   useEffect(() => {
@@ -152,7 +222,7 @@ function CustomerForm() {
     if (newRentRate !== formData.rentRatePerMillion) {
       setFormData(prev => ({ ...prev, rentRatePerMillion: newRentRate }));
     }
-  }, [formData.propertyType]);
+  }, [formData.propertyType, formData.rentRatePerMillion]);
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
@@ -174,11 +244,45 @@ function CustomerForm() {
     }
   };
 
+  // Project search functions
+  const handleProjectSearch = (e) => {
+    const searchTerm = e.target.value;
+    setProjectSearchTerm(searchTerm);
+    setFormData(prev => ({ ...prev, projectName: searchTerm }));
+    
+    if (searchTerm.trim() === '') {
+      setFilteredProjects(projectOptions);
+    } else {
+      const filtered = projectOptions.filter(project =>
+        project.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredProjects(filtered);
+    }
+    setShowProjectDropdown(true);
+  };
+
+  const handleProjectSelect = (project) => {
+    setFormData(prev => ({ ...prev, projectName: project }));
+    setProjectSearchTerm(project);
+    setShowProjectDropdown(false);
+  };
+
+  const handleProjectInputFocus = () => {
+    setShowProjectDropdown(true);
+    setFilteredProjects(projectOptions);
+  };
+
+  const handleProjectInputBlur = () => {
+    // Delay hiding dropdown to allow click events
+    setTimeout(() => setShowProjectDropdown(false), 200);
+  };
+
   const formatNumber = (num) => {
     if (!num) return '';
     return parseFloat(num).toLocaleString('en-US');
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleDynamicInputChange = (e, index, field) => {
     const { value } = e.target;
     setFormData(prev => {
@@ -188,10 +292,12 @@ function CustomerForm() {
     });
   };
 
+  // eslint-disable-next-line no-unused-vars
   const addDynamicInput = (field) => {
     setFormData(prev => ({ ...prev, [field]: [...prev[field], ''] }));
   };
 
+  // eslint-disable-next-line no-unused-vars
   const removeDynamicInput = (index, field) => {
     setFormData(prev => {
       const newArray = prev[field].filter((_, i) => i !== index);
@@ -229,7 +335,7 @@ function CustomerForm() {
         navigate(`/customer/${customerId}`);
       } else {
         alert('เพิ่มลูกค้าใหม่เรียบร้อยแล้ว');
-        navigate(`/customer/${data.id}`);
+        navigate(`/customer/${data.customer.id}`);
       }
     } catch (error) {
       console.error('Error saving customer:', error);
@@ -260,6 +366,28 @@ function CustomerForm() {
                   </select>
                 </div>
               </div>
+              {isEditing && (
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label>วันที่บันทึกข้อมูล</label>
+                    <input 
+                      type="text" 
+                      value={formData.created_at ? new Date(formData.created_at).toLocaleString('th-TH') : 'ไม่ระบุ'} 
+                      disabled 
+                      style={{backgroundColor: '#f3f4f6', color: '#6b7280'}}
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>วันที่อัปเดตล่าสุด</label>
+                    <input 
+                      type="text" 
+                      value={formData.updated_at ? new Date(formData.updated_at).toLocaleString('th-TH') : 'ไม่ระบุ'} 
+                      disabled 
+                      style={{backgroundColor: '#f3f4f6', color: '#6b7280'}}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className={styles.formSection}>
@@ -310,22 +438,18 @@ function CustomerForm() {
               </div>
             </div>
 
-            <div className={styles.formSection}>
-              <h3>💰 ข้อมูลการเช่าออม (Rent-to-Own Evaluation)</h3>
-              <h4>1. ข้อมูลทรัพย์และส่วนลด</h4>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>ประเภทของที่อยู่อาศัย</label>
-                  <select name="propertyType" value={formData.propertyType} onChange={handleChange}>
-                    <option value="แนวสูง">แนวสูง (4,100 บาท/ล้าน)</option>
-                    <option value="แนวราบ">แนวราบ (5,500 บาท/ล้าน)</option>
-                  </select>
-                </div>
-              </div>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}><label>มูลค่าทรัพย์เต็มจำนวน</label><input type="text" name="propertyPrice" value={formatNumber(formData.propertyPrice)} onChange={handleNumberChange} /></div>
-                <div className={styles.formGroup}><label>ส่วนลด (บาท)</label><input type="text" name="discount" value={formatNumber(formData.discount)} onChange={handleNumberChange} /></div>
-              </div>
+                         <div className={styles.formSection}>
+               <h3>💰 ข้อมูลการเช่าออม (Rent-to-Own Evaluation)</h3>
+               <h4>1. ข้อมูลทรัพย์และส่วนลด</h4>
+               <div className={styles.formRow}>
+                 <div className={styles.formGroup}>
+                   <label>ประเภทของที่อยู่อาศัย</label>
+                   <select name="propertyType" value={formData.propertyType} onChange={handleChange}>
+                     <option value="แนวสูง">แนวสูง (4,100 บาท/ล้าน)</option>
+                     <option value="แนวราบ">แนวราบ (5,500 บาท/ล้าน)</option>
+                   </select>
+                 </div>
+               </div>
 
               <h4>2. เงื่อนไขการเช่าออม</h4>
               <div className={styles.formRow}>
@@ -414,10 +538,61 @@ function CustomerForm() {
 
             <div className={styles.formSection}>
               <h3>🏠 ข้อมูลทรัพย์สิน</h3>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}><label>โครงการ<span className={styles.required}>*</span></label><input type="text" name="projectName" value={formData.projectName} onChange={handleChange} required /></div>
-                <div className={styles.formGroup}><label>เลขห้อง<span className={styles.required}>*</span></label><input type="text" name="unit" value={formData.unit} onChange={handleChange} required /></div>
-              </div>
+                             <div className={styles.formRow}>
+                 <div className={styles.formGroup}>
+                   <label>โครงการ<span className={styles.required}>*</span></label>
+                   <div style={{ position: 'relative' }}>
+                                          <input 
+                        type="text" 
+                        name="projectName" 
+                        value={projectSearchTerm} 
+                        onChange={handleProjectSearch}
+                        onFocus={handleProjectInputFocus}
+                        onBlur={handleProjectInputBlur}
+                        placeholder="super search โปรดใส่คำค้นหาโครงการ"
+                        required 
+                        style={{ width: '100%' }}
+                      />
+                     {showProjectDropdown && filteredProjects.length > 0 && (
+                       <div style={{
+                         position: 'absolute',
+                         top: '100%',
+                         left: 0,
+                         right: 0,
+                         backgroundColor: 'white',
+                         border: '1px solid #ccc',
+                         borderRadius: '4px',
+                         maxHeight: '200px',
+                         overflowY: 'auto',
+                         zIndex: 1000,
+                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                       }}>
+                         {filteredProjects.map((project, index) => (
+                           <div
+                             key={index}
+                             onClick={() => handleProjectSelect(project)}
+                             style={{
+                               padding: '8px 12px',
+                               cursor: 'pointer',
+                               borderBottom: '1px solid #eee',
+                               fontSize: '14px'
+                             }}
+                             onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
+                             onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                           >
+                             {project}
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+                 </div>
+                 <div className={styles.formGroup}><label>เลขห้อง<span className={styles.required}>*</span></label><input type="text" name="unit" value={formData.unit} onChange={handleChange} required /></div>
+               </div>
+               <div className={styles.formRow}>
+                 <div className={styles.formGroup}><label>มูลค่าทรัพย์เต็มจำนวน</label><input type="text" name="propertyPrice" value={formatNumber(formData.propertyPrice)} onChange={handleNumberChange} /></div>
+                 <div className={styles.formGroup}><label>ส่วนลด (บาท)</label><input type="text" name="discount" value={formatNumber(formData.discount)} onChange={handleNumberChange} /></div>
+               </div>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label>มูลค่าทรัพย์ (หลังหักส่วนลด) <span className={styles.required}>*</span></label>
@@ -435,13 +610,24 @@ function CustomerForm() {
                     คำนวณอัตโนมัติจาก: มูลค่าทรัพย์เต็มจำนวน - ส่วนลด
                   </small>
                 </div>
-                <div className={styles.formGroup}><label>LTV (%)<span className={styles.required}>*</span></label><input type="number" name="ltv" value={formData.ltv} onChange={handleChange} required /></div>
+                                 <div className={styles.formGroup}>
+                   <label>LTV (%)<span className={styles.required}>*</span></label>
+                   <select name="ltv" value={formData.ltv} onChange={handleChange} required className={styles.select}>
+                     <option value="">-- เลือก LTV --</option>
+                     <option value="100">100%</option>
+                     <option value="90">90%</option>
+                     <option value="80">80%</option>
+                     <option value="70">70%</option>
+                     <option value="60">60%</option>
+                   </select>
+                 </div>
               </div>
               <div className={styles.formRow + ' ' + styles.fullWidth}>
                 <div className={styles.formGroup}><label>ช่วงเวลาที่พร้อมโอน<span className={styles.required}>*</span></label><input type="month" name="readyToTransfer" value={formData.readyToTransfer} onChange={handleChange} required /></div>
               </div>
             </div>
 
+            {/* ส่วนข้อมูลธนาคารและคำแนะนำ - ซ่อนไว้ชั่วคราว
             <div className={styles.formSection}>
               <h3>🏦 ข้อมูลธนาคารและคำแนะนำ</h3>
               <div className={styles.formRow}>
@@ -470,6 +656,7 @@ function CustomerForm() {
                 <div className={styles.formGroup}><label>อัตราผ่อนที่แนะนำ (บาท/เดือน)</label><input type="text" name="recommendedInstallment" value={formatNumber(formData.recommendedInstallment)} onChange={handleNumberChange} /></div>
               </div>
             </div>
+            */}
 
             <div className={styles.buttonGroup}>
               <button type="submit" className={styles.submitButton}>

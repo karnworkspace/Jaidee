@@ -616,7 +616,7 @@ const calculateKPIs = (customerData) => {
   if (income > 0) {
     const dsr = (debt / income) * 100;
     if (dsr < 40) { financialStatus = 'ดีเยี่ยม'; dsrScore = 100; }
-    else if (dsr < 60) { financialStatus = 'ดีขึ้น'; dsrScore = 75; }
+    else if (dsr < 60) { financialStatus = 'เฝ้าระวัง'; dsrScore = 75; }
     else { financialStatus = 'ต้องปรับปรุง'; dsrScore = 50; }
   }
 
@@ -965,7 +965,7 @@ const calculateEnhancedBankMatching = async (customerData) => {
     // Financial Status Score (0-15 points)
     if (financialStatus === 'ดีเยี่ยม') {
       score += 15;
-    } else if (financialStatus === 'ดีขึ้น') {
+    } else if (financialStatus === 'เฝ้าระวัง') {
       score += 10;
     } else if (financialStatus === 'ต้องปรับปรุง') {
       score += 5;
@@ -1237,10 +1237,15 @@ const calculateRentToOwnAmortizationTable = (data) => {
 
     if (month === 1) {
       payment = Math.max(initialPayment, 0); // ชำระเพิ่มเติมในงวดแรก (หากมี)
-      const totalFirstPayment = overpaidRent; // จำนวนเงินที่จ่ายจริงรวม overpaid
       interest = 0; // งวดแรกยังไม่มีดอกเบี้ย
-      // คำนวณเงินต้นที่จ่าย = จำนวนที่จ่ายจริง - ค่าประกัน - ค่าเช่าล่วงหน้า + overpayment ที่เกิน
-      principalPaid = totalFirstPayment - guarantee - prepaidRent + actualOverpayment;
+      
+      // คำนวณเงินต้นที่จ่ายในงวดแรก
+      // เงินต้น = จำนวนที่จ่ายจริงทั้งหมด - ค่าประกัน - ค่าเช่าล่วงหน้า
+      const totalAmountPaid = initialPayment + overpaidRent;
+      principalPaid = totalAmountPaid - guarantee - prepaidRent;
+      
+      // ตรวจสอบให้แน่ใจว่า principalPaid ไม่เป็นค่าติดลบ
+      principalPaid = Math.max(0, principalPaid);
       remainingPrincipal = propertyAfterDiscount - principalPaid;
     } else {
       payment = monthlyRent;
@@ -1816,7 +1821,7 @@ const convertCSVToCustomerData = (csvRow) => {
     financialStatus = 'ดีเยี่ยม'; 
     dsrScore = 100; 
   } else if (dsr < 60) { 
-    financialStatus = 'ดีขึ้น'; 
+    financialStatus = 'เฝ้าระวัง'; 
     dsrScore = 75; 
   }
 

@@ -56,8 +56,7 @@ function CustomerDetail() {
       id: 'bankAnalysis',
       title: 'BANK ANALYSIS',
       items: [
-        { id: 'bankMatching', label: '🏦 Bank Matching', icon: '🏦' },
-        { id: 'selectedBank', label: '🎯 Selected Bank', icon: '🎯' }
+        { id: 'bankMatching', label: '🏦 Bank Matching', icon: '🏦' }
       ]
     },
     {
@@ -116,6 +115,7 @@ function CustomerDetail() {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const translateIndicator = (indicator) => {
     const translations = {
       // Bad Credit indicators
@@ -146,6 +146,7 @@ function CustomerDetail() {
     return translations[indicator] || indicator;
   };
 
+  // eslint-disable-next-line no-unused-vars
   const translateSeverity = (severity) => {
     const translations = {
       'high': 'สูง',
@@ -232,11 +233,6 @@ function CustomerDetail() {
               <div className={styles.label}>Ownership</div>
               <div className={styles.subtitle}>ระดับความเป็นเจ้าของ</div>
             </div>
-            <div className={styles.kpiCard}>
-              <div className={styles.value}>{customer.actionPlanProgress || 0}%</div>
-              <div className={styles.label}>Plan Progress</div>
-              <div className={styles.subtitle}>ความคืบหน้าแผน</div>
-            </div>
           </div>
         </div>
 
@@ -251,6 +247,10 @@ function CustomerDetail() {
               <div className={styles.infoGroupGrid}>
                 <div className={styles.infoGroup}><label>อาชีพ</label><p>{customer.job}</p></div>
                 <div className={styles.infoGroup}><label>ตำแหน่ง</label><p>{customer.position}</p></div>
+              </div>
+              <div className={styles.infoGroupGrid}>
+                <div className={styles.infoGroup}><label>วันที่บันทึกข้อมูล</label><p>{customer.created_at ? new Date(customer.created_at).toLocaleString('th-TH') : 'ไม่ระบุ'}</p></div>
+                <div className={styles.infoGroup}><label>วันที่อัปเดตล่าสุด</label><p>{customer.updated_at ? new Date(customer.updated_at).toLocaleString('th-TH') : 'ไม่ระบุ'}</p></div>
               </div>
             </div>
 
@@ -637,23 +637,7 @@ function CustomerDetail() {
         )}
         </div>
 
-        {/* Selected Bank Section */}
-        <div id="selectedBank" className={styles.section}>
-        {customer.selectedBank && customer.recommendedLoanTerm && customer.recommendedInstallment ? (
-        <div className={styles.selectedBankSection}>
-          <h2>🎯 อัตราผ่อนของธนาคารที่ลูกค้าควรเลือกสินเชื่อ</h2>
-          <div className={styles.infoSection}>
-            <div className={styles.infoGroup}><label>ธนาคาร</label><p>{customer.selectedBank}</p></div>
-            <div className={styles.infoGroup}><label>ระยะเวลาผ่อนที่แนะนำ</label><p>{customer.recommendedLoanTerm} ปี</p></div>
-            <div className={styles.infoGroup}><label>อัตราผ่อนที่แนะนำ</label><p>{customer.recommendedInstallment} บาท/เดือน</p></div>
-          </div>
-        </div>
-        ) : (
-          <div className={styles.noData}>
-            <p>ไม่มีข้อมูลธนาคารที่แนะนำ</p>
-          </div>
-        )}
-        </div>
+
 
         <div className={styles.footerButtons}>
           <Link to="/" className={styles.editButton}>กลับหน้าแรก</Link>

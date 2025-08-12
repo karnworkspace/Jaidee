@@ -14,14 +14,19 @@ export default function RentToOwnTable({ data }) {
         return [6, 12, 18, 24, 30, 36].includes(installmentNum) || typeof row.installment === 'string';
       });
 
+  const formatNumber = (value) => {
+    if (value === null || value === undefined) return "0";
+    return Math.round(value).toLocaleString();
+  };
+
   const formatPrincipal = (value, isEndPeriod) => {
     if (isEndPeriod) return "–"; // แทนค่าติดลบด้วยขีดกลาง
-    return value.toFixed(2);
+    return formatNumber(value);
   };
 
   const formatRemaining = (value, isEndPeriod) => {
-    if (isEndPeriod) return value.toLocaleString();
-    return value > 0 ? value.toLocaleString() : "0";
+    if (isEndPeriod) return formatNumber(value);
+    return value > 0 ? formatNumber(value) : "0";
   };
 
   return (
@@ -49,8 +54,8 @@ export default function RentToOwnTable({ data }) {
                   className={isEndPeriod ? styles.endOfMonthRow : styles.normalRow}
                 >
                   <td className={styles.td}>{row.installment}</td>
-                  <td className={styles.tdRight}>{row.payment.toLocaleString()}</td>
-                  <td className={styles.tdRight}>{row.interest.toFixed(2)}</td>
+                  <td className={styles.tdRight}>{formatNumber(row.payment)}</td>
+                  <td className={styles.tdRight}>{formatNumber(row.interest)}</td>
                   <td className={styles.tdRight}>{formatPrincipal(row.principalPaid, isEndPeriod)}</td>
                   <td className={styles.tdRight}>{formatRemaining(row.remainingPrincipal, isEndPeriod)}</td>
                 </tr>

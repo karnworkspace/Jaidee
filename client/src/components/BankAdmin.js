@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './BankAdmin.module.css';
@@ -13,7 +13,7 @@ function BankAdmin() {
   const { authenticatedFetch } = useAuth();
 
   // Fetch all banks
-  const fetchBanks = async () => {
+  const fetchBanks = useCallback(async () => {
     try {
       const response = await authenticatedFetch('http://localhost:3001/api/bank-rules');
       const data = await response.json();
@@ -23,11 +23,11 @@ function BankAdmin() {
       console.error('Error fetching banks:', error);
       setLoading(false);
     }
-  };
+  }, [authenticatedFetch]);
 
   useEffect(() => {
     fetchBanks();
-  }, [authenticatedFetch]);
+  }, [fetchBanks]);
 
   const handleSelectBank = async (bankCode) => {
     try {
