@@ -44,7 +44,7 @@ const initializeDatabase = () => {
           ltvNote TEXT,
           maxLoanAmount REAL,
           targetDate TEXT,
-          officer TEXT DEFAULT 'ณัฐพงศ์ ไหมพรม',
+          officer TEXT DEFAULT 'นายพิชญ์ สุดทัน',
           selectedBank TEXT,
           targetBank TEXT,
           recommendedLoanTerm REAL,
@@ -104,6 +104,26 @@ const initializeDatabase = () => {
           reject(err);
           return;
         }
+
+        // Create users table for authentication
+        db.run(`
+          CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            full_name TEXT NOT NULL,
+            role TEXT NOT NULL CHECK (role IN ('admin', 'data_entry', 'data_user')),
+            department TEXT NOT NULL CHECK (department IN ('เงินสดใจดี', 'CO')),
+            is_active BOOLEAN NOT NULL DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `, (err) => {
+          if (err) {
+            console.error('Error creating users table:', err);
+            reject(err);
+          }
+        });
 
         // Create bank_rules table
         db.run(`

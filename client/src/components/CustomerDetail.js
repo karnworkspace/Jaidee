@@ -1,22 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import RentToOwnTable from './RentToOwnTable';
 import styles from './CustomerDetail.module.css';
 
 function CustomerDetail() {
   const { customerId } = useParams();
+  const { authenticatedFetch } = useAuth();
   const [customer, setCustomer] = useState(null);
   const [activeSection, setActiveSection] = useState('overview');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (customerId) {
-      fetch(`http://localhost:3001/api/customers/${customerId}`)
-        .then(res => res.json())
-        .then(data => setCustomer(data))
-        .catch(error => console.error('Error fetching customer details:', error));
-    }
-  }, [customerId]);
+    const fetchCustomerDetails = async () => {
+      if (customerId) {
+        try {
+          const response = await authenticatedFetch(`http://localhost:3001/api/customers/${customerId}`);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          setCustomer(data);
+        } catch (error) {
+          console.error('Error fetching customer details:', error);
+          setCustomer(null);
+        }
+      }
+    };
+
+    fetchCustomerDetails();
+  }, [customerId, authenticatedFetch]);
 
   if (!customer) {
     return <div>Loading...</div>;
@@ -36,8 +49,7 @@ function CustomerDetail() {
       id: 'financial',
       title: 'FINANCIAL',
       items: [
-        { id: 'financialInfo', label: '💳 ข้อมูลการเงิน', icon: '💳' },
-        { id: 'creditBureau', label: '📊 Credit Bureau', icon: '📊' }
+        { id: 'financialInfo', label: '💳 ข้อมูลการเงิน', icon: '💳' }
       ]
     },
     {
@@ -203,7 +215,7 @@ function CustomerDetail() {
         <div className={styles.header}>
           <h1>
             {customer.name}
-            <span>ดูแลโดย: {customer.officer}</span>
+            <span>ผู้วิเคราะห์ CAA: {customer.officer}</span>
           </h1>
         </div>
 
@@ -240,9 +252,6 @@ function CustomerDetail() {
                 <div className={styles.infoGroup}><label>อาชีพ</label><p>{customer.job}</p></div>
                 <div className={styles.infoGroup}><label>ตำแหน่ง</label><p>{customer.position}</p></div>
               </div>
-              {customer.businessOwnerType === 'เจ้าของธุรกิจส่วนตัว' && (
-                <div className={styles.infoGroup}><label>ประเภทธุรกิจส่วนตัว</label><p>{customer.privateBusinessType}</p></div>
-              )}
             </div>
 
             <div className={styles.infoSection}>
@@ -252,7 +261,24 @@ function CustomerDetail() {
                 <div className={styles.infoGroup}><label>เลขห้อง</label><p>{customer.unit || customer.roomNumber}</p></div>
               </div>
               <div className={styles.infoGroupGrid}>
-                <div className={styles.infoGroup}><label>มูลค่าทรัพย์</label><p>{formatNumber(customer.propertyValue)} บาท</p></div>
+                <div className={styles.infoGroup}>
+                  <label>มูลค่าทรัพย์ (หลังหักส่วนลด)</label>
+                  <p>{formatNumber((() => {
+                    const propertyPrice = parseFloat(customer.propertyPrice) || parseFloat(customer.propertyValue) || 0;
+                    const discount = parseFloat(customer.discount) || 0;
+                    return propertyPrice - discount;
+                  })())} บาท</p>
+                  {(() => {
+                    const propertyPrice = parseFloat(customer.propertyPrice) || parseFloat(customer.propertyValue) || 0;
+                    const discount = parseFloat(customer.discount) || 0;
+                    if (discount > 0) {
+                      return <small style={{color: '#6b7280', fontSize: '0.8rem'}}>
+                        เดิม: {formatNumber(propertyPrice)} บาท, ส่วนลด: {formatNumber(discount)} บาท
+                      </small>;
+                    }
+                    return null;
+                  })()}
+                </div>
                 <div className={styles.infoGroup}><label>ประวัติการชำระเงิน</label><p>{customer.paymentHistory}</p></div>
               </div>
             </div>
@@ -295,102 +321,6 @@ function CustomerDetail() {
           </div>
         </div>
 
-        {/* Credit Bureau Analysis Section */}
-        <div id="creditBureau" className={styles.section}>
-        {customer.creditBureauAnalysis ? (
-        <div className={styles.creditBureauSection}>
-          <h2>📊 Credit Bureau Analysis</h2>
-          
-          <div className={styles.creditSummary}>
-            <div className={styles.creditCard}>
-              <h3>เครดิตสกอร์</h3>
-              <div className={styles.creditScore}>
-                <span className={styles.scoreNumber}>
-                  {customer.creditBureauAnalysis.creditInterpretation.score || 'ไม่มี'}
-                </span>
-                <span className={styles.creditGrade}>
-                  {customer.creditBureauAnalysis.creditInterpretation.grade || ''}
-                </span>
-              </div>
-              <div className={styles.creditStatus}>
-                {customer.creditBureauAnalysis.creditInterpretation.status}
-              </div>
-            </div>
-            
-            <div className={styles.livnexCard}>
-              <h3>LivNex Recommendation</h3>
-              <div className={styles.livnexEligible}>
-                {customer.creditBureauAnalysis.livnexCompatibility.eligible ? 
-                  '✅ เหมาะสมเข้าโปรแกรม' : 
-                  '❌ ไม่เหมาะสมขณะนี้'}
-              </div>
-              {customer.creditBureauAnalysis.livnexCompatibility.eligible && (
-                <div className={styles.livnexDetails}>
-                  <div>ระยะเวลา: {customer.creditBureauAnalysis.livnexCompatibility.duration} เดือน</div>
-                  <div>ระดับความสำคัญ: {customer.creditBureauAnalysis.livnexCompatibility.priority}</div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className={styles.problemsAnalysis}>
-            <h3>3B Problems Analysis</h3>
-            <div className={styles.problemsGrid}>
-              <div className={styles.problemCard}>
-                <h4>Bad Credit (เครดิตไม่ดี)</h4>
-                <div className={`${styles.severityBadge} ${styles[customer.creditBureauAnalysis.problems3B.badCredit.severity]}`}>
-                  {translateSeverity(customer.creditBureauAnalysis.problems3B.badCredit.severity)}
-                </div>
-                <ul>
-                  {customer.creditBureauAnalysis.problems3B.badCredit.indicators.map((indicator, index) => (
-                    <li key={index}>{translateIndicator(indicator)}</li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className={styles.problemCard}>
-                <h4>Bad Income (รายได้ไม่ดี)</h4>
-                <div className={`${styles.severityBadge} ${styles[customer.creditBureauAnalysis.problems3B.badIncome.severity]}`}>
-                  {translateSeverity(customer.creditBureauAnalysis.problems3B.badIncome.severity)}
-                </div>
-                <ul>
-                  {customer.creditBureauAnalysis.problems3B.badIncome.indicators.map((indicator, index) => (
-                    <li key={index}>{translateIndicator(indicator)}</li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className={styles.problemCard}>
-                <h4>Bad Confidence (ความมั่นใจไม่ดี)</h4>
-                <div className={`${styles.severityBadge} ${styles[customer.creditBureauAnalysis.problems3B.badConfidence.severity]}`}>
-                  {translateSeverity(customer.creditBureauAnalysis.problems3B.badConfidence.severity)}
-                </div>
-                <ul>
-                  {customer.creditBureauAnalysis.problems3B.badConfidence.indicators.map((indicator, index) => (
-                    <li key={index}>{translateIndicator(indicator)}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {customer.creditBureauAnalysis.livnexCompatibility.recommendations && (
-            <div className={styles.recommendationsSection}>
-              <h3>คำแนะนำ</h3>
-              <ul className={styles.recommendationsList}>
-                {customer.creditBureauAnalysis.livnexCompatibility.recommendations.map((rec, index) => (
-                  <li key={index}>{rec}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-        ) : (
-          <div className={styles.noData}>
-            <p>ไม่มีข้อมูล Credit Bureau Analysis</p>
-          </div>
-        )}
-        </div>
 
 
         {/* Loan Table Section */}
@@ -486,15 +416,11 @@ function CustomerDetail() {
                 <td>{formatNumber(customer.detailedRentToOwnEstimation.monthlyRent)}</td>
               </tr>
               <tr>
-                <td>ยอดชำระรวม</td>
-                <td>{formatNumber(customer.detailedRentToOwnEstimation.totalPaid)}</td>
-              </tr>
-              <tr>
                 <td>ค่าประกัน</td>
                 <td>{formatNumber(customer.detailedRentToOwnEstimation.guarantee)}</td>
               </tr>
               <tr>
-                <td>ค่าเช่าล่วงหน้า</td>
+                <td>ค่าเช่าที่พึงชำระไว้แล้ว</td>
                 <td>{formatNumber(customer.detailedRentToOwnEstimation.prepaidRent)}</td>
               </tr>
               <tr>
@@ -577,10 +503,6 @@ function CustomerDetail() {
                     <span className={styles.componentLabel}>Rent-to-Own</span>
                     <span className={styles.componentValue}>{data.componentScores.rentToOwn}</span>
                   </div>
-                  <div className={styles.componentScore}>
-                    <span className={styles.componentLabel}>Credit Bureau</span>
-                    <span className={styles.componentValue}>{data.componentScores.creditBureau}</span>
-                  </div>
                 </div>
 
                 <div className={styles.bankDetails}>
@@ -600,19 +522,6 @@ function CustomerDetail() {
                   </div>
                 </div>
 
-                {data.creditBureauInsights && (
-                  <div className={styles.creditInsights}>
-                    <h4>Credit Bureau Insights</h4>
-                    <div className={styles.insightRow}>
-                      <span className={styles.insightLabel}>เครดิตเกรด:</span>
-                      <span className={styles.insightValue}>{data.creditBureauInsights.creditGrade}</span>
-                    </div>
-                    <div className={styles.insightRow}>
-                      <span className={styles.insightLabel}>LivNex:</span>
-                      <span className={styles.insightValue}>{data.creditBureauInsights.livnexRecommendation}</span>
-                    </div>
-                  </div>
-                )}
 
                 {data.customerAnalysis && (
                   <div className={styles.customerAnalysis}>

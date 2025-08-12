@@ -16,7 +16,7 @@ export function calculateRentToOwn({
 
   const guarantee = monthlyRent * guaranteeMultiplier;
   const prepaidRent = monthlyRent * prepaidRentMultiplier;
-  const initialPayment = (guarantee + prepaidRent) - overpaidRent;
+  const initialPayment = (guarantee + prepaidRent + overpaidRent);
 
   // Step 2: Initialize Result Array
   const amortizationTable = [];
@@ -27,7 +27,7 @@ export function calculateRentToOwn({
     let payment, interest, principalPaid;
 
     if (month === 1) {
-      payment = initialPayment + overpaidRent; // ชำระรวม ณ งวดแรก
+      payment = initialPayment; // ชำระรวม ณ งวดแรก (รวม overpaidRent แล้ว)
       interest = 0; // งวดแรกยังไม่มีดอกเบี้ย
       principalPaid = payment - guarantee; // เงินต้น = ชำระ - ค่าประกัน
       currentRemainingPrincipal = propertyAfterDiscount - principalPaid;
@@ -71,7 +71,7 @@ export function calculateRentToOwn({
 
   // Summary results (from previous detailed calculation, adjusted for new logic)
   const totalPaid = monthlyRent * installmentMonths;
-  const additionalPayment = (guarantee + prepaidRent) - overpaidRent;
+  const additionalPayment = (guarantee + prepaidRent + overpaidRent);
   let transferFeeRate = 0;
   if (transferYear === 1) transferFeeRate = 0.01;
   else if (transferYear === 2) transferFeeRate = 0.015;

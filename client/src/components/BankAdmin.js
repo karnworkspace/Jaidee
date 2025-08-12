@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import styles from './BankAdmin.module.css';
 
 function BankAdmin() {
@@ -9,11 +10,12 @@ function BankAdmin() {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({});
   const navigate = useNavigate();
+  const { authenticatedFetch } = useAuth();
 
   // Fetch all banks
   const fetchBanks = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/bank-rules');
+      const response = await authenticatedFetch('http://localhost:3001/api/bank-rules');
       const data = await response.json();
       setBanks(data);
       setLoading(false);
@@ -25,11 +27,11 @@ function BankAdmin() {
 
   useEffect(() => {
     fetchBanks();
-  }, []);
+  }, [authenticatedFetch]);
 
   const handleSelectBank = async (bankCode) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/bank-rules/${bankCode}`);
+      const response = await authenticatedFetch(`http://localhost:3001/api/bank-rules/${bankCode}`);
       const bankData = await response.json();
       setSelectedBank(bankData);
       setFormData({

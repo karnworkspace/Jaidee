@@ -3,6 +3,7 @@ const cors = require('cors');
 const csv = require('csv-parser');
 const fs = require('fs');
 const path = require('path');
+const session = require('express-session');
 const { 
   initializeDatabase, 
   getCustomerWithDetails, 
@@ -15,6 +16,24 @@ const {
   insertBankRule,
   updateBankRule
 } = require('./database');
+const {
+  comparePassword,
+  generateToken,
+  authenticateToken,
+  requireRole,
+  requireDepartment,
+  getUserByUsername,
+  getUserById,
+  initializeDefaultUsers
+} = require('./auth');
+const {
+  getProblemCategories,
+  getProblemDetails,
+  getSolution,
+  getAllOtherProblems,
+  getOtherProblemSolution,
+  getAllProblemsFlat
+} = require('./problemsData');
 
 const app = express();
 const port = 3001;
@@ -22,10 +41,23 @@ const port = 3001;
 app.use(cors());
 app.use(express.json());
 
+// Session configuration
+app.use(session({
+  secret: 'jaidee-session-secret-2025',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+}));
+
 // Initialize database on startup
 initializeDatabase()
   .then(() => {
     console.log('Database initialized successfully');
+    // Initialize default users
+    return initializeDefaultUsers();
+  })
+  .then(() => {
+    console.log('Default users initialized');
   })
   .catch(err => {
     console.error('Failed to initialize database:', err);
@@ -1350,7 +1382,88 @@ app.post('/api/calculate-rent-to-own', (req, res) => {
   res.status(200).json(response);
 });
 
-app.get('/api/customers', async (req, res) => {
+// ===============================
+// AUTHENTICATION ROUTES
+// ===============================
+
+// Login endpoint
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+
+    // Get user from database
+    const user = await getUserByUsername(username);
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    // Check password
+    const isPasswordValid = await comparePassword(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    // Generate token
+    const token = generateToken(user);
+
+    // Return user info and token
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        full_name: user.full_name,
+        role: user.role,
+        department: user.department
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get current user endpoint
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  try {
+    const user = await getUserById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        full_name: user.full_name,
+        role: user.role,
+        department: user.department
+      }
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Logout endpoint
+app.post('/api/auth/logout', authenticateToken, (req, res) => {
+  // For JWT, we can't really "logout" server-side
+  // The client should remove the token
+  res.json({ message: 'Logout successful' });
+});
+
+// ===============================
+// CUSTOMER ROUTES (Protected)
+// ===============================
+
+app.get('/api/customers', authenticateToken, async (req, res) => {
   try {
     const customers = await getAllCustomers();
     res.json(customers);
@@ -1360,7 +1473,7 @@ app.get('/api/customers', async (req, res) => {
   }
 });
 
-app.get('/api/customers/:id', async (req, res) => {
+app.get('/api/customers/:id', authenticateToken, async (req, res) => {
   try {
     const customerId = parseInt(req.params.id);
     const customer = await getCustomerWithDetails(customerId);
@@ -1409,7 +1522,7 @@ app.get('/api/customers/:id', async (req, res) => {
   }
 });
 
-app.post('/api/customers', async (req, res) => {
+app.post('/api/customers', authenticateToken, requireRole(['admin', 'data_entry']), async (req, res) => {
   try {
     const kpis = calculateKPIs(req.body);
     const loanEstimation = calculateLoanEstimation(
@@ -1463,7 +1576,7 @@ app.post('/api/customers', async (req, res) => {
   }
 });
 
-app.put('/api/customers/:id', async (req, res) => {
+app.put('/api/customers/:id', authenticateToken, requireRole(['admin', 'data_entry']), async (req, res) => {
   try {
     const customerId = parseInt(req.params.id);
     
@@ -1567,7 +1680,7 @@ app.put('/api/customers/:id', async (req, res) => {
 });
 
 // Bank Rules API Endpoints
-app.get('/api/bank-rules', async (req, res) => {
+app.get('/api/bank-rules', authenticateToken, async (req, res) => {
   try {
     const bankRules = await getAllBankRules();
     res.json(bankRules);
@@ -1577,7 +1690,7 @@ app.get('/api/bank-rules', async (req, res) => {
   }
 });
 
-app.get('/api/bank-rules/:bankCode', async (req, res) => {
+app.get('/api/bank-rules/:bankCode', authenticateToken, async (req, res) => {
   try {
     const bankCode = req.params.bankCode.toUpperCase();
     const bankRule = await getBankRuleByCode(bankCode);
@@ -1609,7 +1722,7 @@ app.post('/api/bank-rules', async (req, res) => {
   }
 });
 
-app.put('/api/bank-rules/:bankCode', async (req, res) => {
+app.put('/api/bank-rules/:bankCode', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const bankCode = req.params.bankCode.toUpperCase();
     
@@ -1673,7 +1786,7 @@ const convertCSVToCustomerData = (csvRow) => {
     unit: csvRow['เลขห้อง'] || '',
     propertyValue: parseFloat(csvRow['มูลค่าเช่าออม']) || 0,
     monthlyRentToOwnRate: parseFloat(csvRow['อัตราเช่าออม']) || 0,
-    officer: csvRow['ผู้วิเคราะห์'] || 'ณัฐพงศ์ ไหมพรม'
+          officer: csvRow['ผู้วิเคราะห์'] || 'นายพิชญ์ สุดทัน'
   };
 
   // Parse financial data using correct column names from CSV structure
@@ -1725,8 +1838,86 @@ const convertCSVToCustomerData = (csvRow) => {
   };
 };
 
+// ===============================
+// LOAN PROBLEMS API ENDPOINTS
+// ===============================
+
+// Get problem categories (ระดับ 1)
+app.get('/api/problems/categories', authenticateToken, (req, res) => {
+  try {
+    const categories = getProblemCategories();
+    res.json(categories);
+  } catch (error) {
+    console.error('Error getting problem categories:', error);
+    res.status(500).json({ message: 'Error getting problem categories' });
+  }
+});
+
+// Get problem details for a category (ระดับ 2)
+app.get('/api/problems/details/:category', authenticateToken, (req, res) => {
+  try {
+    const category = decodeURIComponent(req.params.category);
+    const details = getProblemDetails(category);
+    res.json(details);
+  } catch (error) {
+    console.error('Error getting problem details:', error);
+    res.status(500).json({ message: 'Error getting problem details' });
+  }
+});
+
+// Get solution for a specific problem (ระดับ 3)
+app.get('/api/problems/solution/:category/:detail', authenticateToken, (req, res) => {
+  try {
+    const category = decodeURIComponent(req.params.category);
+    const detail = decodeURIComponent(req.params.detail);
+    const solution = getSolution(category, detail);
+    res.json({ solution });
+  } catch (error) {
+    console.error('Error getting solution:', error);
+    res.status(500).json({ message: 'Error getting solution' });
+  }
+});
+
+// Get other problems (ปัญหาอื่น ๆ)
+app.get('/api/problems/other', authenticateToken, (req, res) => {
+  try {
+    const otherProblems = getAllOtherProblems();
+    res.json(otherProblems);
+  } catch (error) {
+    console.error('Error getting other problems:', error);
+    res.status(500).json({ message: 'Error getting other problems' });
+  }
+});
+
+// Get solution for other problem
+app.get('/api/problems/other-solution/:problem', authenticateToken, (req, res) => {
+  try {
+    const problem = decodeURIComponent(req.params.problem);
+    const solution = getOtherProblemSolution(problem);
+    res.json({ solution });
+  } catch (error) {
+    console.error('Error getting other problem solution:', error);
+    res.status(500).json({ message: 'Error getting other problem solution' });
+  }
+});
+
+// Get all problems as flat list (for compatibility)
+app.get('/api/problems/all', authenticateToken, (req, res) => {
+  try {
+    const problems = getAllProblemsFlat();
+    res.json(problems);
+  } catch (error) {
+    console.error('Error getting all problems:', error);
+    res.status(500).json({ message: 'Error getting all problems' });
+  }
+});
+
+// ===============================
+// CSV IMPORT API ENDPOINTS
+// ===============================
+
 // CSV Import API Endpoint
-app.post('/api/import-csv', async (req, res) => {
+app.post('/api/import-csv', authenticateToken, requireRole(['admin', 'data_entry']), async (req, res) => {
   try {
     const csvPath = path.join(__dirname, '../CV/database from ca cl fixed.csv');
     
@@ -1858,7 +2049,7 @@ app.get('/api/debug-csv-parsing', (req, res) => {
 });
 
 // Clear all customers API
-app.post('/api/clear-customers', async (req, res) => {
+app.post('/api/clear-customers', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { db } = require('./database');
     

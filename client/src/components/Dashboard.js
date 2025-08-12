@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import styles from './Dashboard.module.css';
 
 function Dashboard() {
@@ -16,37 +17,69 @@ function Dashboard() {
     financialStatus: 'all',
     officer: 'all'
   });
-  const [importStatus, setImportStatus] = useState('');
+
   const navigate = useNavigate();
+  const { authenticatedFetch, canEditData, isAdmin } = useAuth();
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/customers')
-      .then(response => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await authenticatedFetch('http://localhost:3001/api/customers');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return response.json();
-      })
-      .then(data => {
+        const data = await response.json();
         console.log('Fetched customers:', data);
         setCustomers(data);
         setFilteredCustomers(data);
-      })
-      .catch(error => {
+      } catch (error) {
         console.error('Error fetching customers:', error);
-        // Set empty array as fallback
         setCustomers([]);
         setFilteredCustomers([]);
-      });
-  }, []);
+      }
+    };
+
+    fetchCustomers();
+  }, [authenticatedFetch]);
 
   useEffect(() => {
     let filtered = customers.filter(customer => {
-      // Search filter
-      const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.projectName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.unit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.officer?.toLowerCase().includes(searchTerm.toLowerCase());
+      // Super Search filter - enhanced search across multiple fields
+      const searchTermLower = searchTerm.toLowerCase().trim();
+      let matchesSearch = true;
+      
+      if (searchTermLower !== '') {
+        matchesSearch = 
+          // Basic text fields
+          customer.name?.toLowerCase().includes(searchTermLower) ||
+          customer.projectName?.toLowerCase().includes(searchTermLower) ||
+          customer.unit?.toLowerCase().includes(searchTermLower) ||
+          customer.officer?.toLowerCase().includes(searchTermLower) ||
+          customer.phone?.toLowerCase().includes(searchTermLower) ||
+          customer.job?.toLowerCase().includes(searchTermLower) ||
+          customer.position?.toLowerCase().includes(searchTermLower) ||
+          
+          // Exact matches for codes and numbers
+          customer.id?.toString() === searchTermLower ||
+          customer.targetBank?.toLowerCase() === searchTermLower ||
+          customer.selectedBank?.toLowerCase().includes(searchTermLower) ||
+          
+          // Financial data searches
+          customer.income?.toString().includes(searchTermLower.replace(/,/g, '')) ||
+          customer.debt?.toString().includes(searchTermLower.replace(/,/g, '')) ||
+          customer.propertyValue?.toString().includes(searchTermLower.replace(/,/g, '')) ||
+          
+          // Problem and solution searches
+          (customer.loanProblem && Array.isArray(customer.loanProblem) && 
+           customer.loanProblem.some(problem => problem?.toLowerCase().includes(searchTermLower))) ||
+          (customer.actionPlan && Array.isArray(customer.actionPlan) && 
+           customer.actionPlan.some(action => action?.toLowerCase().includes(searchTermLower))) ||
+          
+          // Date searches (partial matches)
+          customer.date?.includes(searchTermLower) ||
+          customer.targetDate?.includes(searchTermLower) ||
+          customer.readyToTransfer?.includes(searchTermLower);
+      }
       
       if (!matchesSearch) return false;
       
@@ -208,38 +241,7 @@ function Dashboard() {
 
   const stats = getStats();
 
-  const handleImportCSV = async () => {
-    if (!window.confirm('คุณต้องการนำเข้าข้อมูลจาก CSV หรือไม่?\n\nการดำเนินการนี้จะเพิ่มข้อมูลลูกค้าใหม่เข้าสู่ระบบ')) {
-      return;
-    }
 
-    setImportStatus('🔄 กำลังนำเข้าข้อมูล...');
-    
-    try {
-      const response = await fetch('http://localhost:3001/api/import-csv', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const result = await response.json();
-      
-      if (response.ok) {
-        setImportStatus(`✅ นำเข้าสำเร็จ: ${result.summary.successful}/${result.summary.totalRows} รายการ`);
-        
-        // Refresh customer data
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
-      } else {
-        setImportStatus(`❌ เกิดข้อผิดพลาด: ${result.message}`);
-      }
-    } catch (error) {
-      console.error('Import error:', error);
-      setImportStatus(`❌ เกิดข้อผิดพลาด: ${error.message}`);
-    }
-  };
 
   return (
     <div className={styles.dashboardContainer}>
@@ -247,18 +249,17 @@ function Dashboard() {
         <div className={styles.header}>
           <h1 className={styles.title}>Customer Dashboard</h1>
           <div className={styles.headerActions}>
-            <Link to="/admin/banks" className={styles.adminButton}>🏦 จัดการธนาคาร</Link>
-            <button onClick={handleImportCSV} className={styles.importButton}>📁 นำเข้า CSV</button>
-            <Link to="/add-customer" className={styles.addButton}>เพิ่มลูกค้าใหม่</Link>
+            {isAdmin() && (
+              <Link to="/admin/banks" className={styles.adminButton}>🏦 จัดการธนาคาร</Link>
+            )}
+
+            {canEditData() && (
+              <Link to="/add-customer" className={styles.addButton}>เพิ่มลูกค้าใหม่</Link>
+            )}
           </div>
         </div>
 
-        {/* Import Status */}
-        {importStatus && (
-          <div className={styles.importStatus}>
-            {importStatus}
-          </div>
-        )}
+
 
         {/* Stats Section */}
         <div className={styles.statsSection}>
@@ -289,7 +290,7 @@ function Dashboard() {
           <div className={styles.searchRow}>
             <input
               type="text"
-              placeholder="🔎 ค้นหาลูกค้า (ชื่อ, โครงการ, หมายเลขห้อง, เจ้าหน้าที่)..."
+              placeholder="🔍 Super Search: ชื่อ, โครงการ, ห้อง, เจ้าหน้าที่, เบอร์โทร, อาชีพ, ธนาคาร, รายได้, ปัญหา, แผนแก้ไข..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={styles.searchInput}
@@ -337,7 +338,7 @@ function Dashboard() {
               onChange={(e) => handleFilterChange('officer', e.target.value)}
               className={styles.filterSelect}
             >
-              <option value="all">👤 เจ้าหน้าที่ทั้งหมด</option>
+              <option value="all">👤 ผู้วิเคราะห์ CAA ทั้งหมด</option>
               {getUniqueOfficers().map(officer => (
                 <option key={officer} value={officer}>{officer}</option>
               ))}
@@ -394,7 +395,7 @@ function Dashboard() {
                   </th>
                   <th>💼 สถานะการเงิน</th>
                   <th onClick={() => handleSort('officer')} className={styles.sortableHeader}>
-                    👨‍💼 เจ้าหน้าที่
+                    👨‍💼 ผู้วิเคราะห์ CAA
                     {sortField === 'officer' && (
                       <span className={styles.sortIcon}>
                         {sortDirection === 'asc' ? ' ↑' : ' ↓'}
@@ -461,13 +462,15 @@ function Dashboard() {
                         >
                           📋
                         </Link>
-                        <Link 
-                          to={`/edit-customer/${customer.id}`} 
-                          className={styles.editButton}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          ⚙️
-                        </Link>
+                        {canEditData() && (
+                          <Link 
+                            to={`/edit-customer/${customer.id}`} 
+                            className={styles.editButton}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            ⚙️
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   );

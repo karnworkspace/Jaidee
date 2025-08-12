@@ -1,0 +1,241 @@
+.problemSelector {
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  background-color: #f8fafc;
+  margin-bottom: 24px;
+}
+
+.title {
+  color: #2d3748;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #718096;
+  font-size: 1.1rem;
+}
+
+/* Categorized Problems Section */
+.categorizedSection {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.sectionTitle {
+  color: #4a5568;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdownRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.dropdownGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.dropdown {
+  padding: 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.dropdown:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.dropdown:disabled {
+  background-color: #f7fafc;
+  color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.solutionPreview {
+  margin-bottom: 20px;
+}
+
+.solutionText {
+  background: #edf2f7;
+  padding: 12px;
+  border-radius: 6px;
+  color: #2d3748;
+  font-size: 0.9rem;
+  border-left: 4px solid #667eea;
+  margin-top: 8px;
+}
+
+.addButton {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.addButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+}
+
+.addButton:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Other Problems Section */
+.otherSection {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.otherProblemsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.otherProblemButton {
+  background: white;
+  border: 2px solid #e2e8f0;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-align: left;
+  transition: all 0.3s ease;
+  color: #4a5568;
+}
+
+.otherProblemButton:hover:not(.disabled) {
+  border-color: #667eea;
+  background: #f7fafc;
+  transform: translateY(-1px);
+}
+
+.otherProblemButton.disabled {
+  background: #f7fafc;
+  color: #a0aec0;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+/* Selected Problems Section */
+.selectedSection {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.selectedList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.selectedItem {
+  background: #f0fff4;
+  border: 1px solid #9ae6b4;
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+}
+
+.selectedProblem {
+  margin-bottom: 8px;
+  color: #2d3748;
+  font-size: 0.95rem;
+}
+
+.selectedSolution {
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.selectedProblem strong,
+.selectedSolution strong {
+  color: #2d3748;
+}
+
+.removeButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #fed7d7;
+  border: 1px solid #feb2b2;
+  color: #e53e3e;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.removeButton:hover {
+  background: #feb2b2;
+  transform: scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .problemSelector {
+    padding: 16px;
+  }
+  
+  .dropdownRow {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .otherProblemsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .title {
+    font-size: 1.1rem;
+  }
+  
+  .sectionTitle {
+    font-size: 1rem;
+  }
+}
