@@ -18,7 +18,7 @@ export function calculateRentToOwn({
   const prepaidRent = monthlyRent * prepaidRentMultiplier;
   const totalRequired = guarantee + prepaidRent;
   const initialPayment = Math.max(0, totalRequired - overpaidRent); // This is the actual payment made by user
-  const actualOverpayment = Math.max(0, overpaidRent - totalRequired); // This is the overpayment that contributes to principal
+  // const actualOverpayment = Math.max(0, overpaidRent - totalRequired); // This is the overpayment that contributes to principal // eslint-disable-next-line no-unused-vars
 
   // Step 2: Initialize Result Array
   const amortizationTable = [];

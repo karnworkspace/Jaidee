@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom'; // eslint-disable-next-line no-unused-vars
 import SupabaseFrontendService from '../services/supabaseService';
 import styles from './SupabaseCustomers.module.css';
 
@@ -12,6 +12,7 @@ function SupabaseCustomers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState('');
   const [projects, setProjects] = useState([]);
+
 
   // ดึงข้อมูลลูกค้าจาก Supabase
   const fetchCustomers = useCallback(async () => {
@@ -216,9 +217,13 @@ function SupabaseCustomers() {
                     </td>
                     <td className={styles.actionCell}>
                       <div className={styles.actionButtons}>
-                        <button className={styles.viewButton} title="ดูรายละเอียด">
+                        <button 
+                          className={styles.viewButton} 
+                          title="ดูรายละเอียด"
+                        >
                           👁️ ดู
                         </button>
+
                       </div>
                     </td>
                   </tr>
@@ -238,6 +243,8 @@ function SupabaseCustomers() {
           )}
         </p>
       </div>
+
+
     </div>
   );
 }

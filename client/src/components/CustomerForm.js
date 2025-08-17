@@ -430,11 +430,120 @@ function CustomerForm() {
                 onSolutionsChange={setSelectedSolutions}
               />
 
-              <div className={styles.formRow + ' ' + styles.fullWidth}>
+              <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label>เป้าหมายยื่นกู้ (เดือน/ปี)<span className={styles.required}>*</span></label>
                   <input type="month" name="targetDate" value={formData.targetDate ? formData.targetDate.substring(0, 7) : ''} onChange={handleChange} required />
                 </div>
+                <div className={styles.formGroup}>
+                  <label>ธนาคารเป้าหมาย<span className={styles.required}>*</span></label>
+                  <select name="targetBank" value={formData.targetBank} onChange={handleChange} required className={styles.select}>
+                    <option value="">-- เลือกธนาคาร --</option>
+                    <option value="KTB">ธนาคารกรุงไทย (KTB)</option>
+                    <option value="GHB">ธนาคารอาคารสงเคราะห์ (GHB)</option>
+                    <option value="GSB">ธนาคารออมสิน (GSB)</option>
+                    <option value="BBL">ธนาคารกรุงเทพ (BBL)</option>
+                    <option value="SCB">ธนาคารไทยพาณิชย์ (SCB)</option>
+                    <option value="KBANK">ธนาคารกสิกรไทย (KBANK)</option>
+                    <option value="BAY">ธนาคารกรุงศรีอยุธยา (BAY)</option>
+                    <option value="TTB">ธนาคารทีเอ็มบีธนชาต (TTB)</option>
+                    <option value="CIMBT">ธนาคารซีไอเอ็มบีไทย (CIMBT)</option>
+                    <option value="TISCO">ธนาคารทิสโก้ (TISCO)</option>
+                    <option value="KKP">ธนาคารเกียรตินาคิน (KKP)</option>
+                    <option value="LH BANK">ธนาคารแอลเอช (LH BANK)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.formSection}>
+              <h3>🏠 ข้อมูลทรัพย์สิน</h3>
+                             <div className={styles.formRow}>
+                 <div className={styles.formGroup}>
+                   <label>โครงการ<span className={styles.required}>*</span></label>
+                   <div style={{ position: 'relative' }}>
+                                          <input 
+                        type="text" 
+                        name="projectName" 
+                        value={projectSearchTerm} 
+                        onChange={handleProjectSearch}
+                        onFocus={handleProjectInputFocus}
+                        onBlur={handleProjectInputBlur}
+                        placeholder="super search โปรดใส่คำค้นหาโครงการ"
+                        required 
+                        style={{ width: '100%' }}
+                      />
+                     {showProjectDropdown && filteredProjects.length > 0 && (
+                       <div style={{
+                         position: 'absolute',
+                         top: '100%',
+                         left: 0,
+                         right: 0,
+                         backgroundColor: 'white',
+                         border: '1px solid #ccc',
+                         borderRadius: '4px',
+                         maxHeight: '200px',
+                         overflowY: 'auto',
+                         zIndex: 1000,
+                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                       }}>
+                         {filteredProjects.map((project, index) => (
+                           <div
+                             key={index}
+                             onClick={() => handleProjectSelect(project)}
+                             style={{
+                               padding: '8px 12px',
+                               cursor: 'pointer',
+                               borderBottom: '1px solid #eee',
+                               fontSize: '14px'
+                             }}
+                             onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
+                             onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                           >
+                             {project}
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+                 </div>
+                 <div className={styles.formGroup}><label>เลขห้อง<span className={styles.required}>*</span></label><input type="text" name="unit" value={formData.unit} onChange={handleChange} required /></div>
+               </div>
+               <div className={styles.formRow}>
+                 <div className={styles.formGroup}><label>มูลค่าทรัพย์เต็มจำนวน</label><input type="text" name="propertyPrice" value={formatNumber(formData.propertyPrice)} onChange={handleNumberChange} /></div>
+                 <div className={styles.formGroup}><label>ส่วนลด (บาท)</label><input type="text" name="discount" value={formatNumber(formData.discount)} onChange={handleNumberChange} /></div>
+               </div>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>มูลค่าทรัพย์ (หลังหักส่วนลด) <span className={styles.required}>*</span></label>
+                  <input 
+                    type="text" 
+                    value={formatNumber((() => {
+                      const propertyPrice = parseFloat(formData.propertyPrice) || 0;
+                      const discount = parseFloat(formData.discount) || 0;
+                      return propertyPrice - discount;
+                    })())} 
+                    disabled 
+                    style={{backgroundColor: '#f3f4f6', color: '#374151', fontWeight: 'bold'}}
+                  />
+                  <small style={{color: '#6b7280', fontSize: '0.8rem'}}>
+                    คำนวณอัตโนมัติจาก: มูลค่าทรัพย์เต็มจำนวน - ส่วนลด
+                  </small>
+                </div>
+                                 <div className={styles.formGroup}>
+                   <label>LTV (%)<span className={styles.required}>*</span></label>
+                   <select name="ltv" value={formData.ltv} onChange={handleChange} required className={styles.select}>
+                     <option value="">-- เลือก LTV --</option>
+                     <option value="100">100%</option>
+                     <option value="90">90%</option>
+                     <option value="80">80%</option>
+                     <option value="70">70%</option>
+                     <option value="60">60%</option>
+                   </select>
+                 </div>
+              </div>
+              <div className={styles.formRow + ' ' + styles.fullWidth}>
+                <div className={styles.formGroup}><label>ช่วงเวลาที่พร้อมโอน<span className={styles.required}>*</span></label><input type="month" name="readyToTransfer" value={formData.readyToTransfer} onChange={handleChange} required /></div>
               </div>
             </div>
 
@@ -534,97 +643,6 @@ function CustomerForm() {
                   )}
                 </div>
               )}
-            </div>
-
-            <div className={styles.formSection}>
-              <h3>🏠 ข้อมูลทรัพย์สิน</h3>
-                             <div className={styles.formRow}>
-                 <div className={styles.formGroup}>
-                   <label>โครงการ<span className={styles.required}>*</span></label>
-                   <div style={{ position: 'relative' }}>
-                                          <input 
-                        type="text" 
-                        name="projectName" 
-                        value={projectSearchTerm} 
-                        onChange={handleProjectSearch}
-                        onFocus={handleProjectInputFocus}
-                        onBlur={handleProjectInputBlur}
-                        placeholder="super search โปรดใส่คำค้นหาโครงการ"
-                        required 
-                        style={{ width: '100%' }}
-                      />
-                     {showProjectDropdown && filteredProjects.length > 0 && (
-                       <div style={{
-                         position: 'absolute',
-                         top: '100%',
-                         left: 0,
-                         right: 0,
-                         backgroundColor: 'white',
-                         border: '1px solid #ccc',
-                         borderRadius: '4px',
-                         maxHeight: '200px',
-                         overflowY: 'auto',
-                         zIndex: 1000,
-                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                       }}>
-                         {filteredProjects.map((project, index) => (
-                           <div
-                             key={index}
-                             onClick={() => handleProjectSelect(project)}
-                             style={{
-                               padding: '8px 12px',
-                               cursor: 'pointer',
-                               borderBottom: '1px solid #eee',
-                               fontSize: '14px'
-                             }}
-                             onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
-                             onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
-                           >
-                             {project}
-                           </div>
-                         ))}
-                       </div>
-                     )}
-                   </div>
-                 </div>
-                 <div className={styles.formGroup}><label>เลขห้อง<span className={styles.required}>*</span></label><input type="text" name="unit" value={formData.unit} onChange={handleChange} required /></div>
-               </div>
-               <div className={styles.formRow}>
-                 <div className={styles.formGroup}><label>มูลค่าทรัพย์เต็มจำนวน</label><input type="text" name="propertyPrice" value={formatNumber(formData.propertyPrice)} onChange={handleNumberChange} /></div>
-                 <div className={styles.formGroup}><label>ส่วนลด (บาท)</label><input type="text" name="discount" value={formatNumber(formData.discount)} onChange={handleNumberChange} /></div>
-               </div>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>มูลค่าทรัพย์ (หลังหักส่วนลด) <span className={styles.required}>*</span></label>
-                  <input 
-                    type="text" 
-                    value={formatNumber((() => {
-                      const propertyPrice = parseFloat(formData.propertyPrice) || 0;
-                      const discount = parseFloat(formData.discount) || 0;
-                      return propertyPrice - discount;
-                    })())} 
-                    disabled 
-                    style={{backgroundColor: '#f3f4f6', color: '#374151', fontWeight: 'bold'}}
-                  />
-                  <small style={{color: '#6b7280', fontSize: '0.8rem'}}>
-                    คำนวณอัตโนมัติจาก: มูลค่าทรัพย์เต็มจำนวน - ส่วนลด
-                  </small>
-                </div>
-                                 <div className={styles.formGroup}>
-                   <label>LTV (%)<span className={styles.required}>*</span></label>
-                   <select name="ltv" value={formData.ltv} onChange={handleChange} required className={styles.select}>
-                     <option value="">-- เลือก LTV --</option>
-                     <option value="100">100%</option>
-                     <option value="90">90%</option>
-                     <option value="80">80%</option>
-                     <option value="70">70%</option>
-                     <option value="60">60%</option>
-                   </select>
-                 </div>
-              </div>
-              <div className={styles.formRow + ' ' + styles.fullWidth}>
-                <div className={styles.formGroup}><label>ช่วงเวลาที่พร้อมโอน<span className={styles.required}>*</span></label><input type="month" name="readyToTransfer" value={formData.readyToTransfer} onChange={handleChange} required /></div>
-              </div>
             </div>
 
             {/* ส่วนข้อมูลธนาคารและคำแนะนำ - ซ่อนไว้ชั่วคราว

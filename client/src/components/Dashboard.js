@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import ConsumerAdviseReport from './ConsumerAdviseReport';
 import styles from './Dashboard.module.css';
 
 function Dashboard() {
@@ -9,14 +10,16 @@ function Dashboard() {
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(25);
-  const [sortField, setSortField] = useState('name');
-  const [sortDirection, setSortDirection] = useState('asc');
+  const [sortField, setSortField] = useState('created_at');
+  const [sortDirection, setSortDirection] = useState('desc');
   const [filters, setFilters] = useState({
     status: 'all',
     potentialScore: 'all',
     financialStatus: 'all',
     officer: 'all'
   });
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [showReport, setShowReport] = useState(false);
 
   const navigate = useNavigate();
   const { authenticatedFetch, canEditData, isAdmin } = useAuth();
@@ -124,7 +127,7 @@ function Dashboard() {
       }
       
       // Handle date fields
-      if (sortField === 'targetDate') {
+      if (sortField === 'targetDate' || sortField === 'date' || sortField === 'created_at') {
         aVal = new Date(aVal);
         bVal = new Date(bVal);
       }
@@ -463,6 +466,32 @@ function Dashboard() {
                         >
                           📋
                         </Link>
+                        <button 
+                          className={styles.printButton}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              // ดึงข้อมูลลูกค้าที่มี detailedRentToOwnEstimation ครบถ้วน
+                              const response = await authenticatedFetch(`http://localhost:3001/api/customers/${customer.id}`);
+                              if (response.ok) {
+                                const customerWithDetails = await response.json();
+                                setSelectedCustomer(customerWithDetails);
+                                setShowReport(true);
+                              } else {
+                                console.error('Failed to fetch customer details');
+                                setSelectedCustomer(customer);
+                                setShowReport(true);
+                              }
+                            } catch (error) {
+                              console.error('Error fetching customer details:', error);
+                              setSelectedCustomer(customer);
+                              setShowReport(true);
+                            }
+                          }}
+                          title="พิมพ์ Consumer Advise Report"
+                        >
+                          🖨️
+                        </button>
                         {canEditData() && (
                           <Link 
                             to={`/edit-customer/${customer.id}`} 
@@ -536,6 +565,17 @@ function Dashboard() {
               </button>
             </div>
           </div>
+        )}
+
+        {/* Consumer Advise Report Modal */}
+        {showReport && selectedCustomer && (
+          <ConsumerAdviseReport
+            customerData={selectedCustomer}
+            onClose={() => {
+              setShowReport(false);
+              setSelectedCustomer(null);
+            }}
+          />
         )}
       </div>
     </div>

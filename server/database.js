@@ -125,6 +125,28 @@ const initializeDatabase = () => {
           }
         });
 
+        // Create reports table (for saving report data)
+        db.run(`
+          CREATE TABLE IF NOT EXISTS reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER,
+            customer_name TEXT NOT NULL,
+            report_date TEXT NOT NULL,
+            selected_installment INTEGER,
+            additional_notes TEXT,
+            debt_limit INTEGER,
+            loan_term_after INTEGER,
+            analyst TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
+          )
+        `, (err) => {
+          if (err) {
+            console.error('Error creating reports table:', err);
+            reject(err);
+          }
+        });
+
         // Create bank_rules table
         db.run(`
           CREATE TABLE IF NOT EXISTS bank_rules (
@@ -668,6 +690,89 @@ const updateBankRule = (bankCode, bankData) => {
   });
 };
 
+// Function to insert report data
+const insertReport = (reportData) => {
+  return new Promise((resolve, reject) => {
+    console.log('Inserting report data:', reportData);
+    
+    const {
+      customerId,
+      customerName,
+      reportDate,
+      selectedInstallment,
+      additionalNotes,
+      debtLimit,
+      loanTermAfter,
+      analyst
+    } = reportData;
+    
+    console.log('🔍 additionalNotes received:', additionalNotes);
+    console.log('🔍 additionalNotes type:', typeof additionalNotes);
+    console.log('🔍 additionalNotes isArray:', Array.isArray(additionalNotes));
+    console.log('🔍 additionalNotes length:', additionalNotes ? additionalNotes.length : 'null/undefined');
+
+    const sql = `
+      INSERT INTO reports (
+        customer_id, customer_name, report_date, selected_installment, 
+        additional_notes, debt_limit, loan_term_after, analyst
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const additionalNotesString = JSON.stringify(additionalNotes);
+    console.log('🔍 JSON.stringify(additionalNotes):', additionalNotesString);
+    
+    const values = [
+      customerId,
+      customerName,
+      reportDate,
+      selectedInstallment,
+      additionalNotesString,
+      debtLimit,
+      loanTermAfter,
+      analyst
+    ];
+
+    console.log('SQL:', sql);
+    console.log('Values:', values);
+
+    db.run(sql, values, function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        reject(err);
+        return;
+      }
+      console.log('Report inserted with ID:', this.lastID);
+      resolve(this.lastID);
+    });
+  });
+};
+
+// Function to get reports by customer ID
+const getReportsByCustomerId = (customerId) => {
+  return new Promise((resolve, reject) => {
+    console.log('Getting reports for customer ID:', customerId);
+    
+    const sql = `
+      SELECT * FROM reports 
+      WHERE customer_id = ? 
+      ORDER BY created_at DESC
+    `;
+
+    console.log('SQL:', sql);
+    console.log('Customer ID:', customerId);
+
+    db.all(sql, [customerId], (err, reports) => {
+      if (err) {
+        console.error('Database error:', err);
+        reject(err);
+        return;
+      }
+      console.log('Found reports:', reports);
+      resolve(reports);
+    });
+  });
+};
+
 module.exports = {
   db,
   initializeDatabase,
@@ -679,5 +784,7 @@ module.exports = {
   getAllBankRules,
   getBankRuleByCode,
   insertBankRule,
-  updateBankRule
+  updateBankRule,
+  insertReport,
+  getReportsByCustomerId
 };

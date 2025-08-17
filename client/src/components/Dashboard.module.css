@@ -448,7 +448,7 @@
   white-space: nowrap;
 }
 
-.viewButton, .editButton {
+.viewButton, .editButton, .printButton {
   display: inline-block;
   padding: 0.4rem 0.6rem;
   margin: 0 0.2rem;
@@ -457,6 +457,8 @@
   font-size: 0.9rem;
   transition: all 0.2s ease;
   font-weight: 500;
+  border: none;
+  cursor: pointer;
 }
 
 .viewButton {
@@ -477,6 +479,16 @@
 .editButton:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.printButton {
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  color: white;
+}
+
+.printButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
 }
 
 .noCustomers {

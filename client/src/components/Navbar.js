@@ -42,12 +42,14 @@ function Navbar() {
               </Link>
             )}
             
+            {/* Temporarily hidden - Supabase customers menu
             <Link 
               to="/supabase-customers" 
               className={`${styles.navLink} ${isActive('/supabase-customers') ? styles.active : ''}`}
             >
               🌐 ข้อมูลลูกค้าเดิม
             </Link>
+            */}
             
             {isAdmin() && (
               <Link 

@@ -41,7 +41,13 @@ function CustomerDetail() {
       title: 'OVERVIEW',
       items: [
         { id: 'kpi', label: '📊 KPI Dashboard', icon: '📊' },
-        { id: 'personal', label: '👤 ข้อมูลส่วนบุคคล', icon: '👤' },
+        { id: 'personal', label: '👤 ข้อมูลส่วนบุคคล', icon: '👤' }
+      ]
+    },
+    {
+      id: 'property',
+      title: 'PROPERTY',
+      items: [
         { id: 'property', label: '🏠 ข้อมูลทรัพย์สิน', icon: '🏠' }
       ]
     },
@@ -70,7 +76,7 @@ function CustomerDetail() {
       id: 'rentToOwn',
       title: 'RENT-TO-OWN',
       items: [
-        { id: 'rentResults', label: '🏘️ Rent Results', icon: '🏘️' },
+        { id: 'rentResults', label: '💰 ข้อมูลการเช่าออม', icon: '💰' },
         { id: 'amortization', label: '📋 Amortization', icon: '📋' }
       ]
     }
@@ -236,92 +242,97 @@ function CustomerDetail() {
           </div>
         </div>
 
-        <div className={styles.mainContent}>
-          <div className={styles.leftColumn}>
-            <div className={styles.infoSection}>
-              <h2>👤 ข้อมูลส่วนบุคคล</h2>
-              <div className={styles.infoGroupGrid}>
-                <div className={styles.infoGroup}><label>อายุ</label><p>{customer.age ? `${customer.age} ปี` : 'ไม่ระบุ'}</p></div>
-                <div className={styles.infoGroup}><label>เบอร์โทร</label><p>{customer.phone || 'ไม่ระบุ'}</p></div>
-              </div>
-              <div className={styles.infoGroupGrid}>
-                <div className={styles.infoGroup}><label>อาชีพ</label><p>{customer.job}</p></div>
-                <div className={styles.infoGroup}><label>ตำแหน่ง</label><p>{customer.position}</p></div>
-              </div>
-              <div className={styles.infoGroupGrid}>
-                <div className={styles.infoGroup}><label>วันที่บันทึกข้อมูล</label><p>{customer.created_at ? new Date(customer.created_at).toLocaleString('th-TH') : 'ไม่ระบุ'}</p></div>
-                <div className={styles.infoGroup}><label>วันที่อัปเดตล่าสุด</label><p>{customer.updated_at ? new Date(customer.updated_at).toLocaleString('th-TH') : 'ไม่ระบุ'}</p></div>
-              </div>
+                {/* Personal Information Section */}
+        <div id="personal" className={styles.section}>
+          <div className={styles.infoSection}>
+            <h2>👤 ข้อมูลส่วนบุคคล</h2>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}><label>อายุ</label><p>{customer.age ? `${customer.age} ปี` : 'ไม่ระบุ'}</p></div>
+              <div className={styles.infoGroup}><label>เบอร์โทร</label><p>{customer.phone || 'ไม่ระบุ'}</p></div>
             </div>
-
-            <div className={styles.infoSection}>
-              <h2>🏠 ข้อมูลทรัพย์สิน</h2>
-              <div className={styles.infoGroupGrid}>
-                <div className={styles.infoGroup}><label>โครงการ</label><p>{customer.projectName}</p></div>
-                <div className={styles.infoGroup}><label>เลขห้อง</label><p>{customer.unit || customer.roomNumber}</p></div>
-              </div>
-              <div className={styles.infoGroupGrid}>
-                <div className={styles.infoGroup}>
-                  <label>มูลค่าทรัพย์ (หลังหักส่วนลด)</label>
-                  <p>{formatNumber((() => {
-                    const propertyPrice = parseFloat(customer.propertyPrice) || parseFloat(customer.propertyValue) || 0;
-                    const discount = parseFloat(customer.discount) || 0;
-                    return propertyPrice - discount;
-                  })())} บาท</p>
-                  {(() => {
-                    const propertyPrice = parseFloat(customer.propertyPrice) || parseFloat(customer.propertyValue) || 0;
-                    const discount = parseFloat(customer.discount) || 0;
-                    if (discount > 0) {
-                      return <small style={{color: '#6b7280', fontSize: '0.8rem'}}>
-                        เดิม: {formatNumber(propertyPrice)} บาท, ส่วนลด: {formatNumber(discount)} บาท
-                      </small>;
-                    }
-                    return null;
-                  })()}
-                </div>
-                <div className={styles.infoGroup}><label>ประวัติการชำระเงิน</label><p>{customer.paymentHistory}</p></div>
-              </div>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}><label>อาชีพ</label><p>{customer.job}</p></div>
+              <div className={styles.infoGroup}><label>ตำแหน่ง</label><p>{customer.position}</p></div>
+            </div>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}><label>วันที่บันทึกข้อมูล</label><p>{customer.created_at ? new Date(customer.created_at).toLocaleString('th-TH') : 'ไม่ระบุ'}</p></div>
+              <div className={styles.infoGroup}><label>วันที่อัปเดตล่าสุด</label><p>{customer.updated_at ? new Date(customer.updated_at).toLocaleString('th-TH') : 'ไม่ระบุ'}</p></div>
             </div>
           </div>
+        </div>
 
-          <div className={styles.rightColumn}>
-            <div className={styles.infoSection}>
-              <h2>💳 ข้อมูลการเงินและสินเชื่อ</h2>
-              <div className={styles.infoGroupGrid}>
-                <div className={styles.infoGroup}><label>รายได้ปัจจุบัน</label><p>{formatNumber(customer.income)} บาท</p></div>
-                <div className={styles.infoGroup}><label>ภาระหนี้ปัจจุบัน</label><p>{formatNumber(customer.debt)} บาท</p></div>
-              </div>
-              <div className={styles.infoGroupGrid}>
-                <div className={styles.infoGroup}><label>สถานะทางการเงิน</label><p>{customer.financialStatus}</p></div>
-                <div className={styles.infoGroup}><label>เป้าหมายยื่นกู้</label><p>{customer.targetDate ? new Date(customer.targetDate).toLocaleDateString('th-TH') : '-'}</p></div>
-              </div>
-              <div className={styles.infoGroup}><label>ปัญหาด้านสินเชื่อ</label>
-                {customer.loanProblem && customer.loanProblem.length > 0 ? (
-                  <ul>
-                    {customer.loanProblem.map((problem, index) => (
-                      <li key={index}>{problem}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>ไม่มี</p>
-                )}
-              </div>
-              <div className={styles.infoGroup}><label>แผนการดำเนินการ</label>
-                {customer.actionPlan && customer.actionPlan.length > 0 ? (
-                  <ul>
-                    {customer.actionPlan.map((plan, index) => (
-                      <li key={index}>{plan}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>ไม่มี</p>
-                )}
-              </div>
+        
+
+        {/* Financial Information Section */}
+        <div id="financialInfo" className={styles.section}>
+          <div className={styles.infoSection}>
+            <h2>💳 ข้อมูลการเงินและสินเชื่อ</h2>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}><label>รายได้ปัจจุบัน</label><p>{formatNumber(customer.income)} บาท</p></div>
+              <div className={styles.infoGroup}><label>ภาระหนี้ปัจจุบัน</label><p>{formatNumber(customer.debt)} บาท</p></div>
+            </div>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}><label>สถานะทางการเงิน</label><p>{customer.financialStatus}</p></div>
+              <div className={styles.infoGroup}><label>เป้าหมายยื่นกู้</label><p>{customer.targetDate ? new Date(customer.targetDate).toLocaleDateString('th-TH') : '-'}</p></div>
+            </div>
+            <div className={styles.infoGroup}><label>ปัญหาด้านสินเชื่อ</label>
+              {customer.loanProblem && customer.loanProblem.length > 0 ? (
+                <ul>
+                  {customer.loanProblem.map((problem, index) => (
+                    <li key={index}>{problem}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>ไม่มี</p>
+              )}
+            </div>
+            <div className={styles.infoGroup}><label>แผนการดำเนินการ</label>
+              {customer.actionPlan && customer.actionPlan.length > 0 ? (
+                <ul>
+                  {customer.actionPlan.map((plan, index) => (
+                    <li key={index}>{plan}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>ไม่มี</p>
+              )}
             </div>
           </div>
         </div>
 
 
+
+        {/* Property Information Section - Moved to show before Rent-to-Own */}
+        <div id="property" className={styles.section}>
+          <div className={styles.infoSection}>
+            <h2>🏠 ข้อมูลทรัพย์สิน</h2>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}><label>โครงการ</label><p>{customer.projectName}</p></div>
+              <div className={styles.infoGroup}><label>เลขห้อง</label><p>{customer.unit || customer.roomNumber}</p></div>
+            </div>
+            <div className={styles.infoGroupGrid}>
+              <div className={styles.infoGroup}>
+                <label>มูลค่าทรัพย์ (หลังหักส่วนลด)</label>
+                <p>{formatNumber((() => {
+                  const propertyPrice = parseFloat(customer.propertyPrice) || parseFloat(customer.propertyValue) || 0;
+                  const discount = parseFloat(customer.discount) || 0;
+                  return propertyPrice - discount;
+                })())} บาท</p>
+                {(() => {
+                  const propertyPrice = parseFloat(customer.propertyPrice) || parseFloat(customer.propertyValue) || 0;
+                  const discount = parseFloat(customer.discount) || 0;
+                  if (discount > 0) {
+                    return <small style={{color: '#6b7280', fontSize: '0.8rem'}}>
+                      เดิม: {formatNumber(propertyPrice)} บาท, ส่วนลด: {formatNumber(discount)} บาท
+                    </small>;
+                  }
+                  return null;
+                })()}
+              </div>
+              <div className={styles.infoGroup}><label>ประวัติการชำระเงิน</label><p>{customer.paymentHistory}</p></div>
+            </div>
+          </div>
+        </div>
 
         {/* Loan Table Section */}
         <div id="loanTable" className={styles.section}>
@@ -398,7 +409,7 @@ function CustomerDetail() {
         <div id="rentResults" className={styles.section}>
         {customer.detailedRentToOwnEstimation ? (
         <div className={styles.loanTable}>
-          <h2>ผลลัพธ์การประเมินเช่าออม</h2>
+          <h2>💰 ข้อมูลการเช่าออม (Rent-to-Own Evaluation)</h2>
           <table>
             <thead>
               <tr>
@@ -494,6 +505,7 @@ function CustomerDetail() {
                   </div>
                 </div>
 
+                {/* Temporarily hidden - Component scores
                 <div className={styles.componentScores}>
                   <div className={styles.componentScore}>
                     <span className={styles.componentLabel}>Loan Band</span>
@@ -504,6 +516,7 @@ function CustomerDetail() {
                     <span className={styles.componentValue}>{data.componentScores.rentToOwn}</span>
                   </div>
                 </div>
+                */}
 
                 <div className={styles.bankDetails}>
                   <div className={styles.detailRow}>

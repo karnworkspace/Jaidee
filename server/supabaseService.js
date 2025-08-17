@@ -22,14 +22,17 @@ class SupabaseCustomerService {
       
       if (error) {
         console.error('Supabase getAllCustomers error:', error);
-        throw new Error(`Failed to fetch customers: ${error.message}`);
+        // Return empty array instead of throwing error for better UX
+        console.log('⚠️  Returning empty customers array due to Supabase error');
+        return [];
       }
       
       console.log(`✅ Retrieved ${data.length} customers from Supabase`);
       return data;
     } catch (err) {
       console.error('getAllCustomers service error:', err);
-      throw err;
+      // Return empty array instead of throwing error
+      return [];
     }
   }
 
@@ -99,7 +102,9 @@ class SupabaseCustomerService {
       
       if (error) {
         console.error('Supabase getUniqueProjects error:', error);
-        throw new Error(`Failed to fetch projects: ${error.message}`);
+        // Return empty array instead of throwing error
+        console.log('⚠️  Returning empty projects array due to Supabase error');
+        return [];
       }
       
       // กรองข้อมูลให้ไม่ซ้ำและเลือกเฉพาะ field ที่ต้องการ
@@ -123,7 +128,8 @@ class SupabaseCustomerService {
       return uniqueProjects;
     } catch (err) {
       console.error('getUniqueProjects service error:', err);
-      throw err;
+      // Return empty array instead of throwing error
+      return [];
     }
   }
 
@@ -138,7 +144,12 @@ class SupabaseCustomerService {
       
       if (error) {
         console.error('Supabase getCustomerStats error:', error);
-        throw new Error(`Failed to get stats: ${error.message}`);
+        // Return default stats instead of throwing error
+        console.log('⚠️  Returning default stats due to Supabase error');
+        return {
+          totalCustomers: 0,
+          lastUpdated: new Date().toISOString()
+        };
       }
       
       const stats = {
@@ -150,7 +161,11 @@ class SupabaseCustomerService {
       return stats;
     } catch (err) {
       console.error('getCustomerStats service error:', err);
-      throw err;
+      // Return default stats instead of throwing error
+      return {
+        totalCustomers: 0,
+        lastUpdated: new Date().toISOString()
+      };
     }
   }
 

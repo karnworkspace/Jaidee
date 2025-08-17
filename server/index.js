@@ -14,7 +14,9 @@ const {
   getAllBankRules,
   getBankRuleByCode,
   insertBankRule,
-  updateBankRule
+  updateBankRule,
+  insertReport,
+  getReportsByCustomerId
 } = require('./database');
 const {
   comparePassword,
@@ -1188,14 +1190,19 @@ const calculateEnhancedBankMatching = async (customerData) => {
       };
     });
     
-    // Sort by total score (highest first) and limit to top 5
-    const sortedResults = Object.entries(bankResults)
+    // Sort by total score (highest first) and show top 4 banks
+    let sortedResults = Object.entries(bankResults)
       .sort((a, b) => b[1].totalScore - a[1].totalScore)
-      .slice(0, 5) // Only show top 5 banks
+      .slice(0, 4) // Show top 4 banks
       .reduce((acc, [bank, data]) => {
         acc[bank] = data;
         return acc;
       }, {});
+    
+    // Always include target bank if it exists and not already in results
+    if (customerData.targetBank && bankResults[customerData.targetBank] && !sortedResults[customerData.targetBank]) {
+      sortedResults[customerData.targetBank] = bankResults[customerData.targetBank];
+    }
     
     return sortedResults;
   } catch (error) {
@@ -1486,6 +1493,65 @@ app.get('/api/customers', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error fetching customers:', error);
     res.status(500).json({ message: 'Error fetching customers', error: error.message });
+  }
+});
+
+// API endpoint สำหรับบันทึกรายงาน
+app.post('/api/reports', authenticateToken, async (req, res) => {
+  try {
+    console.log('📥 Received report data:', req.body);
+    console.log('🔍 additionalNotes in request:', req.body.additionalNotes);
+    console.log('🔍 additionalNotes type:', typeof req.body.additionalNotes);
+    console.log('🔍 additionalNotes isArray:', Array.isArray(req.body.additionalNotes));
+    console.log('🔍 additionalNotes length:', req.body.additionalNotes ? req.body.additionalNotes.length : 'null/undefined');
+    
+    const reportData = req.body;
+    
+    // ตรวจสอบข้อมูลที่จำเป็น
+    if (!reportData.customerId || !reportData.customerName) {
+      return res.status(400).json({
+        message: 'Missing required fields: customerId and customerName'
+      });
+    }
+    
+    // บันทึกรายงานลงฐานข้อมูล
+    const reportId = await insertReport(reportData);
+    
+    console.log('✅ Report saved with ID:', reportId);
+    console.log('📤 Sending response with reportId:', reportId);
+    
+    res.status(201).json({ 
+      message: 'Report saved successfully', 
+      reportId: reportId 
+    });
+  } catch (error) {
+    console.error('Error saving report:', error);
+    res.status(500).json({ 
+      message: 'Error saving report', 
+      error: error.message 
+    });
+  }
+});
+
+// API endpoint สำหรับดึงข้อมูลรายงานที่บันทึกไว้
+app.get('/api/reports/:customerId', authenticateToken, async (req, res) => {
+  try {
+    console.log('Fetching reports for customer ID:', req.params.customerId);
+    
+    const customerId = parseInt(req.params.customerId);
+    
+    // ดึงข้อมูลรายงานที่บันทึกไว้
+    const reports = await getReportsByCustomerId(customerId);
+    
+    console.log('Found reports:', reports);
+    
+    res.json(reports);
+  } catch (error) {
+    console.error('Error fetching reports:', error);
+    res.status(500).json({ 
+      message: 'Error fetching reports', 
+      error: error.message 
+    });
   }
 });
 
