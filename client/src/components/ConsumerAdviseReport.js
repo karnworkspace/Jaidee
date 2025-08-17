@@ -410,7 +410,9 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
                 
 
                 const additionalPlans = additionalNotes
-                  .map((note, index) => `หมายเหตุ${index + 1}: ${note.trim() || 'ยังไม่ได้กรอกข้อมูล'}`);
+                  .map((note, index) => ({ note: note.trim(), index }))
+                  .filter(item => item.note) // กรองเฉพาะหมายเหตุที่มีข้อมูล
+                  .map(item => `หมายเหตุ${item.index + 1}: ${item.note}`);
                 
                 const allPlans = [...originalPlans, ...additionalPlans];
                 
