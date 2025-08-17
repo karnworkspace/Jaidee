@@ -815,6 +815,37 @@
   }
 }
 
+/* PDF Generation Styles - เรียงลำดับใหม่สำหรับ PDF */
+.pdfMode .noteInputSection,
+.pdfMode .debtLimitInput,
+.pdfMode .loanTermInput {
+  display: none !important;
+}
+
+.pdfSection {
+  display: block !important;
+  page-break-inside: avoid;
+  margin-bottom: 20px;
+}
+
+.pdfSection.hidden {
+  display: none !important;
+}
+
+/* เรียงลำดับสำหรับ PDF */
+.pdfOrder1 { order: 1; }
+.pdfOrder2 { order: 2; }
+.pdfOrder3 { order: 3; }
+.pdfOrder4 { order: 4; }
+.pdfOrder5 { order: 5; }
+.pdfOrder6 { order: 6; }
+.pdfOrder7 { order: 7; }
+.pdfOrder8 { order: 8; }
+.pdfOrder9 { order: 9; }
+.pdfOrder10 { order: 10; }
+.pdfOrder11 { order: 11; }
+.pdfOrder12 { order: 12; }
+
 /* Responsive */
 @media (max-width: 768px) {
   .reportContent {
