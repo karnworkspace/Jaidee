@@ -22,7 +22,6 @@ function CustomerDetail() {
           const data = await response.json();
           setCustomer(data);
         } catch (error) {
-          console.error('Error fetching customer details:', error);
           setCustomer(null);
         }
       }

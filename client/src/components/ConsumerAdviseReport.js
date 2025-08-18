@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useReactToPrint } from 'react-to-print';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './ConsumerAdviseReport.module.css';
 import jsPDF from 'jspdf';
@@ -11,41 +10,22 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
   const [selectedInstallment, setSelectedInstallment] = useState(36);
   const [additionalNotes, setAdditionalNotes] = useState(['', '', '', '']);
   
-  // Debug log เมื่อ additionalNotes เปลี่ยน
-  useEffect(() => {
-    console.log('🔄 additionalNotes changed:', additionalNotes);
-    console.log('🔄 additionalNotes length:', additionalNotes.length);
-  }, [additionalNotes]);
   const [debtLimit, setDebtLimit] = useState('8000');
   const [loanTermAfter, setLoanTermAfter] = useState('40');
   const componentRef = useRef();
 
   const loadSavedReportData = useCallback(async () => {
     try {
-      console.log('🔄 Loading saved report data for customer ID:', customerData.id);
-      
       const response = await authenticatedFetch(`http://localhost:3001/api/reports/${customerData.id}`);
-
-      console.log('📡 Load response status:', response.status);
-      console.log('📡 Load response ok:', response.ok);
 
       if (response.ok) {
         const savedData = await response.json();
-        console.log('📥 Saved data received:', savedData);
         
         if (savedData && savedData.length > 0) {
-          console.log('📊 Total reports found:', savedData.length);
-          console.log('📊 All report IDs:', savedData.map(r => r.id));
-          console.log('📊 All report dates:', savedData.map(r => r.created_at));
-          
           // เรียงลำดับตาม ID จากมากไปน้อย แล้วใช้ข้อมูลล่าสุด
           const sortedData = savedData.sort((a, b) => b.id - a.id);
-          console.log('📊 Sorted report IDs:', sortedData.map(r => r.id));
           
           const latestReport = sortedData[0]; // ข้อมูลแรกหลังเรียงลำดับ
-          console.log('📋 Latest report ID:', latestReport.id);
-          console.log('📋 Latest report date:', latestReport.created_at);
-          console.log('📋 Latest report:', latestReport);
           
           // อัปเดต state ด้วยข้อมูลที่บันทึกไว้
           setSelectedInstallment(latestReport.selected_installment || 36);
@@ -55,16 +35,12 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
           // อัปเดตหมายเหตุ
           if (latestReport.additional_notes) {
             try {
-              console.log('🔍 Raw additional_notes:', latestReport.additional_notes);
-              console.log('🔍 Type of additional_notes:', typeof latestReport.additional_notes);
-              
               let notes;
               if (typeof latestReport.additional_notes === 'string') {
                 notes = JSON.parse(latestReport.additional_notes);
               } else {
                 notes = latestReport.additional_notes;
               }
-              console.log('✅ Parsed notes:', notes);
               // ให้แน่ใจว่ามี 4 ตัวเสมอ
               const fullNotes = ['', '', '', ''];
               if (Array.isArray(notes)) {
@@ -75,32 +51,21 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
                 });
               }
               setAdditionalNotes(fullNotes);
-              console.log('🎯 Final additionalNotes set to:', fullNotes);
             } catch (e) {
-              console.error('❌ Error parsing additional notes:', e);
               // ถ้า parse ไม่ได้ ให้ใช้ค่าเริ่มต้น 4 ตัว
               setAdditionalNotes(['', '', '', '']);
             }
           } else {
             // ถ้าไม่มีข้อมูล ให้ใช้ค่าเริ่มต้น 4 ตัว
-            console.log('⚠️ No additional_notes found, using default');
             setAdditionalNotes(['', '', '', '']);
           }
-          
-          console.log('✅ State updated with saved data');
         } else {
-          console.log('No saved data found');
           // ถ้าไม่มีข้อมูลที่บันทึกไว้เลย ให้ใช้ค่าเริ่มต้น
           setAdditionalNotes(['', '', '', '']);
         }
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Failed to load saved data:', errorText);
       }
     } catch (error) {
-      console.error('💥 Error loading saved report data:', error);
-      console.error('💥 Error message:', error.message);
-      console.error('💥 Error stack:', error.stack);
+      // Handle error silently or show user-friendly message if needed
     }
     }, [customerData.id, authenticatedFetch]);
 
@@ -160,13 +125,10 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
       setReportData(report);
       
       // โหลดข้อมูลรายงานที่บันทึกไว้หลังจากสร้าง reportData แล้ว
-      console.log('🚀 Calling loadSavedReportData...');
-      console.log('🚀 loadSavedReportData function:', typeof loadSavedReportData);
       try {
         await loadSavedReportData();
-        console.log('✅ loadSavedReportData completed successfully');
       } catch (error) {
-        console.error('❌ Error in loadSavedReportData:', error);
+        // Handle error silently
       }
     }
   }, [customerData, loadSavedReportData]);
@@ -177,7 +139,6 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
 
   const handlePrint = async () => {
     try {
-      console.log('🖨️ Starting PDF generation...');
       if (!reportData) {
         alert('กรุณารอข้อมูลโหลดเสร็จก่อนพิมพ์');
         return;
@@ -475,7 +436,6 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
       document.body.appendChild(pdfContainer);
       
       // Capture หน้าเว็บเป็นรูปภาพ
-      console.log('📸 Capturing report as image...');
       const canvas = await html2canvas(pdfContainer, {
         scale: 1,
         useCORS: true,
@@ -488,7 +448,6 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
       document.body.removeChild(pdfContainer);
       
       // สร้าง PDF
-      console.log('📄 Creating PDF...');
       const imgData = canvas.toDataURL('image/jpeg', 0.8);
       const pdf = new jsPDF('p', 'mm', 'a4');
       
@@ -513,14 +472,11 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
       
       // บันทึกไฟล์ PDF
       const fileName = `รายงาน_Consumer_Advise_${customerData?.name || customerData?.customer_name || 'Report'}_${new Date().toLocaleDateString('th-TH')}.pdf`;
-      console.log('💾 Saving PDF as:', fileName);
       pdf.save(fileName);
       
-      console.log('✅ PDF generated successfully!');
       alert('✅ สร้าง PDF เรียบร้อยแล้ว!\n\nไฟล์: ' + fileName);
       
     } catch (error) {
-      console.error('❌ Error generating PDF:', error);
       alert('❌ เกิดข้อผิดพลาดในการสร้าง PDF\n\nกรุณาลองใหม่อีกครั้ง');
     } finally {
       // รีเซ็ตปุ่ม
@@ -551,7 +507,6 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
         saveButton.disabled = false;
       }
     } catch (error) {
-      console.error('Error saving report:', error);
       alert('❌ เกิดข้อผิดพลาดในการบันทึกรายงาน\n\nกรุณาลองใหม่อีกครั้ง');
       
       // รีเซ็ตปุ่ม
@@ -565,8 +520,6 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
 
   const saveReportData = async () => {
     try {
-      console.log('💾 Starting to save report data...');
-      
       // สร้างข้อมูลรายงาน
       const reportDataToSave = {
         customerId: customerData.id,
@@ -579,44 +532,27 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
         analyst: customerData.officer || 'นายพิชญ์ สุดทัน',
       };
 
-      console.log('📤 Report data to save:', reportDataToSave);
-      console.log('📝 additionalNotes being saved:', additionalNotes);
-      console.log('📝 additionalNotes length:', additionalNotes.length);
-      console.log('📝 additionalNotes type:', typeof additionalNotes);
-      console.log('📝 additionalNotes isArray:', Array.isArray(additionalNotes));
-      console.log('📝 additionalNotes JSON:', JSON.stringify(additionalNotes));
-
       // บันทึกลงฐานข้อมูล
       const response = await authenticatedFetch('http://localhost:3001/api/reports', {
         method: 'POST',
         body: JSON.stringify(reportDataToSave)
       });
 
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response ok:', response.ok);
-
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Report data saved successfully:', result);
         return result;
       } else {
         const errorText = await response.text();
-        console.error('❌ Failed to save report data:', errorText);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
     } catch (error) {
-      console.error('💥 Error saving report data:', error);
-      console.error('💥 Error message:', error.message);
-      console.error('💥 Error stack:', error.stack);
       throw error;
     }
   };
 
   const handleNoteChange = (index, value) => {
-    console.log('✏️ handleNoteChange called:', { index, value });
     const newNotes = [...additionalNotes];
     newNotes[index] = value;
-    console.log('✏️ newNotes before setState:', newNotes);
     setAdditionalNotes(newNotes);
   };
 

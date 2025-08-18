@@ -23,11 +23,9 @@ class SupabaseCustomerService {
       if (error) {
         console.error('Supabase getAllCustomers error:', error);
         // Return empty array instead of throwing error for better UX
-        console.log('⚠️  Returning empty customers array due to Supabase error');
         return [];
       }
       
-      console.log(`✅ Retrieved ${data.length} customers from Supabase`);
       return data;
     } catch (err) {
       console.error('getAllCustomers service error:', err);
@@ -55,7 +53,6 @@ class SupabaseCustomerService {
         throw new Error(`Failed to fetch customer: ${error.message}`);
       }
       
-      console.log(`✅ Retrieved customer ID ${id} from Supabase`);
       return data;
     } catch (err) {
       console.error('getCustomerById service error:', err);
@@ -79,7 +76,6 @@ class SupabaseCustomerService {
         throw new Error(`Failed to search customers: ${error.message}`);
       }
       
-      console.log(`✅ Found ${data.length} customers matching "${searchTerm}"`);
       return data;
     } catch (err) {
       console.error('searchCustomers service error:', err);
@@ -103,7 +99,6 @@ class SupabaseCustomerService {
       if (error) {
         console.error('Supabase getUniqueProjects error:', error);
         // Return empty array instead of throwing error
-        console.log('⚠️  Returning empty projects array due to Supabase error');
         return [];
       }
       
@@ -124,7 +119,6 @@ class SupabaseCustomerService {
         }
       }
       
-      console.log(`✅ Retrieved ${uniqueProjects.length} unique projects from Supabase`);
       return uniqueProjects;
     } catch (err) {
       console.error('getUniqueProjects service error:', err);
@@ -145,7 +139,6 @@ class SupabaseCustomerService {
       if (error) {
         console.error('Supabase getCustomerStats error:', error);
         // Return default stats instead of throwing error
-        console.log('⚠️  Returning default stats due to Supabase error');
         return {
           totalCustomers: 0,
           lastUpdated: new Date().toISOString()
@@ -157,7 +150,6 @@ class SupabaseCustomerService {
         lastUpdated: new Date().toISOString()
       };
       
-      console.log(`✅ Retrieved customer stats: ${count} total customers`);
       return stats;
     } catch (err) {
       console.error('getCustomerStats service error:', err);
@@ -183,13 +175,11 @@ class SupabaseCustomerService {
           table: this.tableName
         },
         (payload) => {
-          console.log('🔄 Real-time change detected:', payload);
           callback(payload);
         }
       )
       .subscribe();
 
-    console.log('📡 Subscribed to real-time changes for', this.tableName);
     return subscription;
   }
 
@@ -199,7 +189,6 @@ class SupabaseCustomerService {
   unsubscribeFromChanges(subscription) {
     if (subscription) {
       supabase.removeChannel(subscription);
-      console.log('📡 Unsubscribed from real-time changes');
     }
   }
 }

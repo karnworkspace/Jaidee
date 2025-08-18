@@ -166,7 +166,7 @@ function CustomerForm() {
           // Set project search term for editing
           setProjectSearchTerm(data.projectName || '');
         } catch (error) {
-          console.error('Error fetching customer:', error);
+          // Handle error silently
         }
       }
     };
@@ -189,7 +189,6 @@ function CustomerForm() {
       });
       setCalculatedRentToOwnResults(results);
     } catch (error) {
-      console.error("Error calculating rent to own:", error);
       setCalculatedRentToOwnResults(null);
     }
   }, [
@@ -338,7 +337,6 @@ function CustomerForm() {
         navigate(`/customer/${data.customer.id}`);
       }
     } catch (error) {
-      console.error('Error saving customer:', error);
       alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + error.message);
     }
   };

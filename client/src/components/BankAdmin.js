@@ -20,7 +20,6 @@ function BankAdmin() {
       setBanks(data);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching banks:', error);
       setLoading(false);
     }
   }, [authenticatedFetch]);
@@ -59,7 +58,7 @@ function BankAdmin() {
       });
       setIsEditing(false);
     } catch (error) {
-      console.error('Error fetching bank details:', error);
+      // Handle error silently or show user-friendly message
     }
   };
 
@@ -118,7 +117,6 @@ function BankAdmin() {
         throw new Error('Failed to update bank');
       }
     } catch (error) {
-      console.error('Error updating bank:', error);
       alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     }
   };
@@ -334,7 +332,7 @@ function BankAdmin() {
                     />
                   </div>
                   <div className={styles.formGroup}>
-                    <label>บ้านหลังที่ 2 (>2ปี)</label>
+                    <label>บ้านหลังที่ 2 ({'>'}2ปี)</label>
                     <input
                       type="number"
                       name="ltv_type2_over_2years"
@@ -347,7 +345,7 @@ function BankAdmin() {
                     />
                   </div>
                   <div className={styles.formGroup}>
-                    <label>บ้านหลังที่ 2 (&lt;2ปี)</label>
+                    <label>บ้านหลังที่ 2 ({'<'}2ปี)</label>
                     <input
                       type="number"
                       name="ltv_type2_under_2years"

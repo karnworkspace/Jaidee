@@ -145,7 +145,6 @@ const initializeDefaultUsers = async () => {
         role: 'admin',
         department: 'CO'
       });
-      console.log('Default admin user created');
     }
 
     // Create demo users for testing
@@ -158,7 +157,6 @@ const initializeDefaultUsers = async () => {
         role: 'data_entry',
         department: 'เงินสดใจดี'
       });
-      console.log('Demo data entry user created');
     }
 
     const dataUserExists = await getUserByUsername('data_user');
@@ -170,7 +168,6 @@ const initializeDefaultUsers = async () => {
         role: 'data_user',
         department: 'CO'
       });
-      console.log('Demo data user created');
     }
 
   } catch (error) {

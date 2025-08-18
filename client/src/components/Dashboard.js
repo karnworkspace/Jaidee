@@ -32,11 +32,9 @@ function Dashboard() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        console.log('Fetched customers:', data);
         setCustomers(data);
         setFilteredCustomers(data);
       } catch (error) {
-        console.error('Error fetching customers:', error);
         setCustomers([]);
         setFilteredCustomers([]);
       }
@@ -478,12 +476,10 @@ function Dashboard() {
                                 setSelectedCustomer(customerWithDetails);
                                 setShowReport(true);
                               } else {
-                                console.error('Failed to fetch customer details');
                                 setSelectedCustomer(customer);
                                 setShowReport(true);
                               }
                             } catch (error) {
-                              console.error('Error fetching customer details:', error);
                               setSelectedCustomer(customer);
                               setShowReport(true);
                             }

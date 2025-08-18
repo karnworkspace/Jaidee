@@ -41,7 +41,6 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       } finally {
@@ -70,7 +69,7 @@ export const AuthProvider = ({ children }) => {
         });
       }
     } catch (error) {
-      console.error('Logout error:', error);
+      // Handle error silently
     } finally {
       setUser(null);
       setToken(null);

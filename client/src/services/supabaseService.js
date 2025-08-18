@@ -25,7 +25,6 @@ export class SupabaseFrontendService {
       
       return data.customers;
     } catch (error) {
-      console.error('Frontend getAllCustomers error:', error);
       throw error;
     }
   }
@@ -52,7 +51,6 @@ export class SupabaseFrontendService {
       
       return data.customer;
     } catch (error) {
-      console.error('Frontend getCustomerById error:', error);
       throw error;
     }
   }
@@ -76,7 +74,6 @@ export class SupabaseFrontendService {
       
       return data.customers;
     } catch (error) {
-      console.error('Frontend searchCustomers error:', error);
       throw error;
     }
   }
@@ -100,7 +97,6 @@ export class SupabaseFrontendService {
       
       return data.projects;
     } catch (error) {
-      console.error('Frontend getUniqueProjects error:', error);
       throw error;
     }
   }
@@ -124,7 +120,6 @@ export class SupabaseFrontendService {
       
       return data.stats;
     } catch (error) {
-      console.error('Frontend getCustomerStats error:', error);
       throw error;
     }
   }
@@ -148,7 +143,6 @@ export class SupabaseFrontendService {
       
       return data.data;
     } catch (error) {
-      console.error('Frontend getHybridCustomers error:', error);
       throw error;
     }
   }

@@ -25,7 +25,6 @@ const testConnection = async () => {
     });
     
     if (response.ok) {
-      console.log('✅ Supabase connection successful');
       
       // ลองทดสอบเข้าถึงตาราง uat_Liv
       try {
@@ -35,16 +34,11 @@ const testConnection = async () => {
           .limit(1);
         
         if (error) {
-          console.log('⚠️  Table access limited:', error.message);
-          console.log('💡 Note: You may need to configure RLS policies in Supabase');
-          console.log('💡 Or use service role key to bypass RLS');
           return true; // ยังถือว่าเชื่อมต่อได้
         } else {
-          console.log(`📊 Table access OK - Found ${data ? data.length : 0} records`);
           return true;
         }
       } catch (tableError) {
-        console.log('⚠️  Table access error:', tableError.message);
         return true; // ยังถือว่าเชื่อมต่อได้
       }
     } else {

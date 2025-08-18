@@ -213,11 +213,9 @@ const addCreditBureauFields = (callback) => {
   migrations.forEach((migration) => {
     db.run(migration, (err) => {
       if (err && !err.message.includes('duplicate column')) {
-        console.log('Migration note:', err.message);
       }
       completed++;
       if (completed === migrations.length) {
-        console.log('Credit Bureau fields migration completed');
         callback();
       }
     });
@@ -693,7 +691,6 @@ const updateBankRule = (bankCode, bankData) => {
 // Function to insert report data
 const insertReport = (reportData) => {
   return new Promise((resolve, reject) => {
-    console.log('Inserting report data:', reportData);
     
     const {
       customerId,
@@ -706,10 +703,6 @@ const insertReport = (reportData) => {
       analyst
     } = reportData;
     
-    console.log('🔍 additionalNotes received:', additionalNotes);
-    console.log('🔍 additionalNotes type:', typeof additionalNotes);
-    console.log('🔍 additionalNotes isArray:', Array.isArray(additionalNotes));
-    console.log('🔍 additionalNotes length:', additionalNotes ? additionalNotes.length : 'null/undefined');
 
     const sql = `
       INSERT INTO reports (
@@ -719,7 +712,6 @@ const insertReport = (reportData) => {
     `;
 
     const additionalNotesString = JSON.stringify(additionalNotes);
-    console.log('🔍 JSON.stringify(additionalNotes):', additionalNotesString);
     
     const values = [
       customerId,
@@ -732,16 +724,12 @@ const insertReport = (reportData) => {
       analyst
     ];
 
-    console.log('SQL:', sql);
-    console.log('Values:', values);
 
     db.run(sql, values, function(err) {
       if (err) {
-        console.error('Database error:', err);
         reject(err);
         return;
       }
-      console.log('Report inserted with ID:', this.lastID);
       resolve(this.lastID);
     });
   });
@@ -750,7 +738,6 @@ const insertReport = (reportData) => {
 // Function to get reports by customer ID
 const getReportsByCustomerId = (customerId) => {
   return new Promise((resolve, reject) => {
-    console.log('Getting reports for customer ID:', customerId);
     
     const sql = `
       SELECT * FROM reports 
@@ -758,16 +745,12 @@ const getReportsByCustomerId = (customerId) => {
       ORDER BY created_at DESC
     `;
 
-    console.log('SQL:', sql);
-    console.log('Customer ID:', customerId);
 
     db.all(sql, [customerId], (err, reports) => {
       if (err) {
-        console.error('Database error:', err);
         reject(err);
         return;
       }
-      console.log('Found reports:', reports);
       resolve(reports);
     });
   });

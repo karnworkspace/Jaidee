@@ -36,7 +36,7 @@ function LoanProblemSelector({
         setOtherProblems(otherData);
 
       } catch (error) {
-        console.error('Error loading problems data:', error);
+        // Handle error silently
       } finally {
         setLoading(false);
       }
@@ -64,7 +64,7 @@ function LoanProblemSelector({
           [selectedCategory]: details
         }));
       } catch (error) {
-        console.error('Error loading problem details:', error);
+        // Handle error silently
       }
     };
 
@@ -86,7 +86,7 @@ function LoanProblemSelector({
         const data = await response.json();
         setSelectedSolution(data.solution);
       } catch (error) {
-        console.error('Error loading solution:', error);
+        // Handle error silently
       }
     };
 
@@ -138,7 +138,7 @@ function LoanProblemSelector({
       onProblemsChange(updatedProblems);
       onSolutionsChange(updatedSolutions);
     } catch (error) {
-      console.error('Error loading other problem solution:', error);
+      // Handle error silently
     }
   };
 

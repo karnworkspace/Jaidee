@@ -45,7 +45,6 @@ function Login({ onLogin }) {
         setError(data.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
       }
     } catch (error) {
-      console.error('Login error:', error);
       setError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
     } finally {
       setLoading(false);

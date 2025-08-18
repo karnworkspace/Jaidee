@@ -32,7 +32,6 @@ function SupabaseCustomers() {
       setProjects(projectsData || []);
       
     } catch (err) {
-      console.error('Error fetching Supabase data:', err);
       setError(err.message || 'ไม่สามารถดึงข้อมูลจาก Supabase ได้');
     } finally {
       setLoading(false);
