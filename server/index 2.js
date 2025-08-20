@@ -36,7 +36,8 @@ const {
   getOtherProblemSolution,
   getAllProblemsFlat
 } = require('./problemsData');
-
+const { supabaseCustomerService } = require('./supabaseService');
+const { testConnection } = require('./supabaseClient');
 
 const app = express();
 const port = 3001;
@@ -61,7 +62,15 @@ initializeDatabase()
   })
   .then(() => {
     console.log('Default users initialized');
-    console.log('✅ Running in SQLite-only mode');
+    // Test Supabase connection
+    return testConnection();
+  })
+  .then((connected) => {
+    if (connected) {
+      console.log('🔗 Supabase connection established');
+    } else {
+      console.log('⚠️  Supabase connection failed, running in SQLite-only mode');
+    }
   })
   .catch(err => {
     console.error('Failed to initialize database:', err);
@@ -1197,6 +1206,7 @@ const calculateEnhancedBankMatching = async (customerData) => {
     
     return sortedResults;
   } catch (error) {
+    console.error('Error in calculateEnhancedBankMatching:', error);
     // Return empty results if database query fails
     return {};
   }
@@ -1437,6 +1447,7 @@ app.post('/api/auth/login', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -1459,6 +1470,7 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Get user error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -1479,6 +1491,7 @@ app.get('/api/customers', authenticateToken, async (req, res) => {
     const customers = await getAllCustomers();
     res.json(customers);
   } catch (error) {
+    console.error('Error fetching customers:', error);
     res.status(500).json({ message: 'Error fetching customers', error: error.message });
   }
 });
@@ -1486,6 +1499,11 @@ app.get('/api/customers', authenticateToken, async (req, res) => {
 // API endpoint สำหรับบันทึกรายงาน
 app.post('/api/reports', authenticateToken, async (req, res) => {
   try {
+    console.log('📥 Received report data:', req.body);
+    console.log('🔍 additionalNotes in request:', req.body.additionalNotes);
+    console.log('🔍 additionalNotes type:', typeof req.body.additionalNotes);
+    console.log('🔍 additionalNotes isArray:', Array.isArray(req.body.additionalNotes));
+    console.log('🔍 additionalNotes length:', req.body.additionalNotes ? req.body.additionalNotes.length : 'null/undefined');
     
     const reportData = req.body;
     
@@ -1499,12 +1517,15 @@ app.post('/api/reports', authenticateToken, async (req, res) => {
     // บันทึกรายงานลงฐานข้อมูล
     const reportId = await insertReport(reportData);
     
+    console.log('✅ Report saved with ID:', reportId);
+    console.log('📤 Sending response with reportId:', reportId);
     
     res.status(201).json({ 
       message: 'Report saved successfully', 
       reportId: reportId 
     });
   } catch (error) {
+    console.error('Error saving report:', error);
     res.status(500).json({ 
       message: 'Error saving report', 
       error: error.message 
@@ -1515,15 +1536,18 @@ app.post('/api/reports', authenticateToken, async (req, res) => {
 // API endpoint สำหรับดึงข้อมูลรายงานที่บันทึกไว้
 app.get('/api/reports/:customerId', authenticateToken, async (req, res) => {
   try {
+    console.log('Fetching reports for customer ID:', req.params.customerId);
     
     const customerId = parseInt(req.params.customerId);
     
     // ดึงข้อมูลรายงานที่บันทึกไว้
     const reports = await getReportsByCustomerId(customerId);
     
+    console.log('Found reports:', reports);
     
     res.json(reports);
   } catch (error) {
+    console.error('Error fetching reports:', error);
     res.status(500).json({ 
       message: 'Error fetching reports', 
       error: error.message 
@@ -1575,6 +1599,7 @@ app.get('/api/customers/:id', authenticateToken, async (req, res) => {
       res.status(404).json({ message: 'Customer not found' });
     }
   } catch (error) {
+    console.error('Error fetching customer:', error);
     res.status(500).json({ message: 'Error fetching customer', error: error.message });
   }
 });
@@ -1628,6 +1653,7 @@ app.post('/api/customers', authenticateToken, requireRole(['admin', 'data_entry'
     
     res.status(201).json({ message: 'Customer added successfully', customer: newCustomer });
   } catch (error) {
+    console.error('Error adding customer:', error);
     res.status(500).json({ message: 'Error adding customer', error: error.message });
   }
 });
@@ -1730,6 +1756,7 @@ app.put('/api/customers/:id', authenticateToken, requireRole(['admin', 'data_ent
     
     res.json({ message: 'Customer updated successfully', customer: updatedCustomer });
   } catch (error) {
+    console.error('Error updating customer:', error);
     res.status(500).json({ message: 'Error updating customer', error: error.message });
   }
 });
@@ -1740,6 +1767,7 @@ app.get('/api/bank-rules', authenticateToken, async (req, res) => {
     const bankRules = await getAllBankRules();
     res.json(bankRules);
   } catch (error) {
+    console.error('Error fetching bank rules:', error);
     res.status(500).json({ message: 'Error fetching bank rules', error: error.message });
   }
 });
@@ -1755,6 +1783,7 @@ app.get('/api/bank-rules/:bankCode', authenticateToken, async (req, res) => {
     
     res.json(bankRule);
   } catch (error) {
+    console.error('Error fetching bank rule:', error);
     res.status(500).json({ message: 'Error fetching bank rule', error: error.message });
   }
 });
@@ -1770,6 +1799,7 @@ app.post('/api/bank-rules', async (req, res) => {
       id: bankRuleId 
     });
   } catch (error) {
+    console.error('Error adding bank rule:', error);
     res.status(500).json({ message: 'Error adding bank rule', error: error.message });
   }
 });
@@ -1795,6 +1825,7 @@ app.put('/api/bank-rules/:bankCode', authenticateToken, requireRole(['admin']), 
       bankRule: updatedBankRule 
     });
   } catch (error) {
+    console.error('Error updating bank rule:', error);
     res.status(500).json({ message: 'Error updating bank rule', error: error.message });
   }
 });
@@ -1899,6 +1930,7 @@ app.get('/api/problems/categories', authenticateToken, (req, res) => {
     const categories = getProblemCategories();
     res.json(categories);
   } catch (error) {
+    console.error('Error getting problem categories:', error);
     res.status(500).json({ message: 'Error getting problem categories' });
   }
 });
@@ -1910,6 +1942,7 @@ app.get('/api/problems/details/:category', authenticateToken, (req, res) => {
     const details = getProblemDetails(category);
     res.json(details);
   } catch (error) {
+    console.error('Error getting problem details:', error);
     res.status(500).json({ message: 'Error getting problem details' });
   }
 });
@@ -1922,6 +1955,7 @@ app.get('/api/problems/solution/:category/:detail', authenticateToken, (req, res
     const solution = getSolution(category, detail);
     res.json({ solution });
   } catch (error) {
+    console.error('Error getting solution:', error);
     res.status(500).json({ message: 'Error getting solution' });
   }
 });
@@ -1932,6 +1966,7 @@ app.get('/api/problems/other', authenticateToken, (req, res) => {
     const otherProblems = getAllOtherProblems();
     res.json(otherProblems);
   } catch (error) {
+    console.error('Error getting other problems:', error);
     res.status(500).json({ message: 'Error getting other problems' });
   }
 });
@@ -1943,6 +1978,7 @@ app.get('/api/problems/other-solution/:problem', authenticateToken, (req, res) =
     const solution = getOtherProblemSolution(problem);
     res.json({ solution });
   } catch (error) {
+    console.error('Error getting other problem solution:', error);
     res.status(500).json({ message: 'Error getting other problem solution' });
   }
 });
@@ -1953,6 +1989,7 @@ app.get('/api/problems/all', authenticateToken, (req, res) => {
     const problems = getAllProblemsFlat();
     res.json(problems);
   } catch (error) {
+    console.error('Error getting all problems:', error);
     res.status(500).json({ message: 'Error getting all problems' });
   }
 });
@@ -1987,6 +2024,7 @@ app.post('/api/import-csv', authenticateToken, requireRole(['admin', 'data_entry
         csvData.push(data);
       })
       .on('end', async () => {
+        console.log(`Found ${csvData.length} rows in CSV`);
         
         // Skip header rows (first 3 rows are headers)
         const dataRows = csvData.slice(3);
@@ -2011,6 +2049,7 @@ app.post('/api/import-csv', authenticateToken, requireRole(['admin', 'data_entry
             successCount++;
             
           } catch (error) {
+            console.error(`Error processing row ${processedCount}:`, error);
             errors.push({
               row: processedCount,
               name: `${row['ชื่อ']} ${row['สกุล']}`,
@@ -2032,10 +2071,12 @@ app.post('/api/import-csv', authenticateToken, requireRole(['admin', 'data_entry
         });
       })
       .on('error', (error) => {
+        console.error('Error reading CSV file:', error);
         res.status(500).json({ message: 'Error reading CSV file', error: error.message });
       });
 
   } catch (error) {
+    console.error('Error importing CSV:', error);
     res.status(500).json({ message: 'Error importing CSV', error: error.message });
   }
 });
@@ -2079,10 +2120,12 @@ app.get('/api/debug-csv-parsing', (req, res) => {
         });
       })
       .on('error', (error) => {
+        console.error('Error reading CSV file:', error);
         res.status(500).json({ message: 'Error reading CSV file', error: error.message });
       });
 
   } catch (error) {
+    console.error('Error debugging CSV:', error);
     res.status(500).json({ message: 'Error debugging CSV', error: error.message });
   }
 });
@@ -2110,6 +2153,7 @@ app.post('/api/clear-customers', authenticateToken, requireRole(['admin']), asyn
     
     res.json({ message: 'All customer data cleared successfully' });
   } catch (error) {
+    console.error('Error clearing customers:', error);
     res.status(500).json({ message: 'Error clearing customer data', error: error.message });
   }
 });
@@ -2158,6 +2202,160 @@ app.get('/api/test-csv', async (req, res) => {
 // ==========================================
 // SUPABASE API ENDPOINTS
 // ==========================================
+
+// GET /api/supabase/customers - ดึงข้อมูลลูกค้าทั้งหมดจาก Supabase
+app.get('/api/supabase/customers', async (req, res) => {
+  try {
+    const customers = await supabaseCustomerService.getAllCustomers();
+    res.json({ 
+      success: true, 
+      customers, 
+      count: customers.length,
+      source: 'supabase'
+    });
+  } catch (error) {
+    console.error('Supabase customers API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'supabase'
+    });
+  }
+});
+
+// GET /api/supabase/customers/:id - ดึงข้อมูลลูกค้าตาม ID จาก Supabase
+app.get('/api/supabase/customers/:id', async (req, res) => {
+  try {
+    const customer = await supabaseCustomerService.getCustomerById(req.params.id);
+    if (!customer) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Customer not found',
+        source: 'supabase'
+      });
+    }
+    res.json({ 
+      success: true, 
+      customer,
+      source: 'supabase'
+    });
+  } catch (error) {
+    console.error('Supabase customer by ID API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'supabase'
+    });
+  }
+});
+
+// GET /api/supabase/search - ค้นหาลูกค้าใน Supabase
+app.get('/api/supabase/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Search query is required',
+        source: 'supabase'
+      });
+    }
+    
+    const customers = await supabaseCustomerService.searchCustomers(q);
+    res.json({ 
+      success: true, 
+      customers, 
+      count: customers.length,
+      searchTerm: q,
+      source: 'supabase'
+    });
+  } catch (error) {
+    console.error('Supabase search API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'supabase'
+    });
+  }
+});
+
+// GET /api/supabase/projects - ดึงรายการโครงการที่ไม่ซ้ำจาก Supabase
+app.get('/api/supabase/projects', async (req, res) => {
+  try {
+    const projects = await supabaseCustomerService.getUniqueProjects();
+    res.json({ 
+      success: true, 
+      projects, 
+      count: projects.length,
+      source: 'supabase'
+    });
+  } catch (error) {
+    console.error('Supabase projects API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'supabase'
+    });
+  }
+});
+
+// GET /api/supabase/stats - สถิติข้อมูลลูกค้าจาก Supabase
+app.get('/api/supabase/stats', async (req, res) => {
+  try {
+    const stats = await supabaseCustomerService.getCustomerStats();
+    res.json({ 
+      success: true, 
+      stats,
+      source: 'supabase'
+    });
+  } catch (error) {
+    console.error('Supabase stats API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'supabase'
+    });
+  }
+});
+
+// GET /api/hybrid/customers - รวมข้อมูลจากทั้ง SQLite และ Supabase
+app.get('/api/hybrid/customers', async (req, res) => {
+  try {
+    // ดึงข้อมูลจาก SQLite
+    const sqliteCustomers = await getAllCustomers();
+    
+    // ดึงข้อมูลจาก Supabase
+    let supabaseCustomers = [];
+    try {
+      supabaseCustomers = await supabaseCustomerService.getAllCustomers();
+    } catch (supabaseError) {
+      console.warn('Supabase data unavailable:', supabaseError.message);
+    }
+    
+    res.json({ 
+      success: true, 
+      data: {
+        sqlite: {
+          customers: sqliteCustomers,
+          count: sqliteCustomers.length
+        },
+        supabase: {
+          customers: supabaseCustomers,
+          count: supabaseCustomers.length
+        }
+      },
+      totalCount: sqliteCustomers.length + supabaseCustomers.length,
+      source: 'hybrid'
+    });
+  } catch (error) {
+    console.error('Hybrid customers API error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      source: 'hybrid'
+    });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);

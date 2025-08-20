@@ -6,7 +6,6 @@
 - Frontend: React + Tailwind CSS
 - Backend: Node.js + Express
 - Data: RefBank + LoanBand (DSR)
- ** 12/8 supabase  เรียกdata ของ livnex ล่าสุด
 ## 🖥️ Setup
 
 ### 1. ติดตั้ง dependencies
