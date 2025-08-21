@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
 
         if (storedToken && storedUser) {
           // Verify token is still valid
-          const response = await fetch('http://localhost:3001/api/auth/me', {
+          const response = await fetch('https://jaidee-backend.onrender.com/api/auth/me', {
             headers: {
               'Authorization': `Bearer ${storedToken}`
             }
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       if (token) {
-        await fetch('http://localhost:3001/api/auth/logout', {
+        await fetch('https://jaidee-backend.onrender.com/api/auth/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
