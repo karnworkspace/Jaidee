@@ -148,7 +148,7 @@ function CustomerForm() {
     const loadCustomerData = async () => {
       if (isEditing) {
         try {
-          const response = await authenticatedFetch(`http://localhost:3001/api/customers/${customerId}`);
+          const response = await authenticatedFetch(`https://jaidee-backend.onrender.com/api/customers/${customerId}`);
           const data = await response.json();
           
           setFormData({
@@ -308,7 +308,7 @@ function CustomerForm() {
     e.preventDefault();
     
     try {
-      const url = isEditing ? `http://localhost:3001/api/customers/${customerId}` : 'http://localhost:3001/api/customers';
+      const url = isEditing ? `https://jaidee-backend.onrender.com/api/customers/${customerId}` : 'https://jaidee-backend.onrender.com/api/customers';
       const method = isEditing ? 'PUT' : 'POST';
 
       // Prepare data with updated problems and solutions

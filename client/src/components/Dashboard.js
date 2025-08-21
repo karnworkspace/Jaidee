@@ -27,7 +27,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await authenticatedFetch('http://localhost:3001/api/customers');
+        const response = await authenticatedFetch('https://jaidee-backend.onrender.com/api/customers');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -470,7 +470,7 @@ function Dashboard() {
                             e.stopPropagation();
                             try {
                               // ดึงข้อมูลลูกค้าที่มี detailedRentToOwnEstimation ครบถ้วน
-                              const response = await authenticatedFetch(`http://localhost:3001/api/customers/${customer.id}`);
+                              const response = await authenticatedFetch(`https://jaidee-backend.onrender.com/api/customers/${customer.id}`);
                               if (response.ok) {
                                 const customerWithDetails = await response.json();
                                 setSelectedCustomer(customerWithDetails);

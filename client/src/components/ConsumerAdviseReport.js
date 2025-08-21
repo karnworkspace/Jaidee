@@ -16,7 +16,7 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
 
   const loadSavedReportData = useCallback(async () => {
     try {
-      const response = await authenticatedFetch(`http://localhost:3001/api/reports/${customerData.id}`);
+      const response = await authenticatedFetch(`https://jaidee-backend.onrender.com/api/reports/${customerData.id}`);
 
       if (response.ok) {
         const savedData = await response.json();
@@ -533,7 +533,7 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
       };
 
       // บันทึกลงฐานข้อมูล
-      const response = await authenticatedFetch('http://localhost:3001/api/reports', {
+      const response = await authenticatedFetch('https://jaidee-backend.onrender.com/api/reports', {
         method: 'POST',
         body: JSON.stringify(reportDataToSave)
       });

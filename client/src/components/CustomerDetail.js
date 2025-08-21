@@ -15,7 +15,7 @@ function CustomerDetail() {
     const fetchCustomerDetails = async () => {
       if (customerId) {
         try {
-          const response = await authenticatedFetch(`http://localhost:3001/api/customers/${customerId}`);
+          const response = await authenticatedFetch(`https://jaidee-backend.onrender.com/api/customers/${customerId}`);
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
