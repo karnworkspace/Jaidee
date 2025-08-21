@@ -26,12 +26,12 @@ function LoanProblemSelector({
         setLoading(true);
         
         // Load categories
-        const categoriesResponse = await authenticatedFetch('http://localhost:3001/api/problems/categories');
+        const categoriesResponse = await authenticatedFetch('https://jaidee-backend.onrender.com/api/problems/categories');
         const categoriesData = await categoriesResponse.json();
         setCategories(categoriesData);
 
         // Load other problems
-        const otherResponse = await authenticatedFetch('http://localhost:3001/api/problems/other');
+        const otherResponse = await authenticatedFetch('https://jaidee-backend.onrender.com/api/problems/other');
         const otherData = await otherResponse.json();
         setOtherProblems(otherData);
 
@@ -56,7 +56,7 @@ function LoanProblemSelector({
 
       try {
         const response = await authenticatedFetch(
-          `http://localhost:3001/api/problems/details/${encodeURIComponent(selectedCategory)}`
+          `https://jaidee-backend.onrender.com/api/problems/details/${encodeURIComponent(selectedCategory)}`
         );
         const details = await response.json();
         setProblemDetails(prev => ({
@@ -81,7 +81,7 @@ function LoanProblemSelector({
 
       try {
         const response = await authenticatedFetch(
-          `http://localhost:3001/api/problems/solution/${encodeURIComponent(selectedCategory)}/${encodeURIComponent(selectedDetail)}`
+          `https://jaidee-backend.onrender.com/api/problems/solution/${encodeURIComponent(selectedCategory)}/${encodeURIComponent(selectedDetail)}`
         );
         const data = await response.json();
         setSelectedSolution(data.solution);
@@ -128,7 +128,7 @@ function LoanProblemSelector({
 
     try {
       const response = await authenticatedFetch(
-        `http://localhost:3001/api/problems/other-solution/${encodeURIComponent(problem)}`
+        `https://jaidee-backend.onrender.com/api/problems/other-solution/${encodeURIComponent(problem)}`
       );
       const data = await response.json();
       
