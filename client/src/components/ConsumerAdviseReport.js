@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './ConsumerAdviseReport.module.css';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import CustomerReportPdf from './CustomerReportPdf';
 
 const ConsumerAdviseReport = ({ customerData, onClose }) => {
   const { authenticatedFetch } = useAuth();
@@ -577,6 +579,14 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
     );
   }
 
+  const pdfData = {
+    ...reportData,
+    additionalNotes,
+    debtLimit,
+    loanTermAfter,
+    selectedInstallment,
+  };
+
   return (
     <div className={styles.reportContainer}>
       {/* Print Controls */}
@@ -588,6 +598,19 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
           <button onClick={handlePrint} className={styles.printButton}>
             🖨️ พิมพ์ Report
           </button>
+          <PDFDownloadLink
+            document={<CustomerReportPdf data={pdfData} />}
+            fileName="report.pdf"
+            className={styles.downloadLink}
+          >
+            {({ loading }) => (
+              <span
+                className={`${styles.downloadButton} ${loading ? styles.downloadButtonDisabled : ''}`}
+              >
+                {loading ? '⏳ กำลังเตรียม...' : '⬇️ Download'}
+              </span>
+            )}
+          </PDFDownloadLink>
           <button onClick={onClose} className={styles.closeButton}>
             ❌ ปิด
           </button>
