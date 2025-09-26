@@ -137,6 +137,1344 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
     initializeReport();
   }, [initializeReport]);
 
+  const handleExportHTML = async () => {
+    try {
+      if (!reportData) {
+        alert('กรุณารอข้อมูลโหลดเสร็จก่อน Export');
+        return;
+      }
+
+      // แสดงสถานะกำลัง Export
+      const exportButton = document.querySelector('.exportButton');
+      if (exportButton) {
+        exportButton.textContent = '📄 กำลัง Export...';
+        exportButton.disabled = true;
+      }
+
+      // สร้าง HTML content ที่สมบูรณ์
+      const htmlContent = `
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายงาน Consumer Advise - ${reportData.name || 'Report'}</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Sarabun', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: white;
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: white;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #333;
+      padding-bottom: 20px;
+    }
+
+    .logo h2 {
+      color: #007bff;
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .title {
+      text-align: center;
+      flex: 1;
+      margin: 0 20px;
+    }
+
+    .title h1 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 28px;
+    }
+
+    .title p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .date p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 30px;
+      page-break-inside: avoid;
+    }
+
+    .section h3 {
+      color: #007bff;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    /* Customer Info */
+    .customer-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .info-row {
+      display: flex;
+      align-items: center;
+    }
+
+    .label {
+      font-weight: bold;
+      min-width: 120px;
+      color: #333;
+    }
+
+    .value {
+      color: #666;
+      margin-left: 10px;
+    }
+
+    /* Problems */
+    .problems {
+      margin-left: 20px;
+    }
+
+    .problem-item {
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-left: 4px solid #dc3545;
+      border-radius: 4px;
+    }
+
+    /* Action Plan */
+    .action-plan h4 {
+      color: #007bff;
+      margin: 20px 0 10px 0;
+      font-size: 16px;
+    }
+
+    .action-plan p {
+      margin-bottom: 8px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    th {
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+
+    /* Disclaimer */
+    .disclaimer-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #dc3545;
+      page-break-inside: avoid;
+    }
+
+    .disclaimer-section p {
+      margin: 15px 0;
+      line-height: 1.6;
+      text-align: justify;
+    }
+
+    .acknowledgement {
+      margin: 25px 0;
+      padding: 20px;
+      background: #e7f3ff;
+      border-radius: 5px;
+      text-align: center;
+    }
+
+    .acknowledgement p {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    .signature-section {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .advice-note {
+      margin: 20px 0;
+      padding: 15px;
+      background: #fff3cd;
+      border-radius: 5px;
+      border-left: 4px solid #ffc107;
+    }
+
+    .analyst {
+      text-align: right;
+      margin-top: 30px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* Contact Section */
+    .contact-section {
+      margin-top: 40px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .contact-info p {
+      margin: 8px 0;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .disclaimer {
+      font-size: 12px;
+      color: #666;
+      font-style: italic;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    /* Print Styles */
+    @media print {
+      @page {
+        size: A4;
+        margin: 1.5cm;
+      }
+
+      body {
+        font-size: 12px;
+      }
+
+      .section {
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+      }
+
+      .section:nth-child(5) { /* ข้อมูลรายได้และภาระหนี้ */
+        page-break-before: page;
+      }
+
+      .section:nth-child(8) { /* ตารางเช่าออม */
+        page-break-before: page;
+      }
+
+      .section:nth-child(11) { /* ข้อสงวนสิทธิ์ */
+        page-break-before: page;
+      }
+
+      table {
+        page-break-inside: avoid;
+      }
+
+      th, td {
+        padding: 4px;
+        font-size: 10px;
+      }
+
+      .section h3 {
+        page-break-after: avoid;
+        font-size: 16px;
+      }
+
+      .title h1 {
+        font-size: 20px;
+      }
+
+      .logo h2 {
+        font-size: 18px;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+
+      .header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .customer-info {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 10px;
+      }
+
+      th, td {
+        padding: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <h2>LIVNEX ใจดี</h2>
+      </div>
+      <div class="title">
+        <h1>Consumer Advise Article</h1>
+        <p>เอกสารให้คำแนะนำแก่ลูกค้าของ LIVNEX เพื่อเตรียมความพร้อมในการยื่นขอสินเชื่อกับธนาคาร</p>
+      </div>
+      <div class="date">
+        <p>วันที่: ${reportData.reportDate}</p>
+      </div>
+    </div>
+
+    <!-- ข้อมูลทั่วไป -->
+    <div class="section">
+      <h3>ข้อมูลทั่วไป</h3>
+      <div class="customer-info">
+        <div class="info-row">
+          <span class="label">ชื่อ:</span>
+          <span class="value">${reportData.name || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">อายุ:</span>
+          <span class="value">${reportData.age || 'ไม่ระบุ'} ปี</span>
+        </div>
+        <div class="info-row">
+          <span class="label">เบอร์โทร:</span>
+          <span class="value">${reportData.phone || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">อาชีพ:</span>
+          <span class="value">${reportData.job || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">ตำแหน่ง:</span>
+          <span class="value">${reportData.position || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">โครงการ:</span>
+          <span class="value">${reportData.projectName || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">เลขห้อง:</span>
+          <span class="value">${reportData.unit || reportData.roomNumber || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">มูลค่าเช่าออม:</span>
+          <span class="value">${(() => {
+            const propertyPrice = parseFloat(reportData.propertyPrice) || parseFloat(reportData.propertyValue) || 0;
+            const discount = parseFloat(reportData.discount) || 0;
+            return (propertyPrice - discount).toLocaleString();
+          })()} บาท</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ปัญหาด้านสินเชื่อ -->
+    <div class="section">
+      <h3>ปัญหาด้านสินเชื่อ</h3>
+      <div class="problems">
+        ${Array.isArray(reportData.problems) && reportData.problems.length > 0
+          ? reportData.problems.map((problem, index) =>
+              `<div class="problem-item">${index + 1}. ${problem}</div>`
+            ).join('')
+          : '<div class="problem-item">ไม่มีข้อมูลปัญหาด้านสินเชื่อ</div>'
+        }
+      </div>
+    </div>
+
+    <!-- แผนการเตรียมยื่นขอสินเชื่อ -->
+    <div class="section">
+      <h3>ทำอย่างไรถึงสามารถดำเนินการแผนการเตรียมยื่นข้อสินเชื่อ</h3>
+      <div class="action-plan">
+        <h4>สิ่งที่ต้องปฏิบัติ:</h4>
+        ${(() => {
+          const originalPlans = reportData.actionPlan && Array.isArray(reportData.actionPlan) && reportData.actionPlan.length > 0
+            ? reportData.actionPlan
+            : ['ไม่มีแผนการดำเนินการที่ระบุ'];
+
+          const additionalPlans = additionalNotes
+            .map((note, index) => ({ note: note.trim(), index }))
+            .filter(item => item.note)
+            .map(item => `หมายเหตุ${item.index + 1}: ${item.note}`);
+
+          const allPlans = [...originalPlans, ...additionalPlans];
+
+          return allPlans.map((plan, index) => `<p>${index + 1}. ${plan}</p>`).join('');
+        })()}
+      </div>
+    </div>
+
+    <!-- ข้อมูลรายได้และภาระหนี้ -->
+    <div class="section">
+      <h3>ข้อมูลรายได้และภาระหนี้</h3>
+      <div class="customer-info">
+        <div class="info-row">
+          <span class="label">รายได้ต่อเดือน:</span>
+          <span class="value">${reportData.income?.toLocaleString() || '0'} บาท</span>
+        </div>
+        <div class="info-row">
+          <span class="label">ภาระหนี้ต่อเดือน:</span>
+          <span class="value">${reportData.debt?.toLocaleString() || '0'} บาท</span>
+        </div>
+        <div class="info-row">
+          <span class="label">ระยะเวลาขอสินเชื่อ:</span>
+          <span class="value">${reportData.loanTerm || '40'} ปี</span>
+        </div>
+        <div class="info-row">
+          <span class="label">LTV:</span>
+          <span class="value">${reportData.ltv || '100'}% (${reportData.ltvNote || 'House 1 (บ้านหลังที่ 1)'})</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ตารางประมาณการวงเงินสินเชื่อ -->
+    <div class="section">
+      <h3>ตารางประมาณการวงเงินสินเชื่อ (หน่วย : บาท)</h3>
+      ${reportData.loanEstimationTable && reportData.loanEstimationTable.length > 0
+        ? `<table>
+            <thead>
+              <tr>
+                <th>ภาระหนี้ (บาท/เดือน)</th>
+                <th>40 ปี</th>
+                <th>30 ปี</th>
+                <th>20 ปี</th>
+                <th>10 ปี</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reportData.loanEstimationTable.map((scenario) => {
+                const label = scenario.label || '';
+                const debt = scenario.debt || 0;
+                const loanAmounts = scenario.loanAmounts || {};
+                return `<tr>
+                  <td>${label} (${debt.toLocaleString()})</td>
+                  <td>${loanAmounts[40] ? loanAmounts[40].toLocaleString() : '0'}</td>
+                  <td>${loanAmounts[30] ? loanAmounts[30].toLocaleString() : '0'}</td>
+                  <td>${loanAmounts[20] ? loanAmounts[20].toLocaleString() : '0'}</td>
+                  <td>${loanAmounts[10] ? loanAmounts[10].toLocaleString() : '0'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>`
+        : '<p>ไม่มีข้อมูลตารางประมาณการวงเงินสินเชื่อ</p>'
+      }
+    </div>
+
+    <!-- ข้อมูลเช่าออม -->
+    <div class="section">
+      <h3>ข้อมูลเช่าออม</h3>
+      <div class="customer-info">
+        <div class="info-row">
+          <span class="label">มูลค่าเช่าออม:</span>
+          <span class="value">${reportData.propertyValue?.toLocaleString() || '0'} บาท</span>
+        </div>
+        <div class="info-row">
+          <span class="label">อัตราค่าเช่าออม:</span>
+          <span class="value">${reportData.monthlyRent?.toLocaleString() || '0'} บาท/เดือน</span>
+        </div>
+        <div class="info-row">
+          <span class="label">คาดว่าลูกค้าจะชำระค่าเช่าออมงวดที่:</span>
+          <span class="value">${selectedInstallment} งวด</span>
+        </div>
+        <div class="info-row">
+          <span class="label">เงินต้นค่าทรัพย์คงเหลือ ณ สิ้นงวด:</span>
+          <span class="value">${(() => {
+            if (reportData.amortizationTable && reportData.amortizationTable.length > 0) {
+              const selectedRow = reportData.amortizationTable.find(row => {
+                const installment = row.installment || row.period || 0;
+                return installment === selectedInstallment;
+              });
+              return selectedRow ? (selectedRow.remainingPrincipal || selectedRow.remaining || 0).toLocaleString() : '0';
+            }
+            return '0';
+          })()} บาท</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- จำนวนเงินจำกัดภาระหนี้ -->
+    <div class="section">
+      <h3>จำนวนเงินจำกัดภาระหนี้</h3>
+      <p><strong>* ลูกค้าต้องชำระหนี้ทุกประเภท ตามกำหนดเวลา (ไม่ค้างชำระเกินกำหนด) และควบคุมภาระหนี้ให้ไม่เกิน ${debtLimit} บาท/เดือน</strong></p>
+    </div>
+
+    <!-- ระยะเวลาขอสินเชื่อหลังแผน -->
+    <div class="section">
+      <h3>ระยะเวลาขอสินเชื่อหลังแผน</h3>
+      <p><strong>ระยะเวลาขอสินเชื่อหลังแผน: ${loanTermAfter} ปี</strong></p>
+    </div>
+
+    <!-- ตารางเปรียบเทียบ -->
+    <div class="section">
+      <h3>ตารางเปรียบเทียบ</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>รายการ</th>
+            <th>ก่อนแผน</th>
+            <th>หลังแผน</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ภาระหนี้</td>
+            <td>${reportData.debt?.toLocaleString() || '0'} บาท/เดือน</td>
+            <td>${debtLimit} บาท/เดือน</td>
+          </tr>
+          <tr>
+            <td>ระยะเวลาขอสินเชื่อ</td>
+            <td>${reportData.loanTerm || '40'} ปี</td>
+            <td>${loanTermAfter} ปี</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ตารางเช่าออม -->
+    <div class="section">
+      <h3>ผ่อนแล้ว เงินต้นเหลือเท่าไหร่ ประมาณการตารางเช่าออม</h3>
+      <p><strong>มูลค่าเช่าออม:</strong> ${reportData.propertyValue?.toLocaleString() || '0'} บาท</p>
+      <p><strong>อัตราค่าเช่าออม:</strong> ${reportData.monthlyRent?.toLocaleString() || '0'}</p>
+
+      ${reportData.amortizationTable && reportData.amortizationTable.length > 0
+        ? `<table>
+            <thead>
+              <tr>
+                <th>งวดที่</th>
+                <th>เงินออมสะสม (หน่วย : บาท)</th>
+                <th>เงินต้นค่าทรัพย์คงเหลือ ณ สิ้นงวด (หน่วย : บาท)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reportData.amortizationTable
+                .filter(row => {
+                  const installment = row.installment || row.period || 0;
+                  if (typeof installment === 'string' && installment.includes('สิ้นงวด')) {
+                    return true;
+                  }
+                  if (typeof installment === 'number') {
+                    return [12, 24, 36].includes(installment);
+                  }
+                  return false;
+                })
+                .map((row) => {
+                  const installment = row.installment || row.period || 0;
+                  const savings = row.payment || row.savings || 0;
+                  const remaining = row.remainingPrincipal || row.remaining || 0;
+
+                  return `<tr>
+                    <td>${installment}</td>
+                    <td>${savings ? savings.toLocaleString() : '0'}</td>
+                    <td>${remaining ? remaining.toLocaleString() : '0'}</td>
+                  </tr>`;
+                }).join('')}
+            </tbody>
+          </table>`
+        : '<p>ไม่มีข้อมูลตารางเช่าออม</p>'
+      }
+
+      <p class="disclaimer">
+        ***ตัวเลขประมาณการ ทั้งนี้ให้ใช้ ตามเอกสารแนบท้ายสัญญา 4: ตารางแสดงอัตราค่าเช่าออมบ้าน
+      </p>
+
+      <p class="analyst">
+        <strong>วิเคราะห์โดย:</strong> ${reportData.analyst}
+      </p>
+    </div>
+
+    <!-- ข้อสงวนสิทธิ์ในความรับผิด -->
+    <div class="section">
+      <h3>ข้อสงวนสิทธิ์ในความรับผิด</h3>
+      <div class="disclaimer-section">
+        <p>
+          ข้อมูลและคำแนะนำในเอกสารนี้จัดทำขึ้นเพื่อวัตถุประสงค์ในการวิเคราะห์เท่านั้น และอาจมีข้อผิดพลาด ความคลาดเคลื่อน หรือไม่เหมาะสมกับสถานการณ์ในอนาคต หรือการเปลี่ยนแปลงของนโยบายต่างๆ บริษัท เงินสดใจดี จำกัด ("บริษัท") ขอสงวนสิทธิ์ในการปรับปรุง เปลี่ยนแปลง หรือยกเลิกข้อมูลและบริการต่างๆ โดยไม่ต้องแจ้งให้ทราบล่วงหน้า
+        </p>
+        <p>
+          ผู้ใช้บริการควรปรึกษาผู้เชี่ยวชาญเพื่อขอคำแนะนำที่เหมาะสม และบริษัทจะไม่รับผิดชอบต่อความเสียหายใดๆ ทั้งทางตรงและทางอ้อมที่อาจเกิดขึ้นจากการใช้บริการหรือคำแนะนำของบริษัท
+        </p>
+
+        <div class="acknowledgement">
+          <p><strong>ข้าพเจ้ารับทราบ และจะปฏิบัติตามข้อแนะนำดังกล่าว</strong></p>
+          <div class="signature-section">
+            <p>ลงชื่อ: _________________ (ผู้เช่าออม)</p>
+          </div>
+        </div>
+
+        <div class="advice-note">
+          <p><strong>หมายเหตุ:</strong> คำแนะนำสำหรับลูกค้า Livnex เพื่อเตรียมความพร้อมในการยื่นขอสินเชื่อกับธนาคารนี้ เป็นเพียงคำแนะนำจากบริษัท เงินสดใจดี จำกัด เท่านั้น เงื่อนไขอื่นๆ ขึ้นอยู่กับเกณฑ์การพิจารณาของแต่ละธนาคาร</p>
+        </div>
+
+        <p class="analyst">
+          <strong>วิเคราะห์โดย:</strong> ${reportData.analyst}
+        </p>
+      </div>
+    </div>
+
+    <!-- ข้อมูลติดต่อ -->
+    <div class="contact-section">
+      <div class="contact-info">
+        <p><strong>LINE:</strong> @livnex</p>
+        <p><strong>Website:</strong> www.livnex.co</p>
+        <p><strong>Call:</strong> 1776</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+      `;
+
+      // สร้างไฟล์ HTML และดาวน์โหลด
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `รายงาน_Consumer_Advise_${customerData?.name || customerData?.customer_name || 'Report'}_${new Date().toLocaleDateString('th-TH')}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      alert('✅ Export HTML เรียบร้อยแล้ว!\n\nไฟล์: ' + link.download + '\n\n💡 Tips: เปิดไฟล์ HTML ใน browser แล้วกด Ctrl+P เพื่อพิมพ์เป็น PDF');
+
+    } catch (error) {
+      console.error('HTML Export Error:', error);
+      alert('❌ เกิดข้อผิดพลาดใน Export HTML\n\nกรุณาลองใหม่อีกครั้ง\n\nรายละเอียด: ' + error.message);
+    } finally {
+      // รีเซ็ตปุ่ม
+      const exportButton = document.querySelector('.exportButton');
+      if (exportButton) {
+        exportButton.textContent = '📄 Export HTML';
+        exportButton.disabled = false;
+      }
+    }
+  };
+
+  const handleQuickPDF = async () => {
+    try {
+      if (!reportData) {
+        alert('กรุณารอข้อมูลโหลดเสร็จก่อน Export');
+        return;
+      }
+
+      // แสดงสถานะกำลัง Export
+      const quickPdfButton = document.querySelector('.quickPdfButton');
+      if (quickPdfButton) {
+        quickPdfButton.textContent = '🖨️ กำลังเตรียม PDF...';
+        quickPdfButton.disabled = true;
+      }
+
+      // สร้าง HTML content เหมือน Export HTML
+      const htmlContent = `
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายงาน Consumer Advise - ${reportData.name || 'Report'}</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Sarabun', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: white;
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: white;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #333;
+      padding-bottom: 20px;
+    }
+
+    .logo h2 {
+      color: #007bff;
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .title {
+      text-align: center;
+      flex: 1;
+      margin: 0 20px;
+    }
+
+    .title h1 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 28px;
+    }
+
+    .title p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .date p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 30px;
+      page-break-inside: avoid;
+    }
+
+    .section h3 {
+      color: #007bff;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    /* Customer Info */
+    .customer-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .info-row {
+      display: flex;
+      align-items: center;
+    }
+
+    .label {
+      font-weight: bold;
+      min-width: 120px;
+      color: #333;
+    }
+
+    .value {
+      color: #666;
+      margin-left: 10px;
+    }
+
+    /* Problems */
+    .problems {
+      margin-left: 20px;
+    }
+
+    .problem-item {
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-left: 4px solid #dc3545;
+      border-radius: 4px;
+    }
+
+    /* Action Plan */
+    .action-plan h4 {
+      color: #007bff;
+      margin: 20px 0 10px 0;
+      font-size: 16px;
+    }
+
+    .action-plan p {
+      margin-bottom: 8px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    th {
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+
+    /* Disclaimer */
+    .disclaimer-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #dc3545;
+      page-break-inside: avoid;
+    }
+
+    .disclaimer-section p {
+      margin: 15px 0;
+      line-height: 1.6;
+      text-align: justify;
+    }
+
+    .acknowledgement {
+      margin: 25px 0;
+      padding: 20px;
+      background: #e7f3ff;
+      border-radius: 5px;
+      text-align: center;
+    }
+
+    .acknowledgement p {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    .signature-section {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .advice-note {
+      margin: 20px 0;
+      padding: 15px;
+      background: #fff3cd;
+      border-radius: 5px;
+      border-left: 4px solid #ffc107;
+    }
+
+    .analyst {
+      text-align: right;
+      margin-top: 30px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* Contact Section */
+    .contact-section {
+      margin-top: 40px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .contact-info p {
+      margin: 8px 0;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .disclaimer {
+      font-size: 12px;
+      color: #666;
+      font-style: italic;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    /* Print Styles - Optimized for Quick PDF */
+    @media print {
+      @page {
+        size: A4;
+        margin: 1.5cm;
+        -webkit-print-color-adjust: exact;
+      }
+
+      body {
+        font-size: 11px;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .container {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .section {
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+      }
+
+      /* Strategic page breaks for better layout */
+      .section:nth-child(5) { /* ข้อมูลรายได้และภาระหนี้ */
+        page-break-before: page;
+      }
+
+      .section:nth-child(8) { /* ตารางเช่าออม */
+        page-break-before: page;
+      }
+
+      .section:nth-child(11) { /* ข้อสงวนสิทธิ์ */
+        page-break-before: page;
+      }
+
+      table {
+        page-break-inside: avoid;
+      }
+
+      th, td {
+        padding: 4px;
+        font-size: 9px;
+      }
+
+      .section h3 {
+        page-break-after: avoid;
+        font-size: 14px;
+      }
+
+      .title h1 {
+        font-size: 18px;
+      }
+
+      .logo h2 {
+        font-size: 16px;
+      }
+
+      /* Ensure colors print */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+
+    /* Auto-open print dialog */
+    @media screen {
+      body {
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+
+      body.loaded {
+        opacity: 1;
+      }
+    }
+  </style>
+  <script>
+    // Auto-trigger print dialog when page loads
+    window.addEventListener('load', function() {
+      document.body.classList.add('loaded');
+      setTimeout(function() {
+        window.print();
+      }, 500);
+    });
+
+    // Auto-close window after print dialog
+    window.addEventListener('afterprint', function() {
+      setTimeout(function() {
+        window.close();
+      }, 1000);
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <h2>LIVNEX ใจดี</h2>
+      </div>
+      <div class="title">
+        <h1>Consumer Advise Article</h1>
+        <p>เอกสารให้คำแนะนำแก่ลูกค้าของ LIVNEX เพื่อเตรียมความพร้อมในการยื่นขอสินเชื่อกับธนาคาร</p>
+      </div>
+      <div class="date">
+        <p>วันที่: ${reportData.reportDate}</p>
+      </div>
+    </div>
+
+    <!-- ข้อมูลทั่วไป -->
+    <div class="section">
+      <h3>ข้อมูลทั่วไป</h3>
+      <div class="customer-info">
+        <div class="info-row">
+          <span class="label">ชื่อ:</span>
+          <span class="value">${reportData.name || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">อายุ:</span>
+          <span class="value">${reportData.age || 'ไม่ระบุ'} ปี</span>
+        </div>
+        <div class="info-row">
+          <span class="label">เบอร์โทร:</span>
+          <span class="value">${reportData.phone || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">อาชีพ:</span>
+          <span class="value">${reportData.job || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">ตำแหน่ง:</span>
+          <span class="value">${reportData.position || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">โครงการ:</span>
+          <span class="value">${reportData.projectName || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">เลขห้อง:</span>
+          <span class="value">${reportData.unit || reportData.roomNumber || 'ไม่ระบุ'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">มูลค่าเช่าออม:</span>
+          <span class="value">${(() => {
+            const propertyPrice = parseFloat(reportData.propertyPrice) || parseFloat(reportData.propertyValue) || 0;
+            const discount = parseFloat(reportData.discount) || 0;
+            return (propertyPrice - discount).toLocaleString();
+          })()} บาท</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ปัญหาด้านสินเชื่อ -->
+    <div class="section">
+      <h3>ปัญหาด้านสินเชื่อ</h3>
+      <div class="problems">
+        ${Array.isArray(reportData.problems) && reportData.problems.length > 0
+          ? reportData.problems.map((problem, index) =>
+              `<div class="problem-item">${index + 1}. ${problem}</div>`
+            ).join('')
+          : '<div class="problem-item">ไม่มีข้อมูลปัญหาด้านสินเชื่อ</div>'
+        }
+      </div>
+    </div>
+
+    <!-- แผนการเตรียมยื่นขอสินเชื่อ -->
+    <div class="section">
+      <h3>ทำอย่างไรถึงสามารถดำเนินการแผนการเตรียมยื่นข้อสินเชื่อ</h3>
+      <div class="action-plan">
+        <h4>สิ่งที่ต้องปฏิบัติ:</h4>
+        ${(() => {
+          const originalPlans = reportData.actionPlan && Array.isArray(reportData.actionPlan) && reportData.actionPlan.length > 0
+            ? reportData.actionPlan
+            : ['ไม่มีแผนการดำเนินการที่ระบุ'];
+
+          const additionalPlans = additionalNotes
+            .map((note, index) => ({ note: note.trim(), index }))
+            .filter(item => item.note)
+            .map(item => `หมายเหตุ${item.index + 1}: ${item.note}`);
+
+          const allPlans = [...originalPlans, ...additionalPlans];
+
+          return allPlans.map((plan, index) => `<p>${index + 1}. ${plan}</p>`).join('');
+        })()}
+      </div>
+    </div>
+
+    <!-- ข้อมูลรายได้และภาระหนี้ -->
+    <div class="section">
+      <h3>ข้อมูลรายได้และภาระหนี้</h3>
+      <div class="customer-info">
+        <div class="info-row">
+          <span class="label">รายได้ต่อเดือน:</span>
+          <span class="value">${reportData.income?.toLocaleString() || '0'} บาท</span>
+        </div>
+        <div class="info-row">
+          <span class="label">ภาระหนี้ต่อเดือน:</span>
+          <span class="value">${reportData.debt?.toLocaleString() || '0'} บาท</span>
+        </div>
+        <div class="info-row">
+          <span class="label">ระยะเวลาขอสินเชื่อ:</span>
+          <span class="value">${reportData.loanTerm || '40'} ปี</span>
+        </div>
+        <div class="info-row">
+          <span class="label">LTV:</span>
+          <span class="value">${reportData.ltv || '100'}% (${reportData.ltvNote || 'House 1 (บ้านหลังที่ 1)'})</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ตารางประมาณการวงเงินสินเชื่อ -->
+    <div class="section">
+      <h3>ตารางประมาณการวงเงินสินเชื่อ (หน่วย : บาท)</h3>
+      ${reportData.loanEstimationTable && reportData.loanEstimationTable.length > 0
+        ? `<table>
+            <thead>
+              <tr>
+                <th>ภาระหนี้ (บาท/เดือน)</th>
+                <th>40 ปี</th>
+                <th>30 ปี</th>
+                <th>20 ปี</th>
+                <th>10 ปี</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reportData.loanEstimationTable.map((scenario) => {
+                const label = scenario.label || '';
+                const debt = scenario.debt || 0;
+                const loanAmounts = scenario.loanAmounts || {};
+                return `<tr>
+                  <td>${label} (${debt.toLocaleString()})</td>
+                  <td>${loanAmounts[40] ? loanAmounts[40].toLocaleString() : '0'}</td>
+                  <td>${loanAmounts[30] ? loanAmounts[30].toLocaleString() : '0'}</td>
+                  <td>${loanAmounts[20] ? loanAmounts[20].toLocaleString() : '0'}</td>
+                  <td>${loanAmounts[10] ? loanAmounts[10].toLocaleString() : '0'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>`
+        : '<p>ไม่มีข้อมูลตารางประมาณการวงเงินสินเชื่อ</p>'
+      }
+    </div>
+
+    <!-- ข้อมูลเช่าออม -->
+    <div class="section">
+      <h3>ข้อมูลเช่าออม</h3>
+      <div class="customer-info">
+        <div class="info-row">
+          <span class="label">มูลค่าเช่าออม:</span>
+          <span class="value">${reportData.propertyValue?.toLocaleString() || '0'} บาท</span>
+        </div>
+        <div class="info-row">
+          <span class="label">อัตราค่าเช่าออม:</span>
+          <span class="value">${reportData.monthlyRent?.toLocaleString() || '0'} บาท/เดือน</span>
+        </div>
+        <div class="info-row">
+          <span class="label">คาดว่าลูกค้าจะชำระค่าเช่าออมงวดที่:</span>
+          <span class="value">${selectedInstallment} งวด</span>
+        </div>
+        <div class="info-row">
+          <span class="label">เงินต้นค่าทรัพย์คงเหลือ ณ สิ้นงวด:</span>
+          <span class="value">${(() => {
+            if (reportData.amortizationTable && reportData.amortizationTable.length > 0) {
+              const selectedRow = reportData.amortizationTable.find(row => {
+                const installment = row.installment || row.period || 0;
+                return installment === selectedInstallment;
+              });
+              return selectedRow ? (selectedRow.remainingPrincipal || selectedRow.remaining || 0).toLocaleString() : '0';
+            }
+            return '0';
+          })()} บาท</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- จำนวนเงินจำกัดภาระหนี้ -->
+    <div class="section">
+      <h3>จำนวนเงินจำกัดภาระหนี้</h3>
+      <p><strong>* ลูกค้าต้องชำระหนี้ทุกประเภท ตามกำหนดเวลา (ไม่ค้างชำระเกินกำหนด) และควบคุมภาระหนี้ให้ไม่เกิน ${debtLimit} บาท/เดือน</strong></p>
+    </div>
+
+    <!-- ระยะเวลาขอสินเชื่อหลังแผน -->
+    <div class="section">
+      <h3>ระยะเวลาขอสินเชื่อหลังแผน</h3>
+      <p><strong>ระยะเวลาขอสินเชื่อหลังแผน: ${loanTermAfter} ปี</strong></p>
+    </div>
+
+    <!-- ตารางเปรียบเทียบ -->
+    <div class="section">
+      <h3>ตารางเปรียบเทียบ</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>รายการ</th>
+            <th>ก่อนแผน</th>
+            <th>หลังแผน</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ภาระหนี้</td>
+            <td>${reportData.debt?.toLocaleString() || '0'} บาท/เดือน</td>
+            <td>${debtLimit} บาท/เดือน</td>
+          </tr>
+          <tr>
+            <td>ระยะเวลาขอสินเชื่อ</td>
+            <td>${reportData.loanTerm || '40'} ปี</td>
+            <td>${loanTermAfter} ปี</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ตารางเช่าออม -->
+    <div class="section">
+      <h3>ผ่อนแล้ว เงินต้นเหลือเท่าไหร่ ประมาณการตารางเช่าออม</h3>
+      <p><strong>มูลค่าเช่าออม:</strong> ${reportData.propertyValue?.toLocaleString() || '0'} บาท</p>
+      <p><strong>อัตราค่าเช่าออม:</strong> ${reportData.monthlyRent?.toLocaleString() || '0'}</p>
+
+      ${reportData.amortizationTable && reportData.amortizationTable.length > 0
+        ? `<table>
+            <thead>
+              <tr>
+                <th>งวดที่</th>
+                <th>เงินออมสะสม (หน่วย : บาท)</th>
+                <th>เงินต้นค่าทรัพย์คงเหลือ ณ สิ้นงวด (หน่วย : บาท)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reportData.amortizationTable
+                .filter(row => {
+                  const installment = row.installment || row.period || 0;
+                  if (typeof installment === 'string' && installment.includes('สิ้นงวด')) {
+                    return true;
+                  }
+                  if (typeof installment === 'number') {
+                    return [12, 24, 36].includes(installment);
+                  }
+                  return false;
+                })
+                .map((row) => {
+                  const installment = row.installment || row.period || 0;
+                  const savings = row.payment || row.savings || 0;
+                  const remaining = row.remainingPrincipal || row.remaining || 0;
+
+                  return `<tr>
+                    <td>${installment}</td>
+                    <td>${savings ? savings.toLocaleString() : '0'}</td>
+                    <td>${remaining ? remaining.toLocaleString() : '0'}</td>
+                  </tr>`;
+                }).join('')}
+            </tbody>
+          </table>`
+        : '<p>ไม่มีข้อมูลตารางเช่าออม</p>'
+      }
+
+      <p class="disclaimer">
+        ***ตัวเลขประมาณการ ทั้งนี้ให้ใช้ ตามเอกสารแนบท้ายสัญญา 4: ตารางแสดงอัตราค่าเช่าออมบ้าน
+      </p>
+
+      <p class="analyst">
+        <strong>วิเคราะห์โดย:</strong> ${reportData.analyst}
+      </p>
+    </div>
+
+    <!-- ข้อสงวนสิทธิ์ในความรับผิด -->
+    <div class="section">
+      <h3>ข้อสงวนสิทธิ์ในความรับผิด</h3>
+      <div class="disclaimer-section">
+        <p>
+          ข้อมูลและคำแนะนำในเอกสารนี้จัดทำขึ้นเพื่อวัตถุประสงค์ในการวิเคราะห์เท่านั้น และอาจมีข้อผิดพลาด ความคลาดเคลื่อน หรือไม่เหมาะสมกับสถานการณ์ในอนาคต หรือการเปลี่ยนแปลงของนโยบายต่างๆ บริษัท เงินสดใจดี จำกัด ("บริษัท") ขอสงวนสิทธิ์ในการปรับปรุง เปลี่ยนแปลง หรือยกเลิกข้อมูลและบริการต่างๆ โดยไม่ต้องแจ้งให้ทราบล่วงหน้า
+        </p>
+        <p>
+          ผู้ใช้บริการควรปรึกษาผู้เชี่ยวชาญเพื่อขอคำแนะนำที่เหมาะสม และบริษัทจะไม่รับผิดชอบต่อความเสียหายใดๆ ทั้งทางตรงและทางอ้อมที่อาจเกิดขึ้นจากการใช้บริการหรือคำแนะนำของบริษัท
+        </p>
+
+        <div class="acknowledgement">
+          <p><strong>ข้าพเจ้ารับทราบ และจะปฏิบัติตามข้อแนะนำดังกล่าว</strong></p>
+          <div class="signature-section">
+            <p>ลงชื่อ: _________________ (ผู้เช่าออม)</p>
+          </div>
+        </div>
+
+        <div class="advice-note">
+          <p><strong>หมายเหตุ:</strong> คำแนะนำสำหรับลูกค้า Livnex เพื่อเตรียมความพร้อมในการยื่นขอสินเชื่อกับธนาคารนี้ เป็นเพียงคำแนะนำจากบริษัท เงินสดใจดี จำกัด เท่านั้น เงื่อนไขอื่นๆ ขึ้นอยู่กับเกณฑ์การพิจารณาของแต่ละธนาคาร</p>
+        </div>
+
+        <p class="analyst">
+          <strong>วิเคราะห์โดย:</strong> ${reportData.analyst}
+        </p>
+      </div>
+    </div>
+
+    <!-- ข้อมูลติดต่อ -->
+    <div class="contact-section">
+      <div class="contact-info">
+        <p><strong>LINE:</strong> @livnex</p>
+        <p><strong>Website:</strong> www.livnex.co</p>
+        <p><strong>Call:</strong> 1776</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+      `;
+
+      // สร้าง popup window ใหม่
+      const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+
+      if (!printWindow) {
+        alert('❌ เบราว์เซอร์บล็อก popup window\n\nกรุณาอนุญาต popup สำหรับเว็บไซต์นี้');
+        return;
+      }
+
+      // เขียน HTML ลงใน popup window
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+
+      // รอให้โหลดเสร็จแล้วเปิด print dialog
+      printWindow.focus();
+
+      alert('✅ เปิด Print Window เรียบร้อยแล้ว!\n\n💡 Tips: เลือก "Save as PDF" ในหน้าต่างที่เปิดขึ้น');
+
+    } catch (error) {
+      console.error('Quick PDF Error:', error);
+      alert('❌ เกิดข้อผิดพลาดใน Quick PDF\n\nกรุณาลองใหม่อีกครั้ง\n\nรายละเอียด: ' + error.message);
+    } finally {
+      // รีเซ็ตปุ่ม
+      const quickPdfButton = document.querySelector('.quickPdfButton');
+      if (quickPdfButton) {
+        quickPdfButton.textContent = '🖨️ Quick PDF';
+        quickPdfButton.disabled = false;
+      }
+    }
+  };
+
   const handlePrint = async () => {
     try {
       if (!reportData) {
@@ -147,344 +1485,217 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
         alert('กรุณารอหน้าเว็บโหลดเสร็จก่อนพิมพ์');
         return;
       }
-      
-      // แสดงสถานะกำลังพิมพ์
-      const printButton = document.querySelector('.printButton');
-      if (printButton) {
-        printButton.textContent = '🖨️ กำลังสร้าง PDF...';
-        printButton.disabled = true;
-      }
-      
-      // สร้าง DOM ใหม่สำหรับ PDF
-      const pdfContainer = document.createElement('div');
-      pdfContainer.style.cssText = `
-        position: fixed;
-        top: -9999px;
-        left: -9999px;
-        width: 794px;
-        background: white;
-        padding: 40px;
-        font-family: Arial, sans-serif;
-        z-index: -1;
-      `;
-      
-      // สร้างเนื้อหา PDF ตามลำดับที่ต้องการ
-      pdfContainer.innerHTML = `
-        <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px;">
-          <div><h2 style="color: #007bff; margin: 0; font-size: 24px;">LIVNEX ใจดี</h2></div>
-          <div style="text-align: center; flex: 1;">
-            <h1 style="margin: 0 0 10px 0; color: #333; font-size: 28px;">Consumer Advise Article</h1>
-            <p style="margin: 0; color: #666; font-size: 14px;">เอกสารให้คำแนะนำแก่ลูกค้าของ LIVNEX เพื่อเตรียมความพร้อมในการยื่นขอสินเชื่อกับธนาคาร</p>
-          </div>
-          <div><p style="margin: 0; color: #666; font-size: 14px;">วันที่: ${reportData.reportDate}</p></div>
-        </div>
 
-        <!-- ข้อมูลทั่วไป -->
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px;">ข้อมูลทั่วไป</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div style="display: flex; align-items: center;"><span style="font-weight: bold; min-width: 120px; color: #333;">ชื่อ:</span><span style="color: #666; margin-left: 10px;">${reportData.name || 'ไม่ระบุ'}</span></div>
-            <div style="display: flex; align-items: center;"><span style="font-weight: bold; min-width: 120px; color: #333;">อายุ:</span><span style="color: #666; margin-left: 10px;">${reportData.age || 'ไม่ระบุ'} ปี</span></div>
-            <div style="display: flex; align-items: center;"><span style="font-weight: bold; min-width: 120px; color: #333;">เบอร์โทร:</span><span style="color: #666; margin-left: 10px;">${reportData.phone || 'ไม่ระบุ'}</span></div>
-            <div style="display: flex; align-items: center;"><span style="font-weight: bold; min-width: 120px; color: #333;">อาชีพ:</span><span style="color: #666; margin-left: 10px;">${reportData.job || 'ไม่ระบุ'}</span></div>
-            <div style="display: flex; align-items: center;"><span style="font-weight: bold; min-width: 120px; color: #333;">ตำแหน่ง:</span><span style="color: #666; margin-left: 10px;">${reportData.position || 'ไม่ระบุ'}</span></div>
-            <div style="display: flex; align-items: center;"><span style="font-weight: bold; min-width: 120px; color: #333;">โครงการ:</span><span style="color: #666; margin-left: 10px;">${reportData.projectName || 'ไม่ระบุ'}</span></div>
-            <div style="display: flex; align-items: center;"><span style="font-weight: bold; min-width: 120px; color: #333;">เลขห้อง:</span><span style="color: #666; margin-left: 10px;">${reportData.unit || reportData.roomNumber || 'ไม่ระบุ'}</span></div>
-            <div style="display: flex; align-items: center;"><span style="font-weight: bold; min-width: 120px; color: #333;">มูลค่าเช่าออม:</span><span style="color: #666; margin-left: 10px;">${(() => {
-              const propertyPrice = parseFloat(reportData.propertyPrice) || parseFloat(reportData.propertyValue) || 0;
-              const discount = parseFloat(reportData.discount) || 0;
-              return (propertyPrice - discount).toLocaleString();
-            })()} บาท</span></div>
-          </div>
-        </div>
+      // เตรียม DOM สำหรับการพิมพ์
+      const reportContainer = document.querySelector('.reportContainer');
+      const originalBodyOverflow = document.body.style.overflow;
+      const originalBodyBackground = document.body.style.background;
 
-        <!-- ปัญหาด้านสินเชื่อ -->
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px;">ปัญหาด้านสินเชื่อ</h3>
-          <div style="margin-left: 20px;">
-            ${Array.isArray(reportData.problems) && reportData.problems.length > 0 
-              ? reportData.problems.map((problem, index) => 
-                  `<div style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid #dc3545; border-radius: 4px;">${index + 1}. ${problem}</div>`
-                ).join('')
-              : '<div style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid #dc3545; border-radius: 4px;">ไม่มีข้อมูลปัญหาด้านสินเชื่อ</div>'
-            }
-          </div>
-        </div>
+      // ปรับแต่งหน้าเว็บสำหรับการพิมพ์
+      document.body.style.overflow = 'visible';
+      document.body.style.background = 'white';
+      reportContainer.classList.add('print-ready');
 
-        <!-- แผนการเตรียมยื่นขอสินเชื่อ -->
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px;">ทำอย่างไรถึงสามารถดำเนินการแผนการเตรียมยื่นข้อสินเชื่อ</h3>
-          <div>
-            <h4 style="color: #007bff; margin: 20px 0 10px 0;">สิ่งที่ต้องปฏิบัติ:</h4>
-            ${(() => {
-              const originalPlans = reportData.actionPlan && Array.isArray(reportData.actionPlan) && reportData.actionPlan.length > 0 
-                ? reportData.actionPlan 
-                : ['ไม่มีแผนการดำเนินการที่ระบุ'];
-              
-              const additionalPlans = additionalNotes
-                .map((note, index) => ({ note: note.trim(), index }))
-                .filter(item => item.note)
-                .map(item => `หมายเหตุ${item.index + 1}: ${item.note}`);
-              
-              const allPlans = [...originalPlans, ...additionalPlans];
-              
-              return allPlans.map((plan, index) => `<p style="margin-bottom: 8px;">${index + 1}. ${plan}</p>`).join('');
-            })()}
-          </div>
-        </div>
-
-        <!-- ข้อมูลรายได้และภาระหนี้ -->
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px;">ข้อมูลรายได้และภาระหนี้</h3>
-          <div>
-            <div style="display: flex; align-items: center; margin-bottom: 10px;"><span style="font-weight: bold; min-width: 120px; color: #333;">รายได้ต่อเดือน:</span><span style="color: #666; margin-left: 10px;">${reportData.income?.toLocaleString() || '0'} บาท</span></div>
-            <div style="display: flex; align-items: center; margin-bottom: 10px;"><span style="font-weight: bold; min-width: 120px; color: #333;">ภาระหนี้ต่อเดือน:</span><span style="color: #666; margin-left: 10px;">${reportData.debt?.toLocaleString() || '0'} บาท</span></div>
-            <div style="display: flex; align-items: center; margin-bottom: 10px;"><span style="font-weight: bold; min-width: 120px; color: #333;">ระยะเวลาขอสินเชื่อ:</span><span style="color: #666; margin-left: 10px;">${reportData.loanTerm || '40'} ปี</span></div>
-            <div style="display: flex; align-items: center; margin-bottom: 10px;"><span style="font-weight: bold; min-width: 120px; color: #333;">LTV:</span><span style="color: #666; margin-left: 10px;">${reportData.ltv || '100'}% (${reportData.ltvNote || 'House 1 (บ้านหลังที่ 1)'})</span></div>
-          </div>
-        </div>
-
-        <!-- ตารางประมาณการวงเงินสินเชื่อ -->
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px;">ตารางประมาณการวงเงินสินเชื่อ (หน่วย : บาท)</h3>
-          ${reportData.loanEstimationTable && reportData.loanEstimationTable.length > 0 
-            ? `<table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px;">
-                <thead>
-                  <tr>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #007bff; color: white; font-weight: bold;">ภาระหนี้ (บาท/เดือน)</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #007bff; color: white; font-weight: bold;">40 ปี</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #007bff; color: white; font-weight: bold;">30 ปี</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #007bff; color: white; font-weight: bold;">20 ปี</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #007bff; color: white; font-weight: bold;">10 ปี</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${reportData.loanEstimationTable.map((scenario, index) => {
-                    const label = scenario.label || '';
-                    const debt = scenario.debt || 0;
-                    const loanAmounts = scenario.loanAmounts || {};
-                    return `<tr style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${label} (${debt.toLocaleString()})</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${loanAmounts[40] ? loanAmounts[40].toLocaleString() : '0'}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${loanAmounts[30] ? loanAmounts[30].toLocaleString() : '0'}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${loanAmounts[20] ? loanAmounts[20].toLocaleString() : '0'}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${loanAmounts[10] ? loanAmounts[10].toLocaleString() : '0'}</td>
-                    </tr>`;
-                  }).join('')}
-                </tbody>
-              </table>`
-            : '<p>ไม่มีข้อมูลตารางประมาณการวงเงินสินเชื่อ</p>'
+      // เพิ่ม CSS เพื่อซ่อนส่วนที่ไม่ต้องการในการพิมพ์
+      const printStyle = document.createElement('style');
+      printStyle.id = 'print-temp-style';
+      printStyle.textContent = `
+        @media print {
+          body * {
+            visibility: hidden;
           }
-        </div>
 
-        <!-- ข้อมูลเช่าออม -->
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px;">ข้อมูลเช่าออม</h3>
-          <div>
-            <div style="display: flex; align-items: center; margin-bottom: 10px;"><span style="font-weight: bold; min-width: 120px; color: #333;">มูลค่าเช่าออม:</span><span style="color: #666; margin-left: 10px;">${reportData.propertyValue?.toLocaleString() || '0'} บาท</span></div>
-            <div style="display: flex; align-items: center; margin-bottom: 10px;"><span style="font-weight: bold; min-width: 120px; color: #333;">อัตราค่าเช่าออม:</span><span style="color: #666; margin-left: 10px;">${reportData.monthlyRent?.toLocaleString() || '0'} บาท/เดือน</span></div>
-            <div style="display: flex; align-items: center; margin-bottom: 10px;"><span style="font-weight: bold; min-width: 120px; color: #333;">คาดว่าลูกค้าจะชำระค่าเช่าออมงวดที่:</span><span style="color: #666; margin-left: 10px;">${selectedInstallment} งวด</span></div>
-            <div style="display: flex; align-items: center; margin-bottom: 10px;"><span style="font-weight: bold; min-width: 120px; color: #333;">เงินต้นค่าทรัพย์คงเหลือ ณ สิ้นงวด:</span><span style="color: #666; margin-left: 10px;">${(() => {
-              if (reportData.amortizationTable && reportData.amortizationTable.length > 0) {
-                const selectedRow = reportData.amortizationTable.find(row => {
-                  const installment = row.installment || row.period || 0;
-                  return installment === selectedInstallment;
-                });
-                return selectedRow ? (selectedRow.remainingPrincipal || selectedRow.remaining || 0).toLocaleString() : '0';
-              }
-              return '0';
-            })()} บาท</span></div>
-          </div>
-        </div>
-
-        <!-- จำนวนเงินจำกัดภาระหนี้ -->
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px;">จำนวนเงินจำกัดภาระหนี้</h3>
-          <div>
-            <p><strong>* ลูกค้าต้องชำระหนี้ทุกประเภท ตามกำหนดเวลา (ไม่ค้างชำระเกินกำหนด) และควบคุมภาระหนี้ให้ไม่เกิน ${debtLimit} บาท/เดือน</strong></p>
-          </div>
-        </div>
-
-        <!-- ระยะเวลาขอสินเชื่อหลังแผน -->
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px;">ระยะเวลาขอสินเชื่อหลังแผน</h3>
-          <div>
-            <p><strong>ระยะเวลาขอสินเชื่อหลังแผน: ${loanTermAfter} ปี</strong></p>
-          </div>
-        </div>
-
-        <!-- ตารางเปรียบเทียบ -->
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px;">ตารางเปรียบเทียบ</h3>
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <thead>
-              <tr>
-                <th style="border: 1px solid #ddd; padding: 10px; text-align: center; background: #007bff; color: white; font-weight: bold;">รายการ</th>
-                <th style="border: 1px solid #ddd; padding: 10px; text-align: center; background: #007bff; color: white; font-weight: bold;">ก่อนแผน</th>
-                <th style="border: 1px solid #ddd; padding: 10px; text-align: center; background: #007bff; color: white; font-weight: bold;">หลังแผน</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="background: #f8f9fa;">
-                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">ภาระหนี้</td>
-                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${reportData.debt?.toLocaleString() || '0'} บาท/เดือน</td>
-                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${debtLimit} บาท/เดือน</td>
-              </tr>
-              <tr>
-                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">ระยะเวลาขอสินเชื่อ</td>
-                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${reportData.loanTerm || '40'} ปี</td>
-                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${loanTermAfter} ปี</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- ตารางเช่าออม -->
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px;">ผ่อนแล้ว เงินต้นเหลือเท่าไหร่ ประมาณการตารางเช่าออม</h3>
-          <div style="margin-bottom: 20px;">
-            <p style="margin: 5px 0; font-weight: bold;"><strong>มูลค่าเช่าออม:</strong> ${reportData.propertyValue?.toLocaleString() || '0'} บาท</p>
-            <p style="margin: 5px 0; font-weight: bold;"><strong>อัตราค่าเช่าออม:</strong> ${reportData.monthlyRent?.toLocaleString() || '0'}</p>
-          </div>
-          
-          ${reportData.amortizationTable && reportData.amortizationTable.length > 0 
-            ? `<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-                <thead>
-                  <tr>
-                    <th style="border: 1px solid #ddd; padding: 12px; text-align: center; background: #007bff; color: white; font-weight: bold;">งวดที่</th>
-                    <th style="border: 1px solid #ddd; padding: 12px; text-align: center; background: #007bff; color: white; font-weight: bold;">เงินออมสะสม (หน่วย : บาท)</th>
-                    <th style="border: 1px solid #ddd; padding: 12px; text-align: center; background: #007bff; color: white; font-weight: bold;">เงินต้นค่าทรัพย์คงเหลือ ณ สิ้นงวด (หน่วย : บาท)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${reportData.amortizationTable
-                    .filter(row => {
-                      const installment = row.installment || row.period || 0;
-                      if (typeof installment === 'string' && installment.includes('สิ้นงวด')) {
-                        return true;
-                      }
-                      if (typeof installment === 'number') {
-                        return [12, 24, 36].includes(installment);
-                      }
-                      return false;
-                    })
-                    .map((row, index) => {
-                      const installment = row.installment || row.period || 0;
-                      const savings = row.payment || row.savings || 0;
-                      const remaining = row.remainingPrincipal || row.remaining || 0;
-                      
-                      return `<tr style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
-                        <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">${installment}</td>
-                        <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">${savings ? savings.toLocaleString() : '0'}</td>
-                        <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">${remaining ? remaining.toLocaleString() : '0'}</td>
-                      </tr>`;
-                    }).join('')}
-                </tbody>
-              </table>`
-            : '<p>ไม่มีข้อมูลตารางเช่าออม</p>'
+          .reportContainer,
+          .reportContainer * {
+            visibility: visible;
           }
-          
-          <p style="font-size: 12px; color: #666; font-style: italic; margin: 20px 0; text-align: center;">
-            ***ตัวเลขประมาณการ ทั้งนี้ให้ใช้ ตามเอกสารแนบท้ายสัญญา 4: ตารางแสดงอัตราค่าเช่าออมบ้าน
-          </p>
-          
-          <p style="text-align: right; margin-top: 30px; font-weight: bold; color: #333;">
-            <strong>วิเคราะห์โดย:</strong> ${reportData.analyst}
-          </p>
-        </div>
 
-        <!-- ข้อสงวนสิทธิ์ในความรับผิด -->
-        <div style="margin-bottom: 30px;">
-          <h3 style="color: #007bff; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px;">ข้อสงวนสิทธิ์ในความรับผิด</h3>
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #dc3545;">
-            <p style="margin: 15px 0; line-height: 1.6; text-align: justify;">
-              ข้อมูลและคำแนะนำในเอกสารนี้จัดทำขึ้นเพื่อวัตถุประสงค์ในการวิเคราะห์เท่านั้น และอาจมีข้อผิดพลาด ความคลาดเคลื่อน หรือไม่เหมาะสมกับสถานการณ์ในอนาคต หรือการเปลี่ยนแปลงของนโยบายต่างๆ บริษัท เงินสดใจดี จำกัด ("บริษัท") ขอสงวนสิทธิ์ในการปรับปรุง เปลี่ยนแปลง หรือยกเลิกข้อมูลและบริการต่างๆ โดยไม่ต้องแจ้งให้ทราบล่วงหน้า
-            </p>
-            <p style="margin: 15px 0; line-height: 1.6; text-align: justify;">
-              ผู้ใช้บริการควรปรึกษาผู้เชี่ยวชาญเพื่อขอคำแนะนำที่เหมาะสม และบริษัทจะไม่รับผิดชอบต่อความเสียหายใดๆ ทั้งทางตรงและทางอ้อมที่อาจเกิดขึ้นจากการใช้บริการหรือคำแนะนำของบริษัท
-            </p>
-            
-            <div style="margin: 25px 0; padding: 20px; background: #e7f3ff; border-radius: 5px; text-align: center;">
-              <p style="margin: 10px 0; font-weight: bold;"><strong>ข้าพเจ้ารับทราบ และจะปฏิบัติตามข้อแนะนำดังกล่าว</strong></p>
-              <div style="margin: 20px 0; text-align: center;">
-                <p style="margin: 10px 0;">ลงชื่อ: _________________ (ผู้เช่าออม)</p>
-              </div>
-            </div>
-            
-            <p style="margin: 20px 0; padding: 15px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
-              <strong>หมายเหตุ:</strong> คำแนะนำสำหรับลูกค้า Livnex เพื่อเตรียมความพร้อมในการยื่นขอสินเชื่อกับธนาคารนี้ เป็นเพียงคำแนะนำจากบริษัท เงินสดใจดี จำกัด เท่านั้น เงื่อนไขอื่นๆ ขึ้นอยู่กับเกณฑ์การพิจารณาของแต่ละธนาคาร
-            </p>
-            
-            <p style="text-align: right; margin-top: 30px; font-weight: bold; color: #333;">
-              <strong>วิเคราะห์โดย:</strong> ${reportData.analyst}
-            </p>
-          </div>
-        </div>
+          .reportContainer {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+          }
 
-        <!-- ข้อมูลติดต่อ -->
-        <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-          <div>
-            <p style="margin: 8px 0; font-weight: bold; color: #333;"><strong>LINE:</strong> @livnex</p>
-            <p style="margin: 8px 0; font-weight: bold; color: #333;"><strong>Website:</strong> www.livnex.co</p>
-            <p style="margin: 8px 0; font-weight: bold; color: #333;"><strong>Call:</strong> 1776</p>
-          </div>
-        </div>
+          .reportContent {
+            max-height: none !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 15px !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            max-width: none !important;
+          }
+
+          /* ซ่อนปุ่มและส่วนควบคุม */
+          .printControls,
+          .noteInputSection,
+          .debtLimitInput,
+          .loanTermInput {
+            display: none !important;
+          }
+
+          /* ปรับการแบ่งหน้า */
+          .section {
+            page-break-inside: avoid !important;
+            margin-bottom: 15px !important;
+          }
+
+          /* แบ่งหน้าก่อนส่วนสำคัญ */
+          .section:nth-of-type(5) { /* ข้อมูลรายได้และภาระหนี้ */
+            page-break-before: page !important;
+          }
+
+          .section:nth-of-type(8) { /* ตารางเช่าออม */
+            page-break-before: page !important;
+          }
+
+          .section:nth-of-type(11) { /* ข้อสงวนสิทธิ์ */
+            page-break-before: page !important;
+          }
+
+          /* ตาราง */
+          .amortizationTable,
+          .loanEstimationTable,
+          .comparisonTable {
+            page-break-inside: avoid !important;
+            font-size: 10px !important;
+          }
+
+          .amortizationTable th,
+          .loanEstimationTable th,
+          .comparisonTable th,
+          .amortizationTable td,
+          .loanEstimationTable td,
+          .comparisonTable td {
+            padding: 4px !important;
+            font-size: 9px !important;
+          }
+
+          /* หัวข้อ */
+          .section h3 {
+            page-break-after: avoid !important;
+            font-size: 14px !important;
+            margin-bottom: 8px !important;
+          }
+
+          .header {
+            margin-bottom: 20px !important;
+            padding-bottom: 10px !important;
+          }
+
+          .title h1 {
+            font-size: 18px !important;
+          }
+
+          .logo h2 {
+            font-size: 16px !important;
+          }
+
+          /* ข้อมูลทั่วไป */
+          .customerInfo {
+            font-size: 11px !important;
+          }
+
+          .infoRow {
+            margin-bottom: 3px !important;
+          }
+
+          .label {
+            min-width: 80px !important;
+            font-size: 10px !important;
+          }
+
+          .value {
+            font-size: 10px !important;
+          }
+
+          /* ปัญหาด้านสินเชื่อ */
+          .problemItem {
+            font-size: 10px !important;
+            padding: 5px !important;
+            margin-bottom: 5px !important;
+          }
+
+          /* แผนการดำเนินงาน */
+          .actionPlan p {
+            font-size: 10px !important;
+            margin-bottom: 3px !important;
+          }
+
+          .actionPlan h4 {
+            font-size: 12px !important;
+            margin: 8px 0 5px 0 !important;
+          }
+
+          /* Disclaimer */
+          .disclaimerSection {
+            font-size: 9px !important;
+          }
+
+          .disclaimerSection p {
+            line-height: 1.3 !important;
+            margin: 8px 0 !important;
+          }
+
+          .acknowledgement {
+            font-size: 10px !important;
+            padding: 10px !important;
+          }
+
+          .adviceNote {
+            font-size: 9px !important;
+            padding: 8px !important;
+          }
+
+          /* ข้อมูลติดต่อ */
+          .contactSection {
+            font-size: 10px !important;
+            padding: 10px !important;
+          }
+        }
       `;
-      
-      // เพิ่ม DOM ใหม่ลงในหน้า
-      document.body.appendChild(pdfContainer);
-      
-      // Capture หน้าเว็บเป็นรูปภาพ
-      const canvas = await html2canvas(pdfContainer, {
-        scale: 1,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 794
-      });
-      
-      // ลบ DOM ชั่วคราว
-      document.body.removeChild(pdfContainer);
-      
-      // สร้าง PDF
-      const imgData = canvas.toDataURL('image/jpeg', 0.8);
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      // คำนวณขนาดรูปภาพให้พอดีกับหน้า A4
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      // เพิ่มรูปภาพลงใน PDF
-      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-      
-      // ถ้ารูปภาพสูงเกินหน้าเดียว ให้เพิ่มหน้าใหม่
-      let heightLeft = imgHeight;
-      let position = 0;
-      
-      while (heightLeft >= pageHeight) {
-        position = heightLeft - pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, -position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      document.head.appendChild(printStyle);
+
+      // แสดงกล่องข้อความแนะนำ
+      // eslint-disable-next-line no-restricted-globals
+      const printConfirm = confirm(
+        '🖨️ เตรียมพิมพ์ PDF Report\n\n' +
+        'คำแนะนำ:\n' +
+        '1. เลือก "Save as PDF" หรือ "Microsoft Print to PDF"\n' +
+        '2. กำหนดขนาดกระดาษเป็น A4\n' +
+        '3. เลือก "More settings" → ติ๊ก "Background graphics"\n' +
+        '4. กด "Save" เพื่อบันทึกเป็น PDF\n\n' +
+        'คลิก "OK" เพื่อเปิดหน้าต่างพิมพ์'
+      );
+
+      if (printConfirm) {
+        // เปิดหน้าต่างพิมพ์
+        window.print();
       }
-      
-      // บันทึกไฟล์ PDF
-      const fileName = `รายงาน_Consumer_Advise_${customerData?.name || customerData?.customer_name || 'Report'}_${new Date().toLocaleDateString('th-TH')}.pdf`;
-      pdf.save(fileName);
-      
-      alert('✅ สร้าง PDF เรียบร้อยแล้ว!\n\nไฟล์: ' + fileName);
-      
+
+      // รอให้ผู้ใช้พิมพ์เสร็จ แล้วทำความสะอาด
+      setTimeout(() => {
+        // คืนค่าเดิม
+        document.body.style.overflow = originalBodyOverflow;
+        document.body.style.background = originalBodyBackground;
+        reportContainer.classList.remove('print-ready');
+
+        // ลบ CSS ชั่วคราว
+        const tempStyle = document.getElementById('print-temp-style');
+        if (tempStyle) {
+          tempStyle.remove();
+        }
+      }, 1000);
+
     } catch (error) {
-      alert('❌ เกิดข้อผิดพลาดในการสร้าง PDF\n\nกรุณาลองใหม่อีกครั้ง');
-    } finally {
-      // รีเซ็ตปุ่ม
-      const printButton = document.querySelector('.printButton');
-      if (printButton) {
-        printButton.textContent = '🖨️ พิมพ์ Report';
-        printButton.disabled = false;
-      }
+      console.error('Print Error:', error);
+      alert('❌ เกิดข้อผิดพลาดในการพิมพ์\n\nกรุณาลองใหม่อีกครั้ง\n\nรายละเอียด: ' + error.message);
     }
   };
 
@@ -585,8 +1796,13 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
           <button onClick={handleSave} className={styles.saveButton}>
             💾 บันทึก
           </button>
-          <button onClick={handlePrint} className={styles.printButton}>
-            🖨️ พิมพ์ Report
+{/* Export HTML ปุ่มถูกซ่อนไว้เพราะมี Quick PDF แล้ว
+          <button onClick={handleExportHTML} className={styles.exportButton}>
+            📄 Export HTML
+          </button>
+          */}
+          <button onClick={handleQuickPDF} className={styles.quickPdfButton}>
+            🖨️ Quick PDF (Hot Reload Test)
           </button>
           <button onClick={onClose} className={styles.closeButton}>
             ❌ ปิด

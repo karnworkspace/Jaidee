@@ -77,7 +77,7 @@
   justify-content: center;
 }
 
-.printButton, .closeButton, .saveButton {
+.printButton, .closeButton, .saveButton, .exportButton, .quickPdfButton {
   padding: 10px 20px;
   border: none;
   border-radius: 5px;
@@ -93,6 +93,29 @@
 
 .saveButton:hover {
   background: #218838;
+}
+
+.exportButton {
+  background: #17a2b8;
+  color: white;
+}
+
+.exportButton:hover {
+  background: #138496;
+}
+
+.quickPdfButton {
+  background: #ff6b6b;
+  color: white;
+}
+
+.quickPdfButton:hover {
+  background: #ff5252;
+}
+
+.quickPdfButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 
 .printButton {
@@ -765,53 +788,164 @@
   color: #333;
 }
 
-/* Print Styles */
+/* Print Styles - Enhanced for better PDF output */
 @media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 2cm 1.5cm;
+    -webkit-print-color-adjust: exact;
+  }
+
   .reportContainer {
     position: static;
     background: white;
     padding: 0;
+    width: 100% !important;
+    height: auto !important;
   }
-  
+
   .printControls {
-    display: none;
+    display: none !important;
   }
-  
+
   .reportContent {
-    box-shadow: none;
-    max-height: none;
-    overflow: visible;
+    box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    border-radius: 0 !important;
   }
-  
+
+  /* Section page breaks */
   .section {
     page-break-inside: avoid;
+    margin-bottom: 25px !important;
   }
-  
-  .amortizationTable {
+
+  .section:nth-child(4) { /* ปัญหาด้านสินเชื่อ */
+    page-break-before: auto;
+  }
+
+  .section:nth-child(6) { /* ข้อมูลรายได้และภาระหนี้ */
+    page-break-before: avoid;
+  }
+
+  .section:nth-child(8) { /* ข้อมูลเช่าออม */
+    page-break-before: auto;
+  }
+
+  .section h3 {
+    page-break-after: avoid;
+    color: #007bff !important;
+  }
+
+  /* Tables */
+  .amortizationTable,
+  .loanEstimationTable,
+  .comparisonTable {
     page-break-inside: avoid;
+    border-collapse: collapse !important;
+    width: 100% !important;
   }
-  
-  /* ซ่อนส่วนกรอกข้อมูลใน PDF */
-  .noteInputSection {
-    display: none !important;
+
+  .amortizationTable th,
+  .loanEstimationTable th,
+  .comparisonTable th {
+    background-color: #007bff !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact !important;
   }
-  
-  .debtLimitInput {
-    display: none !important;
+
+  .amortizationTable tr:nth-child(even),
+  .loanEstimationTable tr:nth-child(even),
+  .comparisonTable tr:nth-child(even) {
+    background-color: #f8f9fa !important;
+    -webkit-print-color-adjust: exact !important;
   }
-  
-  .loanTermInput {
-    display: none !important;
+
+  /* Headers */
+  .header {
+    margin-bottom: 25px !important;
+    border-bottom: 2px solid #333 !important;
+    padding-bottom: 15px !important;
   }
-  
-  /* ซ่อนส่วนกรอกหมายเหตุใน PDF */
-  .additionalNotesPrint {
-    display: none !important;
+
+  .logo h2 {
+    color: #007bff !important;
   }
-  
-  /* ซ่อนข้อความจำนวนเงินใน PDF */
+
+  .title h1 {
+    color: #333 !important;
+  }
+
+  /* Problem items */
+  .problemItem {
+    background-color: #f8f9fa !important;
+    border-left: 4px solid #dc3545 !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Hide all input sections in PDF */
+  .noteInputSection,
+  .debtLimitInput,
+  .loanTermInput,
+  .additionalNotesPrint,
   .debtLimitNote {
     display: none !important;
+  }
+
+  /* Disclaimer section */
+  .disclaimerSection {
+    background-color: #f8f9fa !important;
+    border-left: 4px solid #dc3545 !important;
+    -webkit-print-color-adjust: exact !important;
+    page-break-inside: avoid;
+  }
+
+  .acknowledgement {
+    background-color: #e7f3ff !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .adviceNote {
+    background-color: #fff3cd !important;
+    border-left: 4px solid #ffc107 !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Contact section */
+  .contactSection {
+    background-color: #f8f9fa !important;
+    -webkit-print-color-adjust: exact !important;
+    page-break-inside: avoid;
+  }
+
+  /* Font adjustments for print */
+  body,
+  .reportContent {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  .section h3 {
+    font-size: 16px !important;
+  }
+
+  .title h1 {
+    font-size: 24px !important;
+  }
+
+  .logo h2 {
+    font-size: 20px !important;
   }
 }
 
@@ -845,6 +979,39 @@
 .pdfOrder10 { order: 10; }
 .pdfOrder11 { order: 11; }
 .pdfOrder12 { order: 12; }
+
+/* Print Mode CSS Class - ใช้ใน JavaScript */
+.print-mode {
+  position: relative !important;
+  background: white !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 20px !important;
+}
+
+.print-mode .printControls,
+.print-mode .noteInputSection,
+.print-mode .debtLimitInput,
+.print-mode .loanTermInput {
+  display: none !important;
+}
+
+.print-mode .section {
+  page-break-inside: avoid;
+  margin-bottom: 20px !important;
+}
+
+.print-mode .amortizationTable,
+.print-mode .loanEstimationTable,
+.print-mode .comparisonTable {
+  page-break-inside: avoid;
+}
+
+.print-mode h3 {
+  page-break-after: avoid;
+}
 
 /* Responsive */
 @media (max-width: 768px) {

@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Backend Service (เหมือนเดิม)
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: jaidee-backend-dev
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+      - backend_data:/app/data
+    restart: unless-stopped
+    networks:
+      - jaidee-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Service สำหรับ Development (Hot Reload)
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    container_name: jaidee-frontend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
+      - CHOKIDAR_USEPOLLING=true  # สำหรับ hot reload บน Docker
+    volumes:
+      - ./client:/app              # Mount source code
+      - /app/node_modules          # Exclude node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - jaidee-network
+    stdin_open: true               # สำหรับ React development server
+    tty: true
+
+volumes:
+  backend_data:
+    driver: local
+
+networks:
+  jaidee-network:
+    driver: bridge

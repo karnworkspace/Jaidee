@@ -37,3 +37,4 @@ docker-compose up -d
 - โปรเจคนี้เป็นแอปพลิเคชันสำหรับวิเคราะห์และรายงานสินเชื่อ
 - ใช้ Docker สำหรับการ deploy
 - มี frontend และ backend แยกกัน
+- ✅ Build Docker containers ใหม่ จาก code ปัจจุบันบน external SSD
