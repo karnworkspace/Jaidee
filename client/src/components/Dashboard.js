@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 import ConsumerAdviseReport from './ConsumerAdviseReport';
 import styles from './Dashboard.module.css';
 
@@ -27,7 +28,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await authenticatedFetch('https://jaidee-backend.onrender.com/api/customers');
+        const response = await authenticatedFetch(API_ENDPOINTS.CUSTOMERS);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -412,7 +413,7 @@ function Dashboard() {
                       </span>
                     )}
                   </th>
-                  <th>⚡ สถานะ</th>
+                  <th>⚡ กำหนดโอน</th>
                   <th>🔧 จัดการ</th>
                 </tr>
               </thead>
@@ -470,7 +471,7 @@ function Dashboard() {
                             e.stopPropagation();
                             try {
                               // ดึงข้อมูลลูกค้าที่มี detailedRentToOwnEstimation ครบถ้วน
-                              const response = await authenticatedFetch(`https://jaidee-backend.onrender.com/api/customers/${customer.id}`);
+                              const response = await authenticatedFetch(API_ENDPOINTS.CUSTOMER_BY_ID(customer.id));
                               if (response.ok) {
                                 const customerWithDetails = await response.json();
                                 setSelectedCustomer(customerWithDetails);

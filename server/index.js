@@ -71,7 +71,7 @@ initializeDatabase()
   })
   .then(() => {
     console.log('Default users initialized');
-    console.log('✅ Running in SQLite-only mode');
+    console.log('✅ Running with MySQL database');
   })
   .catch(err => {
     console.error('Failed to initialize database:', err);
@@ -1012,6 +1012,22 @@ const calculateEnhancedBankMatching = async (customerData) => {
   };
   
     // Calculate for each bank from database
+    const toArray = (v) => {
+      if (Array.isArray(v)) return v;
+      if (v === null || v === undefined || v === '') return [];
+      if (typeof v === 'string') {
+        try {
+          const parsed = JSON.parse(v);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (_) {
+          // not JSON, try comma-separated
+          const parts = v.split(',').map(s => s.trim()).filter(Boolean);
+          if (parts.length) return parts;
+        }
+      }
+      return [];
+    };
+
     bankRules.forEach(bankRule => {
       // Map database fields to expected format using actual bank data
       const loanCriteria = {
@@ -1038,8 +1054,8 @@ const calculateEnhancedBankMatching = async (customerData) => {
       const creditRequirements = {
         minCreditScore: bankRule.min_credit_score || 600,
         livnexBonus: bankRule.livnex_bonus || 0,
-        excludeStatus: bankRule.exclude_status || [],
-        acceptableGrades: bankRule.acceptable_grades || []
+        excludeStatus: toArray(bankRule.exclude_status),
+        acceptableGrades: toArray(bankRule.acceptable_grades)
       };
       
       const scoring = {
@@ -1111,7 +1127,7 @@ const calculateEnhancedBankMatching = async (customerData) => {
           return reasons;
         })(),
         estimatedApprovalTime: calculateEstimatedApprovalTime(totalScore, { partnership: bankRule.partnership_type }),
-        specialPrograms: bankRule.special_programs || [],
+        specialPrograms: toArray(bankRule.special_programs),
         recommendedTerms: {
           interestRate: rentToOwnTerms.preferredInterestRate,
           maxLTV: Math.round(rentToOwnTerms.maxLTV), // ใช้ค่าเปอร์เซ็นต์ตรงจากฐานข้อมูล
@@ -1589,43 +1605,70 @@ app.get('/api/customers/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Helper function to remove undefined values and convert to null for MySQL
+const removeUndefined = (obj) => {
+  if (Array.isArray(obj)) {
+    return obj.map(item => removeUndefined(item));
+  }
+  if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj).reduce((acc, key) => {
+      const value = obj[key];
+      acc[key] = value === undefined ? null : removeUndefined(value);
+      return acc;
+    }, {});
+  }
+  return obj === undefined ? null : obj;
+};
+
 app.post('/api/customers', authenticateToken, requireRole(['admin', 'data_entry']), async (req, res) => {
   try {
-    const kpis = calculateKPIs(req.body);
+    // Clean undefined values from request body
+    const cleanedBody = removeUndefined(req.body);
+
+    const kpis = calculateKPIs(cleanedBody);
     const loanEstimation = calculateLoanEstimation(
-      parseFloat(req.body.income) || 0,
-      parseFloat(req.body.debt) || 0,
-      parseFloat(req.body.propertyPrice) || 0,
-      parseFloat(req.body.discount) || 0,
-      parseFloat(req.body.ltv) || 0,
-      req.body.targetBank || 'KTB'
+      parseFloat(cleanedBody.income) || 0,
+      parseFloat(cleanedBody.debt) || 0,
+      parseFloat(cleanedBody.propertyPrice) || 0,
+      parseFloat(cleanedBody.discount) || 0,
+      parseFloat(cleanedBody.ltv) || 0,
+      cleanedBody.targetBank || 'KTB'
     );
     const allBanksLoanEstimation = calculateLoanEstimationAllBanks(
-      parseFloat(req.body.income) || 0,
-      parseFloat(req.body.debt) || 0,
-      parseFloat(req.body.propertyPrice) || 0,
-      parseFloat(req.body.discount) || 0,
-      parseFloat(req.body.ltv) || 0
+      parseFloat(cleanedBody.income) || 0,
+      parseFloat(cleanedBody.debt) || 0,
+      parseFloat(cleanedBody.propertyPrice) || 0,
+      parseFloat(cleanedBody.discount) || 0,
+      parseFloat(cleanedBody.ltv) || 0
     );
-    const enhancedBankMatching = await calculateBankMatchingWithCreditBureau(req.body);
-    const creditBureauAnalysis = createCreditBureauAnalysis(req.body);
+    const enhancedBankMatching = await calculateBankMatchingWithCreditBureau(cleanedBody);
+    const creditBureauAnalysis = createCreditBureauAnalysis(cleanedBody);
     const rentToOwnEstimation = calculateRentToOwnEstimation(
-      parseFloat(req.body.rentToOwnValue) || 0,
-      parseFloat(req.body.monthlyRentToOwnRate) || 0
+      parseFloat(cleanedBody.rentToOwnValue) || 0,
+      parseFloat(cleanedBody.monthlyRentToOwnRate) || 0
     );
-    const detailedRentToOwnEstimation = calculateRentToOwnAmortizationTable(req.body);
-    
+    const detailedRentToOwnEstimation = calculateRentToOwnAmortizationTable(cleanedBody);
+
+    // Clean KPIs to remove undefined values
+    const cleanedKPIs = removeUndefined(kpis);
+
     const customerData = {
-      ...req.body,
-      projectName: req.body.projectName || '',
-      unit: req.body.unit || '',
-      readyToTransfer: req.body.readyToTransfer || '',
-      loanProblem: req.body.loanProblem || [],
-      actionPlan: req.body.actionPlan || [],
-      ...kpis
+      ...cleanedBody,
+      projectName: cleanedBody.projectName || '',
+      unit: cleanedBody.unit || '',
+      readyToTransfer: cleanedBody.readyToTransfer || '',
+      loanProblem: cleanedBody.loanProblem || [],
+      actionPlan: cleanedBody.actionPlan || [],
+      ...cleanedKPIs
     };
 
-    const customerId = await insertCustomerWithDetails(customerData);
+    console.log('🔍 customerData keys:', Object.keys(customerData).filter(k => customerData[k] === undefined));
+
+    const customerId = await insertCustomerWithDetails(
+      customerData,
+      customerData.loanProblem || [],
+      customerData.actionPlan || []
+    );
     const newCustomer = await getCustomerWithDetails(customerId);
     
     // Add calculated data that's not stored in DB
@@ -1727,7 +1770,12 @@ app.put('/api/customers/:id', authenticateToken, requireRole(['admin', 'data_ent
       actionPlan: req.body.actionPlan || []
     };
 
-    await updateCustomerWithDetails(customerId, dbData);
+    await updateCustomerWithDetails(
+      customerId,
+      dbData,
+      req.body.loanProblem || [],
+      req.body.actionPlan || []
+    );
     const updatedCustomer = await getCustomerWithDetails(customerId);
     
     // Add calculated data that's not stored in DB

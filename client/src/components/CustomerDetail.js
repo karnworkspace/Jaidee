@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import RentToOwnTable from './RentToOwnTable';
 import styles from './CustomerDetail.module.css';
+import { API_ENDPOINTS } from '../config/api';
 
 function CustomerDetail() {
   const { customerId } = useParams();
@@ -15,7 +16,7 @@ function CustomerDetail() {
     const fetchCustomerDetails = async () => {
       if (customerId) {
         try {
-          const response = await authenticatedFetch(`https://jaidee-backend.onrender.com/api/customers/${customerId}`);
+          const response = await authenticatedFetch(API_ENDPOINTS.CUSTOMER_BY_ID(customerId));
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
@@ -29,6 +30,22 @@ function CustomerDetail() {
 
     fetchCustomerDetails();
   }, [customerId, authenticatedFetch]);
+
+  // Safe array helper for rendering defensive against bad shapes
+  const toArray = (v) => {
+    if (Array.isArray(v)) return v;
+    if (v === null || v === undefined || v === '') return [];
+    if (typeof v === 'string') {
+      try {
+        const parsed = JSON.parse(v);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (_) {
+        const parts = v.split(',').map(s => s.trim()).filter(Boolean);
+        if (parts.length) return parts;
+      }
+    }
+    return [];
+  };
 
   if (!customer) {
     return <div>Loading...</div>;
@@ -479,7 +496,14 @@ function CustomerDetail() {
         <div className={styles.bankMatchingSection}>
           <h2>🏦 Enhanced Bank Matching Analysis</h2>
           <div className={styles.bankMatchingGrid}>
-            {Object.entries(customer.enhancedBankMatching).map(([bankName, data]) => (
+            {Object.entries(customer.enhancedBankMatching)
+              .sort(([bankA], [bankB]) => {
+                // GHB (ธอส.) เป็นอันดับแรกเสมอ
+                if (bankA === 'GHB') return -1;
+                if (bankB === 'GHB') return 1;
+                return 0;
+              })
+              .map(([bankName, data]) => (
               <div key={bankName} className={`${styles.bankCard} ${styles[data.eligibility]}`}>
                 <div className={styles.bankHeader}>
                   <h3>{data.bankName || bankName}</h3>
@@ -628,11 +652,11 @@ function CustomerDetail() {
                   </div>
                 </div>
 
-                {data.specialPrograms && data.specialPrograms.length > 0 && (
+                {toArray(data.specialPrograms).length > 0 && (
                   <div className={styles.specialPrograms}>
                     <h4>โปรแกรมพิเศษ</h4>
                     <ul>
-                      {data.specialPrograms.map((program, index) => (
+                      {toArray(data.specialPrograms).map((program, index) => (
                         <li key={index}>{program}</li>
                       ))}
                     </ul>

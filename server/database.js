@@ -1,763 +1,515 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const mysql = require('mysql2/promise');
 
-// Create database connection
-const dbPath = path.join(__dirname, 'jaidee.sqlite');
-const db = new sqlite3.Database(dbPath);
-
-// Initialize database tables
-const initializeDatabase = () => {
-  return new Promise((resolve, reject) => {
-    db.serialize(() => {
-      // Create customers table
-      db.run(`
-        CREATE TABLE IF NOT EXISTS customers (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          date TEXT NOT NULL,
-          name TEXT NOT NULL,
-          age INTEGER,
-          phone TEXT,
-          job TEXT,
-          position TEXT,
-          businessOwnerType TEXT DEFAULT 'ไม่ใช่เจ้าของธุรกิจ',
-          privateBusinessType TEXT,
-          projectName TEXT,
-          unit TEXT,
-          readyToTransfer TEXT,
-          propertyValue REAL,
-          rentToOwnValue REAL,
-          monthlyRentToOwnRate REAL,
-          propertyPrice REAL,
-          discount REAL DEFAULT 0,
-          installmentMonths INTEGER DEFAULT 12,
-          overpaidRent REAL DEFAULT 0,
-          rentRatePerMillion REAL DEFAULT 4100,
-          guaranteeMultiplier REAL DEFAULT 2,
-          prepaidRentMultiplier REAL DEFAULT 1,
-          transferYear INTEGER DEFAULT 1,
-          annualInterestRate REAL DEFAULT 1.8,
-          income REAL,
-          debt REAL,
-          maxDebtAllowed REAL,
-          loanTerm REAL,
-          ltv REAL,
-          ltvNote TEXT,
-          maxLoanAmount REAL,
-          targetDate TEXT,
-          officer TEXT DEFAULT 'นายพิชญ์ สุดทัน',
-          selectedBank TEXT,
-          targetBank TEXT,
-          recommendedLoanTerm REAL,
-          recommendedInstallment REAL,
-          
-          -- Calculated KPI fields
-          potentialScore REAL,
-          degreeOfOwnership REAL,
-          financialStatus TEXT,
-          actionPlanProgress REAL,
-          paymentHistory TEXT,
-          
-          -- Credit Bureau fields
-          creditScore REAL,
-          accountStatuses TEXT,
-          livnexCompleted BOOLEAN DEFAULT 0,
-          creditNotes TEXT,
-          
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `, (err) => {
-        if (err) {
-          console.error('Error creating customers table:', err);
-          reject(err);
-        }
-      });
-
-      // Create loan_problems table (for dynamic loan problems)
-      db.run(`
-        CREATE TABLE IF NOT EXISTS loan_problems (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          customer_id INTEGER,
-          problem TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
-        )
-      `, (err) => {
-        if (err) {
-          console.error('Error creating loan_problems table:', err);
-          reject(err);
-        }
-      });
-
-      // Create action_plans table (for dynamic action plans)
-      db.run(`
-        CREATE TABLE IF NOT EXISTS action_plans (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          customer_id INTEGER,
-          plan TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
-        )
-      `, (err) => {
-        if (err) {
-          console.error('Error creating action_plans table:', err);
-          reject(err);
-          return;
-        }
-
-        // Create users table for authentication
-        db.run(`
-          CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            full_name TEXT NOT NULL,
-            role TEXT NOT NULL CHECK (role IN ('admin', 'data_entry', 'data_user')),
-            department TEXT NOT NULL CHECK (department IN ('เงินสดใจดี', 'CO')),
-            is_active BOOLEAN NOT NULL DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )
-        `, (err) => {
-          if (err) {
-            console.error('Error creating users table:', err);
-            reject(err);
-          }
-        });
-
-        // Create reports table (for saving report data)
-        db.run(`
-          CREATE TABLE IF NOT EXISTS reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            customer_id INTEGER,
-            customer_name TEXT NOT NULL,
-            report_date TEXT NOT NULL,
-            selected_installment INTEGER,
-            additional_notes TEXT,
-            debt_limit INTEGER,
-            loan_term_after INTEGER,
-            analyst TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
-          )
-        `, (err) => {
-          if (err) {
-            console.error('Error creating reports table:', err);
-            reject(err);
-          }
-        });
-
-        // Create bank_rules table
-        db.run(`
-          CREATE TABLE IF NOT EXISTS bank_rules (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bank_code TEXT UNIQUE NOT NULL,
-            bank_name TEXT NOT NULL,
-            criteria TEXT,
-            dsr_high REAL,
-            dsr_low REAL,
-            min_income_for_dsr_high INTEGER,
-            age_min INTEGER,
-            age_max INTEGER,
-            max_term INTEGER,
-            ltv_type1 REAL,
-            ltv_type2_over_2years REAL,
-            ltv_type2_under_2years REAL,
-            ltv_type3 REAL,
-            installment_rates TEXT,
-            interest_rates TEXT,
-            partnership_type TEXT DEFAULT 'Standard_Commercial',
-            min_credit_score INTEGER DEFAULT 600,
-            max_ltv_rent_to_own REAL DEFAULT 80,
-            preferred_interest_rate REAL DEFAULT 4.5,
-            max_term_rent_to_own INTEGER DEFAULT 25,
-            special_programs TEXT,
-            livnex_bonus INTEGER DEFAULT 0,
-            exclude_status TEXT,
-            acceptable_grades TEXT,
-            loan_weight REAL DEFAULT 0.4,
-            rent_to_own_weight REAL DEFAULT 0.3,
-            credit_weight REAL DEFAULT 0.3,
-            is_active BOOLEAN DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )
-        `, (err) => {
-          if (err) {
-            console.error('Error creating bank_rules table:', err);
-            reject(err);
-          } else {
-            // Add migration for Credit Bureau fields
-            addCreditBureauFields(() => {
-              console.log('Database initialized successfully');
-              resolve();
-            });
-          }
-        });
-      });
-    });
-  });
+// MySQL Configuration
+const dbConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 3306,
+  user: process.env.DB_USER || 'jaidee_user',
+  password: process.env.DB_PASSWORD || 'jaidee123',
+  database: process.env.DB_NAME || 'jaidee_db',
+  charset: 'utf8mb4',
+  timezone: '+07:00',
+  acquireTimeout: 60000,
+  timeout: 60000,
+  multipleStatements: true
 };
 
-// Migration function to add Credit Bureau fields to existing tables
-const addCreditBureauFields = (callback) => {
-  const migrations = [
-    'ALTER TABLE customers ADD COLUMN creditScore REAL',
-    'ALTER TABLE customers ADD COLUMN accountStatuses TEXT',
-    'ALTER TABLE customers ADD COLUMN livnexCompleted BOOLEAN DEFAULT 0',
-    'ALTER TABLE customers ADD COLUMN creditNotes TEXT'
+// Create MySQL connection pool
+const pool = mysql.createPool({
+  ...dbConfig,
+  connectionLimit: 10,
+  queueLimit: 0,
+  reconnect: true,
+  idleTimeout: 300000,
+  acquireTimeout: 60000
+});
+
+// Helper function to execute queries
+const executeQuery = async (sql, params = []) => {
+  try {
+    const [results] = await pool.execute(sql, params);
+    return results;
+  } catch (error) {
+    console.error('Database query error:', error);
+    throw error;
+  }
+};
+
+// Initialize database (MySQL tables already exist from migration)
+const initializeDatabase = async () => {
+  try {
+    // Test connection
+    const connection = await pool.getConnection();
+    console.log('✅ MySQL Database connected successfully');
+    connection.release();
+
+    // Verify tables exist
+    const tables = await executeQuery(`
+      SELECT TABLE_NAME
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = ?
+      ORDER BY TABLE_NAME
+    `, [dbConfig.database]);
+
+    console.log('📊 Available tables:', tables.map(t => t.TABLE_NAME).join(', '));
+
+    return true;
+  } catch (error) {
+    console.error('❌ MySQL Database connection failed:', error);
+    throw error;
+  }
+};
+
+// Get customer with details
+const getCustomerWithDetails = async (customerId) => {
+  try {
+    // Get customer basic info
+    const customer = await executeQuery(
+      'SELECT * FROM customers WHERE id = ?',
+      [customerId]
+    );
+
+    if (customer.length === 0) {
+      return null;
+    }
+
+    // Get loan problems
+    const loanProblems = await executeQuery(
+      'SELECT * FROM loan_problems WHERE customer_id = ? ORDER BY created_at DESC',
+      [customerId]
+    );
+
+    // Get action plans
+    const actionPlans = await executeQuery(
+      'SELECT * FROM action_plans WHERE customer_id = ? ORDER BY created_at DESC',
+      [customerId]
+    );
+
+    return {
+      ...customer[0],
+      loanProblems: loanProblems || [],
+      actionPlans: actionPlans || []
+    };
+  } catch (error) {
+    console.error('Error getting customer with details:', error);
+    throw error;
+  }
+};
+
+// Helper function to convert undefined to null for MySQL
+const sanitizeValue = (value) => {
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed === '' || trimmed.toLowerCase() === 'null' || trimmed.toLowerCase() === 'undefined') {
+      return null;
+    }
+    return trimmed;
+  }
+  if (Number.isNaN(value)) return null;
+  return value;
+};
+
+// Helper function to create array with all customer fields initialized to null
+const createSanitizedCustomerArray = (customerData) => {
+  const fields = [
+    'date', 'name', 'age', 'phone', 'job', 'position', 'businessOwnerType', 'privateBusinessType',
+    'projectName', 'unit', 'readyToTransfer', 'propertyValue', 'rentToOwnValue', 'monthlyRentToOwnRate',
+    'propertyPrice', 'discount', 'installmentMonths', 'overpaidRent', 'rentRatePerMillion',
+    'guaranteeMultiplier', 'prepaidRentMultiplier', 'transferYear', 'annualInterestRate',
+    'income', 'debt', 'maxDebtAllowed', 'loanTerm', 'ltv', 'ltvNote', 'maxLoanAmount', 'targetDate',
+    'officer', 'selectedBank', 'targetBank', 'recommendedLoanTerm', 'recommendedInstallment',
+    'potentialScore', 'degreeOfOwnership', 'financialStatus', 'actionPlanProgress',
+    'paymentHistory', 'accountStatuses', 'livnexCompleted', 'creditScore', 'creditNotes'
   ];
-  
-  let completed = 0;
-  
-  migrations.forEach((migration) => {
-    db.run(migration, (err) => {
-      if (err && !err.message.includes('duplicate column')) {
+
+  const numericFields = new Set([
+    'age', 'propertyValue', 'rentToOwnValue', 'monthlyRentToOwnRate', 'propertyPrice', 'discount',
+    'installmentMonths', 'overpaidRent', 'rentRatePerMillion', 'guaranteeMultiplier', 'prepaidRentMultiplier',
+    'transferYear', 'annualInterestRate', 'income', 'debt', 'maxDebtAllowed', 'loanTerm', 'ltv',
+    'maxLoanAmount', 'recommendedLoanTerm', 'recommendedInstallment', 'potentialScore',
+    'degreeOfOwnership', 'actionPlanProgress', 'creditScore'
+  ]);
+
+  const jsonFields = new Set(['paymentHistory', 'accountStatuses']);
+
+  return fields.map(field => {
+    let value = sanitizeValue(customerData[field]);
+
+    if (value === null || value === undefined) return null;
+
+    if (jsonFields.has(field)) {
+      if (Array.isArray(value)) {
+        return JSON.stringify(value);
       }
-      completed++;
-      if (completed === migrations.length) {
-        callback();
+      if (typeof value === 'object') {
+        return JSON.stringify(value);
       }
-    });
-  });
+      return value;
+    }
+
+    if (numericFields.has(field)) {
+      const num = Number(typeof value === 'string' ? value.replace(/,/g, '') : value);
+      return Number.isFinite(num) ? num : null;
+    }
+
+    if (field === 'livnexCompleted') {
+      if (typeof value === 'boolean') return value ? 1 : 0;
+      const num = Number(value);
+      if (Number.isNaN(num)) return 0;
+      return num ? 1 : 0;
+    }
+
+    // Final safety check: ensure no undefined values pass through
+    return value === undefined ? null : value;
+  }).map(val => val === undefined ? null : val); // Double safety filter
 };
 
-// Helper function to get customer with related data
-const getCustomerWithDetails = (customerId) => {
-  return new Promise((resolve, reject) => {
-    // Get customer data
-    db.get('SELECT * FROM customers WHERE id = ?', [customerId], (err, customer) => {
-      if (err) {
-        reject(err);
-        return;
+// Insert customer with details
+const insertCustomerWithDetails = async (customerData, loanProblems = [], actionPlans = []) => {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    console.log('📥 Incoming loanProblems:', JSON.stringify(loanProblems));
+    console.log('📥 Incoming actionPlans:', JSON.stringify(actionPlans));
+
+    // Create sanitized array with all required fields
+    let sanitizedArray = createSanitizedCustomerArray(customerData);
+
+    // Final safety filter to remove any undefined values
+    sanitizedArray = sanitizedArray.map(val => val === undefined ? null : val);
+
+    // Debug log to find problematic values
+    console.log('🔍 Sanitized array length:', sanitizedArray.length);
+
+    const fieldNames = [
+      'date', 'name', 'age', 'phone', 'job', 'position', 'businessOwnerType', 'privateBusinessType',
+      'projectName', 'unit', 'readyToTransfer', 'propertyValue', 'rentToOwnValue', 'monthlyRentToOwnRate',
+      'propertyPrice', 'discount', 'installmentMonths', 'overpaidRent', 'rentRatePerMillion',
+      'guaranteeMultiplier', 'prepaidRentMultiplier', 'transferYear', 'annualInterestRate',
+      'income', 'debt', 'maxDebtAllowed', 'loanTerm', 'ltv', 'ltvNote', 'maxLoanAmount', 'targetDate',
+      'officer', 'selectedBank', 'targetBank', 'recommendedLoanTerm', 'recommendedInstallment',
+      'potentialScore', 'degreeOfOwnership', 'financialStatus', 'actionPlanProgress',
+      'paymentHistory', 'accountStatuses', 'livnexCompleted', 'creditScore', 'creditNotes'
+    ];
+
+    sanitizedArray.forEach((value, index) => {
+      if (value === undefined) {
+        console.log(`❌ Undefined at index ${index} (${fieldNames[index]})`);
       }
-
-      if (!customer) {
-        resolve(null);
-        return;
+      if (Number.isNaN(value)) {
+        console.log(`⚠️ NaN at index ${index} (${fieldNames[index]})`);
       }
-
-      // Get loan problems
-      db.all('SELECT problem FROM loan_problems WHERE customer_id = ?', [customerId], (err, problems) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
-        // Get action plans
-        db.all('SELECT plan FROM action_plans WHERE customer_id = ?', [customerId], (err, plans) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-
-          // Combine data
-          const customerWithDetails = {
-            ...customer,
-            loanProblem: problems.map(p => p.problem),
-            actionPlan: plans.map(p => p.plan)
-          };
-
-          resolve(customerWithDetails);
-        });
-      });
     });
-  });
-};
+    console.log('🔎 Sanitized sample:', sanitizedArray);
 
-// Helper function to insert customer with related data
-const insertCustomerWithDetails = (customerData) => {
-  return new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION');
+    // Insert customer
+    const [customerResult] = await connection.execute(`
+      INSERT INTO customers (
+        date, name, age, phone, job, position, businessOwnerType, privateBusinessType,
+        projectName, unit, readyToTransfer, propertyValue, rentToOwnValue, monthlyRentToOwnRate,
+        propertyPrice, discount, installmentMonths, overpaidRent, rentRatePerMillion,
+        guaranteeMultiplier, prepaidRentMultiplier, transferYear, annualInterestRate,
+        income, debt, maxDebtAllowed, loanTerm, ltv, ltvNote, maxLoanAmount, targetDate,
+        officer, selectedBank, targetBank, recommendedLoanTerm, recommendedInstallment,
+        potentialScore, degreeOfOwnership, financialStatus, actionPlanProgress,
+        paymentHistory, accountStatuses, livnexCompleted, creditScore, creditNotes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, sanitizedArray);
 
-      // Insert customer - only include fields that exist in the customers table
-      const {
-        loanProblem = [],
-        actionPlan = [],
-        ...allFields
-      } = customerData;
+    const customerId = customerResult.insertId;
+    console.log("✅ Customer INSERT result:", JSON.stringify(customerResult));
+    console.log("🆔 Generated customerId:", customerId);
 
-      // Define allowed fields that exist in customers table
-      const allowedFields = [
-        'date', 'name', 'age', 'phone', 'job', 'position', 'businessOwnerType', 'privateBusinessType',
-        'projectName', 'unit', 'readyToTransfer', 'propertyValue', 'rentToOwnValue', 'monthlyRentToOwnRate',
-        'propertyPrice', 'discount', 'installmentMonths', 'overpaidRent', 'rentRatePerMillion',
-        'guaranteeMultiplier', 'prepaidRentMultiplier', 'transferYear', 'annualInterestRate',
-        'income', 'debt', 'maxDebtAllowed', 'loanTerm', 'ltv', 'ltvNote', 'maxLoanAmount',
-        'targetDate', 'officer', 'selectedBank', 'targetBank', 'recommendedLoanTerm', 'recommendedInstallment',
-        'potentialScore', 'degreeOfOwnership', 'financialStatus', 'actionPlanProgress', 'paymentHistory',
-        'creditScore', 'accountStatuses', 'livnexCompleted', 'creditNotes'
-      ];
+    // Insert loan problems
+    if (loanProblems && loanProblems.length > 0) {
+      // Filter out undefined, null, and empty strings
+      const validProblems = loanProblems.filter(p => p !== undefined && p !== null && p !== '');
+      console.log('✅ Valid loan problems to insert:', validProblems.length);
 
-      // Filter only allowed fields
-      const customerFields = {};
-      allowedFields.forEach(field => {
-        if (allFields.hasOwnProperty(field)) {
-          customerFields[field] = allFields[field];
-        }
-      });
-
-      const columns = Object.keys(customerFields);
-      const placeholders = columns.map(() => '?').join(',');
-      const values = columns.map(col => customerFields[col]);
-
-      const sql = `INSERT INTO customers (${columns.join(',')}) VALUES (${placeholders})`;
-
-      db.run(sql, values, function(err) {
-        if (err) {
-          db.run('ROLLBACK');
-          reject(err);
-          return;
-        }
-
-        const customerId = this.lastID;
-
-        // Insert loan problems
-        const insertProblems = loanProblem.map(problem => {
-          return new Promise((resolve, reject) => {
-            db.run('INSERT INTO loan_problems (customer_id, problem) VALUES (?, ?)', 
-              [customerId, problem], (err) => {
-                if (err) reject(err);
-                else resolve();
-              });
-          });
-        });
-
-        // Insert action plans
-        const insertPlans = actionPlan.map(plan => {
-          return new Promise((resolve, reject) => {
-            db.run('INSERT INTO action_plans (customer_id, plan) VALUES (?, ?)', 
-              [customerId, plan], (err) => {
-                if (err) reject(err);
-                else resolve();
-              });
-          });
-        });
-
-        // Wait for all related data to be inserted
-        Promise.all([...insertProblems, ...insertPlans])
-          .then(() => {
-            db.run('COMMIT');
-            resolve(customerId);
-          })
-          .catch(err => {
-            db.run('ROLLBACK');
-            reject(err);
-          });
-      });
-    });
-  });
-};
-
-// Helper function to update customer with related data
-const updateCustomerWithDetails = (customerId, customerData) => {
-  return new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION');
-
-      // Update customer - only include fields that exist in the customers table
-      const {
-        loanProblem = [],
-        actionPlan = [],
-        id, // Exclude id from customerFields
-        ...allFields
-      } = customerData;
-
-      // Define allowed fields that exist in customers table
-      const allowedFields = [
-        'date', 'name', 'age', 'phone', 'job', 'position', 'businessOwnerType', 'privateBusinessType',
-        'projectName', 'unit', 'readyToTransfer', 'propertyValue', 'rentToOwnValue', 'monthlyRentToOwnRate',
-        'propertyPrice', 'discount', 'installmentMonths', 'overpaidRent', 'rentRatePerMillion',
-        'guaranteeMultiplier', 'prepaidRentMultiplier', 'transferYear', 'annualInterestRate',
-        'income', 'debt', 'maxDebtAllowed', 'loanTerm', 'ltv', 'ltvNote', 'maxLoanAmount',
-        'targetDate', 'officer', 'selectedBank', 'targetBank', 'recommendedLoanTerm', 'recommendedInstallment',
-        'potentialScore', 'degreeOfOwnership', 'financialStatus', 'actionPlanProgress', 'paymentHistory',
-        'creditScore', 'accountStatuses', 'livnexCompleted', 'creditNotes'
-      ];
-
-      // Filter only allowed fields
-      const customerFields = {};
-      allowedFields.forEach(field => {
-        if (allFields.hasOwnProperty(field)) {
-          customerFields[field] = allFields[field];
-        }
-      });
-
-      // Add updated_at timestamp
-      customerFields.updated_at = new Date().toISOString();
-
-      const columns = Object.keys(customerFields);
-      const setClause = columns.map(col => `${col} = ?`).join(',');
-      const values = [...columns.map(col => customerFields[col]), customerId];
-
-      const sql = `UPDATE customers SET ${setClause} WHERE id = ?`;
-
-      db.run(sql, values, function(err) {
-        if (err) {
-          db.run('ROLLBACK');
-          reject(err);
-          return;
-        }
-
-        // Delete existing loan problems and action plans
-        db.run('DELETE FROM loan_problems WHERE customer_id = ?', [customerId], (err) => {
-          if (err) {
-            db.run('ROLLBACK');
-            reject(err);
-            return;
-          }
-
-          db.run('DELETE FROM action_plans WHERE customer_id = ?', [customerId], (err) => {
-            if (err) {
-              db.run('ROLLBACK');
-              reject(err);
-              return;
-            }
-
-            // Insert new loan problems
-            const insertProblems = loanProblem.map(problem => {
-              return new Promise((resolve, reject) => {
-                db.run('INSERT INTO loan_problems (customer_id, problem) VALUES (?, ?)', 
-                  [customerId, problem], (err) => {
-                    if (err) reject(err);
-                    else resolve();
-                  });
-              });
-            });
-
-            // Insert new action plans
-            const insertPlans = actionPlan.map(plan => {
-              return new Promise((resolve, reject) => {
-                db.run('INSERT INTO action_plans (customer_id, plan) VALUES (?, ?)', 
-                  [customerId, plan], (err) => {
-                    if (err) reject(err);
-                    else resolve();
-                  });
-              });
-            });
-
-            // Wait for all related data to be inserted
-            Promise.all([...insertProblems, ...insertPlans])
-              .then(() => {
-                db.run('COMMIT');
-                resolve();
-              })
-              .catch(err => {
-                db.run('ROLLBACK');
-                reject(err);
-              });
-          });
-        });
-      });
-    });
-  });
-};
-
-// Helper function to get all customers with basic info
-const getAllCustomers = () => {
-  return new Promise((resolve, reject) => {
-    db.all('SELECT * FROM customers ORDER BY created_at DESC', (err, customers) => {
-      if (err) {
-        reject(err);
-        return;
+      for (const problem of validProblems) {
+        await connection.execute(
+          'INSERT INTO loan_problems (customer_id, problem) VALUES (?, ?)',
+          [customerId, problem]
+        );
       }
+    }
 
-      // Get related data for each customer
-      const customersWithDetails = customers.map(customer => {
-        return getCustomerWithDetails(customer.id);
-      });
+    // Insert action plans
+    if (actionPlans && actionPlans.length > 0) {
+      // Filter out undefined, null, and empty strings
+      const validPlans = actionPlans.filter(p => p !== undefined && p !== null && p !== '');
+      console.log('✅ Valid action plans to insert:', validPlans.length);
 
-      Promise.all(customersWithDetails)
-        .then(results => resolve(results))
-        .catch(err => reject(err));
-    });
-  });
-};
-
-// Helper function to delete customer
-const deleteCustomer = (customerId) => {
-  return new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION');
-
-      // Delete related data first (due to foreign key constraints)
-      db.run('DELETE FROM loan_problems WHERE customer_id = ?', [customerId], (err) => {
-        if (err) {
-          db.run('ROLLBACK');
-          reject(err);
-          return;
-        }
-
-        db.run('DELETE FROM action_plans WHERE customer_id = ?', [customerId], (err) => {
-          if (err) {
-            db.run('ROLLBACK');
-            reject(err);
-            return;
-          }
-
-          // Delete customer
-          db.run('DELETE FROM customers WHERE id = ?', [customerId], function(err) {
-            if (err) {
-              db.run('ROLLBACK');
-              reject(err);
-              return;
-            }
-
-            db.run('COMMIT');
-            resolve(this.changes > 0);
-          });
-        });
-      });
-    });
-  });
-};
-
-// Bank Rules Helper Functions
-const getAllBankRules = () => {
-  return new Promise((resolve, reject) => {
-    db.all('SELECT * FROM bank_rules WHERE is_active = 1 ORDER BY bank_name', (err, rows) => {
-      if (err) {
-        reject(err);
-        return;
+      for (const plan of validPlans) {
+        await connection.execute(
+          'INSERT INTO action_plans (customer_id, plan) VALUES (?, ?)',
+          [customerId, plan]
+        );
       }
-      
-      // Parse JSON fields
-      const bankRules = rows.map(row => ({
-        ...row,
-        criteria: row.criteria ? JSON.parse(row.criteria) : {},
-        installment_rates: row.installment_rates ? JSON.parse(row.installment_rates) : {},
-        interest_rates: row.interest_rates ? JSON.parse(row.interest_rates) : {},
-        special_programs: row.special_programs ? JSON.parse(row.special_programs) : [],
-        exclude_status: row.exclude_status ? JSON.parse(row.exclude_status) : [],
-        acceptable_grades: row.acceptable_grades ? JSON.parse(row.acceptable_grades) : []
-      }));
-      
-      resolve(bankRules);
-    });
-  });
+    }
+
+    await connection.commit();
+    console.log(`✅ Customer ${customerId} inserted successfully`);
+    return customerId;
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error inserting customer with details:', error);
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
-const getBankRuleByCode = (bankCode) => {
-  return new Promise((resolve, reject) => {
-    db.get('SELECT * FROM bank_rules WHERE bank_code = ? AND is_active = 1', [bankCode], (err, row) => {
-      if (err) {
-        reject(err);
-        return;
+// Update customer with details
+const updateCustomerWithDetails = async (customerId, customerData, loanProblems = [], actionPlans = []) => {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // Update customer
+    await connection.execute(`
+      UPDATE customers SET
+        date=?, name=?, age=?, phone=?, job=?, position=?, businessOwnerType=?,
+        privateBusinessType=?, projectName=?, unit=?, readyToTransfer=?, propertyValue=?,
+        rentToOwnValue=?, monthlyRentToOwnRate=?, propertyPrice=?, discount=?,
+        installmentMonths=?, overpaidRent=?, rentRatePerMillion=?, guaranteeMultiplier=?,
+        prepaidRentMultiplier=?, transferYear=?, annualInterestRate=?, income=?, debt=?,
+        maxDebtAllowed=?, loanTerm=?, ltv=?, ltvNote=?, maxLoanAmount=?, targetDate=?,
+        officer=?, selectedBank=?, targetBank=?, recommendedLoanTerm=?, recommendedInstallment=?,
+        potentialScore=?, degreeOfOwnership=?, financialStatus=?, actionPlanProgress=?,
+        paymentHistory=?, accountStatuses=?, livnexCompleted=?, creditScore=?, creditNotes=?,
+        updated_at=CURRENT_TIMESTAMP
+      WHERE id=?
+    `, [
+      sanitizeValue(customerData.date), sanitizeValue(customerData.name), sanitizeValue(customerData.age), sanitizeValue(customerData.phone),
+      sanitizeValue(customerData.job), sanitizeValue(customerData.position), sanitizeValue(customerData.businessOwnerType),
+      sanitizeValue(customerData.privateBusinessType), sanitizeValue(customerData.projectName), sanitizeValue(customerData.unit),
+      sanitizeValue(customerData.readyToTransfer), sanitizeValue(customerData.propertyValue), sanitizeValue(customerData.rentToOwnValue),
+      sanitizeValue(customerData.monthlyRentToOwnRate), sanitizeValue(customerData.propertyPrice), sanitizeValue(customerData.discount),
+      sanitizeValue(customerData.installmentMonths), sanitizeValue(customerData.overpaidRent), sanitizeValue(customerData.rentRatePerMillion),
+      sanitizeValue(customerData.guaranteeMultiplier), sanitizeValue(customerData.prepaidRentMultiplier),
+      sanitizeValue(customerData.transferYear), sanitizeValue(customerData.annualInterestRate), sanitizeValue(customerData.income),
+      sanitizeValue(customerData.debt), sanitizeValue(customerData.maxDebtAllowed), sanitizeValue(customerData.loanTerm),
+      sanitizeValue(customerData.ltv), sanitizeValue(customerData.ltvNote), sanitizeValue(customerData.maxLoanAmount),
+      sanitizeValue(customerData.targetDate), sanitizeValue(customerData.officer), sanitizeValue(customerData.selectedBank),
+      sanitizeValue(customerData.targetBank), sanitizeValue(customerData.recommendedLoanTerm),
+      sanitizeValue(customerData.recommendedInstallment), sanitizeValue(customerData.potentialScore),
+      sanitizeValue(customerData.degreeOfOwnership), sanitizeValue(customerData.financialStatus),
+      sanitizeValue(customerData.actionPlanProgress), sanitizeValue(customerData.paymentHistory),
+      sanitizeValue(customerData.accountStatuses), sanitizeValue(customerData.livnexCompleted),
+      sanitizeValue(customerData.creditScore), sanitizeValue(customerData.creditNotes), customerId
+    ]);
+
+    // Delete existing problems and plans
+    await connection.execute('DELETE FROM loan_problems WHERE customer_id = ?', [customerId]);
+    await connection.execute('DELETE FROM action_plans WHERE customer_id = ?', [customerId]);
+
+    // Insert new loan problems
+    if (loanProblems && loanProblems.length > 0) {
+      // Filter out undefined, null, and empty strings
+      const validProblems = loanProblems.filter(p => p !== undefined && p !== null && p !== '');
+      console.log('✅ Valid loan problems to update:', validProblems.length);
+
+      for (const problem of validProblems) {
+        await connection.execute(
+          'INSERT INTO loan_problems (customer_id, problem) VALUES (?, ?)',
+          [customerId, problem]
+        );
       }
-      
-      if (!row) {
-        resolve(null);
-        return;
+    }
+
+    // Insert new action plans
+    if (actionPlans && actionPlans.length > 0) {
+      // Filter out undefined, null, and empty strings
+      const validPlans = actionPlans.filter(p => p !== undefined && p !== null && p !== '');
+      console.log('✅ Valid action plans to update:', validPlans.length);
+
+      for (const plan of validPlans) {
+        await connection.execute(
+          'INSERT INTO action_plans (customer_id, plan) VALUES (?, ?)',
+          [customerId, plan]
+        );
       }
-      
-      // Parse JSON fields
-      const bankRule = {
-        ...row,
-        criteria: row.criteria ? JSON.parse(row.criteria) : {},
-        installment_rates: row.installment_rates ? JSON.parse(row.installment_rates) : {},
-        interest_rates: row.interest_rates ? JSON.parse(row.interest_rates) : {},
-        special_programs: row.special_programs ? JSON.parse(row.special_programs) : [],
-        exclude_status: row.exclude_status ? JSON.parse(row.exclude_status) : [],
-        acceptable_grades: row.acceptable_grades ? JSON.parse(row.acceptable_grades) : []
-      };
-      
-      resolve(bankRule);
-    });
-  });
+    }
+
+    await connection.commit();
+    console.log(`✅ Customer ${customerId} updated successfully`);
+    return true;
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error updating customer with details:', error);
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
-const insertBankRule = (bankData) => {
-  return new Promise((resolve, reject) => {
-    const {
-      bank_code,
-      bank_name,
-      criteria = {},
-      dsr_high,
-      dsr_low,
-      min_income_for_dsr_high,
-      age_min,
-      age_max,
-      max_term,
-      ltv_type1,
-      ltv_type2_over_2years,
-      ltv_type2_under_2years,
-      ltv_type3,
-      installment_rates = {},
-      interest_rates = {},
-      partnership_type = 'Standard_Commercial',
-      min_credit_score = 600,
-      max_ltv_rent_to_own = 80,
-      preferred_interest_rate = 4.5,
-      max_term_rent_to_own = 25,
-      special_programs = [],
-      livnex_bonus = 0,
-      exclude_status = [],
-      acceptable_grades = [],
-      loan_weight = 0.4,
-      rent_to_own_weight = 0.3,
-      credit_weight = 0.3
-    } = bankData;
+// Get all customers (fields required by dashboard)
+const getAllCustomers = async () => {
+  try {
+    const customers = await executeQuery(`
+      SELECT 
+        id,
+        name,
+        projectName,
+        unit,
+        income,
+        potentialScore,
+        financialStatus,
+        officer,
+        targetDate,
+        created_at,
+        updated_at
+      FROM customers
+      ORDER BY updated_at DESC
+    `);
+    return customers;
+  } catch (error) {
+    console.error('Error getting all customers:', error);
+    throw error;
+  }
+};
 
-    const sql = `
+// Delete customer
+const deleteCustomer = async (customerId) => {
+  try {
+    // MySQL will cascade delete loan_problems and action_plans automatically
+    const result = await executeQuery('DELETE FROM customers WHERE id = ?', [customerId]);
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error('Error deleting customer:', error);
+    throw error;
+  }
+};
+
+// Bank rules functions
+const getAllBankRules = async () => {
+  try {
+    const bankRules = await executeQuery('SELECT * FROM bank_rules WHERE is_active = 1 ORDER BY bank_name');
+    return bankRules;
+  } catch (error) {
+    console.error('Error getting bank rules:', error);
+    throw error;
+  }
+};
+
+const getBankRuleByCode = async (bankCode) => {
+  try {
+    const bankRule = await executeQuery('SELECT * FROM bank_rules WHERE bank_code = ? AND is_active = 1', [bankCode]);
+    return bankRule.length > 0 ? bankRule[0] : null;
+  } catch (error) {
+    console.error('Error getting bank rule by code:', error);
+    throw error;
+  }
+};
+
+const insertBankRule = async (bankRuleData) => {
+  try {
+    const result = await executeQuery(`
       INSERT INTO bank_rules (
         bank_code, bank_name, criteria, dsr_high, dsr_low, min_income_for_dsr_high,
-        age_min, age_max, max_term, ltv_type1, ltv_type2_over_2years, ltv_type2_under_2years, ltv_type3,
-        installment_rates, interest_rates, partnership_type, min_credit_score, max_ltv_rent_to_own,
-        preferred_interest_rate, max_term_rent_to_own, special_programs, livnex_bonus, exclude_status,
-        acceptable_grades, loan_weight, rent_to_own_weight, credit_weight
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const values = [
-      bank_code, bank_name, JSON.stringify(criteria), dsr_high, dsr_low, min_income_for_dsr_high,
-      age_min, age_max, max_term, ltv_type1, ltv_type2_over_2years, ltv_type2_under_2years, ltv_type3,
-      JSON.stringify(installment_rates), JSON.stringify(interest_rates), partnership_type, min_credit_score, max_ltv_rent_to_own,
-      preferred_interest_rate, max_term_rent_to_own, JSON.stringify(special_programs), livnex_bonus, JSON.stringify(exclude_status),
-      JSON.stringify(acceptable_grades), loan_weight, rent_to_own_weight, credit_weight
-    ];
-
-    db.run(sql, values, function(err) {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(this.lastID);
-    });
-  });
+        age_min, age_max, max_term, ltv_type1, ltv_type2_over_2years, ltv_type2_under_2years,
+        ltv_type3, installment_rates, interest_rates, partnership_type, min_credit_score,
+        max_ltv_rent_to_own, preferred_interest_rate, max_term_rent_to_own, special_programs,
+        livnex_bonus, exclude_status, acceptable_grades, loan_weight, rent_to_own_weight,
+        credit_weight, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      bankRuleData.bank_code, bankRuleData.bank_name, bankRuleData.criteria,
+      bankRuleData.dsr_high, bankRuleData.dsr_low, bankRuleData.min_income_for_dsr_high,
+      bankRuleData.age_min, bankRuleData.age_max, bankRuleData.max_term,
+      bankRuleData.ltv_type1, bankRuleData.ltv_type2_over_2years, bankRuleData.ltv_type2_under_2years,
+      bankRuleData.ltv_type3, bankRuleData.installment_rates, bankRuleData.interest_rates,
+      bankRuleData.partnership_type, bankRuleData.min_credit_score, bankRuleData.max_ltv_rent_to_own,
+      bankRuleData.preferred_interest_rate, bankRuleData.max_term_rent_to_own,
+      bankRuleData.special_programs, bankRuleData.livnex_bonus, bankRuleData.exclude_status,
+      bankRuleData.acceptable_grades, bankRuleData.loan_weight, bankRuleData.rent_to_own_weight,
+      bankRuleData.credit_weight, bankRuleData.is_active || 1
+    ]);
+    return result.insertId;
+  } catch (error) {
+    console.error('Error inserting bank rule:', error);
+    throw error;
+  }
 };
 
-const updateBankRule = (bankCode, bankData) => {
-  return new Promise((resolve, reject) => {
-    const {
-      bank_name,
-      criteria = {},
-      dsr_high,
-      dsr_low,
-      min_income_for_dsr_high,
-      age_min,
-      age_max,
-      max_term,
-      ltv_type1,
-      ltv_type2_over_2years,
-      ltv_type2_under_2years,
-      ltv_type3,
-      installment_rates = {},
-      interest_rates = {},
-      partnership_type,
-      min_credit_score,
-      max_ltv_rent_to_own,
-      preferred_interest_rate,
-      max_term_rent_to_own,
-      special_programs = [],
-      livnex_bonus,
-      exclude_status = [],
-      acceptable_grades = [],
-      loan_weight,
-      rent_to_own_weight,
-      credit_weight
-    } = bankData;
-
-    const sql = `
-      UPDATE bank_rules SET 
-        bank_name = ?, criteria = ?, dsr_high = ?, dsr_low = ?, min_income_for_dsr_high = ?,
-        age_min = ?, age_max = ?, max_term = ?, ltv_type1 = ?, ltv_type2_over_2years = ?, 
-        ltv_type2_under_2years = ?, ltv_type3 = ?, installment_rates = ?, interest_rates = ?,
-        partnership_type = ?, min_credit_score = ?, max_ltv_rent_to_own = ?, preferred_interest_rate = ?,
-        max_term_rent_to_own = ?, special_programs = ?, livnex_bonus = ?, exclude_status = ?,
-        acceptable_grades = ?, loan_weight = ?, rent_to_own_weight = ?, credit_weight = ?,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE bank_code = ? AND is_active = 1
-    `;
-
-    const values = [
-      bank_name, JSON.stringify(criteria), dsr_high, dsr_low, min_income_for_dsr_high,
-      age_min, age_max, max_term, ltv_type1, ltv_type2_over_2years, ltv_type2_under_2years, ltv_type3,
-      JSON.stringify(installment_rates), JSON.stringify(interest_rates), partnership_type, min_credit_score, max_ltv_rent_to_own,
-      preferred_interest_rate, max_term_rent_to_own, JSON.stringify(special_programs), livnex_bonus, JSON.stringify(exclude_status),
-      JSON.stringify(acceptable_grades), loan_weight, rent_to_own_weight, credit_weight, bankCode
-    ];
-
-    db.run(sql, values, function(err) {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(this.changes > 0);
-    });
-  });
+const updateBankRule = async (bankRuleId, bankRuleData) => {
+  try {
+    const result = await executeQuery(`
+      UPDATE bank_rules SET
+        bank_code=?, bank_name=?, criteria=?, dsr_high=?, dsr_low=?, min_income_for_dsr_high=?,
+        age_min=?, age_max=?, max_term=?, ltv_type1=?, ltv_type2_over_2years=?, ltv_type2_under_2years=?,
+        ltv_type3=?, installment_rates=?, interest_rates=?, partnership_type=?, min_credit_score=?,
+        max_ltv_rent_to_own=?, preferred_interest_rate=?, max_term_rent_to_own=?, special_programs=?,
+        livnex_bonus=?, exclude_status=?, acceptable_grades=?, loan_weight=?, rent_to_own_weight=?,
+        credit_weight=?, is_active=?, updated_at=CURRENT_TIMESTAMP
+      WHERE id=?
+    `, [
+      bankRuleData.bank_code, bankRuleData.bank_name, bankRuleData.criteria,
+      bankRuleData.dsr_high, bankRuleData.dsr_low, bankRuleData.min_income_for_dsr_high,
+      bankRuleData.age_min, bankRuleData.age_max, bankRuleData.max_term,
+      bankRuleData.ltv_type1, bankRuleData.ltv_type2_over_2years, bankRuleData.ltv_type2_under_2years,
+      bankRuleData.ltv_type3, bankRuleData.installment_rates, bankRuleData.interest_rates,
+      bankRuleData.partnership_type, bankRuleData.min_credit_score, bankRuleData.max_ltv_rent_to_own,
+      bankRuleData.preferred_interest_rate, bankRuleData.max_term_rent_to_own,
+      bankRuleData.special_programs, bankRuleData.livnex_bonus, bankRuleData.exclude_status,
+      bankRuleData.acceptable_grades, bankRuleData.loan_weight, bankRuleData.rent_to_own_weight,
+      bankRuleData.credit_weight, bankRuleData.is_active, bankRuleId
+    ]);
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error('Error updating bank rule:', error);
+    throw error;
+  }
 };
 
-// Function to insert report data
-const insertReport = (reportData) => {
-  return new Promise((resolve, reject) => {
-    
-    const {
-      customerId,
-      customerName,
-      reportDate,
-      selectedInstallment,
-      additionalNotes,
-      debtLimit,
-      loanTermAfter,
-      analyst
-    } = reportData;
-    
-
-    const sql = `
+// Reports functions
+const insertReport = async (reportData) => {
+  try {
+    const result = await executeQuery(`
       INSERT INTO reports (
-        customer_id, customer_name, report_date, selected_installment, 
+        customer_id, customer_name, report_date, selected_installment,
         additional_notes, debt_limit, loan_term_after, analyst
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const additionalNotesString = JSON.stringify(additionalNotes);
-    
-    const values = [
-      customerId,
-      customerName,
-      reportDate,
-      selectedInstallment,
-      additionalNotesString,
-      debtLimit,
-      loanTermAfter,
-      analyst
-    ];
-
-
-    db.run(sql, values, function(err) {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(this.lastID);
-    });
-  });
+    `, [
+      reportData.customer_id, reportData.customer_name, reportData.report_date,
+      reportData.selected_installment, reportData.additional_notes,
+      reportData.debt_limit, reportData.loan_term_after, reportData.analyst
+    ]);
+    return result.insertId;
+  } catch (error) {
+    console.error('Error inserting report:', error);
+    throw error;
+  }
 };
 
-// Function to get reports by customer ID
-const getReportsByCustomerId = (customerId) => {
-  return new Promise((resolve, reject) => {
-    
-    const sql = `
-      SELECT * FROM reports 
-      WHERE customer_id = ? 
-      ORDER BY created_at DESC
-    `;
-
-
-    db.all(sql, [customerId], (err, reports) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(reports);
-    });
-  });
+const getReportsByCustomerId = async (customerId) => {
+  try {
+    const reports = await executeQuery(
+      'SELECT * FROM reports WHERE customer_id = ? ORDER BY created_at DESC',
+      [customerId]
+    );
+    return reports;
+  } catch (error) {
+    console.error('Error getting reports by customer ID:', error);
+    throw error;
+  }
 };
+
+// Close pool connection when app terminates
+process.on('SIGINT', async () => {
+  console.log('🔒 Closing MySQL connection pool...');
+  await pool.end();
+  process.exit(0);
+});
 
 module.exports = {
-  db,
   initializeDatabase,
   getCustomerWithDetails,
   insertCustomerWithDetails,
@@ -769,5 +521,7 @@ module.exports = {
   insertBankRule,
   updateBankRule,
   insertReport,
-  getReportsByCustomerId
+  getReportsByCustomerId,
+  executeQuery,
+  pool
 };
