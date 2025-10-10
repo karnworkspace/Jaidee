@@ -1441,7 +1441,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     // Check password
-    const isPasswordValid = await comparePassword(password, user.password);
+    const isPasswordValid = await comparePassword(password, user.password_hash);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
