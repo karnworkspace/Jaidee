@@ -110,6 +110,32 @@ const sanitizeValue = (value) => {
   return value;
 };
 
+// Helper function to validate and sanitize date values for MySQL
+const sanitizeDate = (dateValue) => {
+  if (!dateValue || dateValue === null || dateValue === undefined) return null;
+
+  const dateStr = String(dateValue).trim();
+  if (dateStr === '' || dateStr.toLowerCase() === 'null' || dateStr.toLowerCase() === 'undefined') {
+    return null;
+  }
+
+  // Check if it's already in YYYY-MM-DD format
+  const fullDateMatch = dateStr.match(/^\d{4}-\d{2}-\d{2}$/);
+  if (fullDateMatch) return dateStr;
+
+  // Check if it's partial date (YYYY-MM or YYYY)
+  const partialMatch = dateStr.match(/^(\d{4})(?:-(\d{2}))?$/);
+  if (partialMatch) {
+    const year = partialMatch[1];
+    const month = partialMatch[2] || '01'; // Default to January if only year
+    return `${year}-${month}-01`; // Default to 1st day
+  }
+
+  // If invalid format, return null
+  console.warn(`⚠️ Invalid date format: "${dateStr}" - setting to null`);
+  return null;
+};
+
 // Helper function to create array with all customer fields initialized to null
 const createSanitizedCustomerArray = (customerData) => {
   const fields = [
@@ -132,9 +158,17 @@ const createSanitizedCustomerArray = (customerData) => {
   ]);
 
   const jsonFields = new Set(['paymentHistory', 'accountStatuses']);
+  const dateFields = new Set(['date', 'targetDate']);
 
   return fields.map(field => {
-    let value = sanitizeValue(customerData[field]);
+    let value;
+
+    // Use sanitizeDate for date fields
+    if (dateFields.has(field)) {
+      value = sanitizeDate(customerData[field]);
+    } else {
+      value = sanitizeValue(customerData[field]);
+    }
 
     if (value === null || value === undefined) return null;
 
@@ -286,7 +320,7 @@ const updateCustomerWithDetails = async (customerId, customerData, loanProblems 
         updated_at=CURRENT_TIMESTAMP
       WHERE id=?
     `, [
-      sanitizeValue(customerData.date), sanitizeValue(customerData.name), sanitizeValue(customerData.age), sanitizeValue(customerData.phone),
+      sanitizeDate(customerData.date), sanitizeValue(customerData.name), sanitizeValue(customerData.age), sanitizeValue(customerData.phone),
       sanitizeValue(customerData.job), sanitizeValue(customerData.position), sanitizeValue(customerData.businessOwnerType),
       sanitizeValue(customerData.privateBusinessType), sanitizeValue(customerData.projectName), sanitizeValue(customerData.unit),
       sanitizeValue(customerData.readyToTransfer), sanitizeValue(customerData.propertyValue), sanitizeValue(customerData.rentToOwnValue),
@@ -296,7 +330,7 @@ const updateCustomerWithDetails = async (customerId, customerData, loanProblems 
       sanitizeValue(customerData.transferYear), sanitizeValue(customerData.annualInterestRate), sanitizeValue(customerData.income),
       sanitizeValue(customerData.debt), sanitizeValue(customerData.maxDebtAllowed), sanitizeValue(customerData.loanTerm),
       sanitizeValue(customerData.ltv), sanitizeValue(customerData.ltvNote), sanitizeValue(customerData.maxLoanAmount),
-      sanitizeValue(customerData.targetDate), sanitizeValue(customerData.officer), sanitizeValue(customerData.selectedBank),
+      sanitizeDate(customerData.targetDate), sanitizeValue(customerData.officer), sanitizeValue(customerData.selectedBank),
       sanitizeValue(customerData.targetBank), sanitizeValue(customerData.recommendedLoanTerm),
       sanitizeValue(customerData.recommendedInstallment), sanitizeValue(customerData.potentialScore),
       sanitizeValue(customerData.degreeOfOwnership), sanitizeValue(customerData.financialStatus),
