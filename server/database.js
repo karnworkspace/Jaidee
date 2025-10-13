@@ -512,9 +512,14 @@ const insertReport = async (reportData) => {
         additional_notes, debt_limit, loan_term_after, analyst
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `, [
-      reportData.customer_id, reportData.customer_name, reportData.report_date,
-      reportData.selected_installment, reportData.additional_notes,
-      reportData.debt_limit, reportData.loan_term_after, reportData.analyst
+      sanitizeValue(reportData.customer_id),
+      sanitizeValue(reportData.customer_name),
+      sanitizeValue(reportData.report_date),
+      sanitizeValue(reportData.selected_installment),
+      sanitizeValue(reportData.additional_notes),
+      sanitizeValue(reportData.debt_limit),
+      sanitizeValue(reportData.loan_term_after),
+      sanitizeValue(reportData.analyst)
     ]);
     return result.insertId;
   } catch (error) {

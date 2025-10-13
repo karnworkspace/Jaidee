@@ -50,7 +50,7 @@ function CustomerForm() {
     targetDate: '',
     officer: 'นายพิชญ์ สุดทัน',
     selectedBank: '',
-    targetBank: '', // Added for loan band calculation
+    targetBank: 'GHB', // Default to GHB (Government Housing Bank)
     recommendedLoanTerm: '',
     recommendedInstallment: '',
   });
@@ -436,9 +436,8 @@ function CustomerForm() {
                 <div className={styles.formGroup}>
                   <label>ธนาคารเป้าหมาย<span className={styles.required}>*</span></label>
                   <select name="targetBank" value={formData.targetBank} onChange={handleChange} required className={styles.select}>
-                    <option value="">-- เลือกธนาคาร --</option>
-                    <option value="KTB">ธนาคารกรุงไทย (KTB)</option>
                     <option value="GHB">ธนาคารอาคารสงเคราะห์ (GHB)</option>
+                    <option value="KTB">ธนาคารกรุงไทย (KTB)</option>
                     <option value="GSB">ธนาคารออมสิน (GSB)</option>
                     <option value="BBL">ธนาคารกรุงเทพ (BBL)</option>
                     <option value="SCB">ธนาคารไทยพาณิชย์ (SCB)</option>
