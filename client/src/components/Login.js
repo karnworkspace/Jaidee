@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styles from './Login.module.css';
+import { API_ENDPOINTS } from '../config/api';
 
 function Login({ onLogin }) {
   const [formData, setFormData] = useState({
@@ -24,7 +25,7 @@ function Login({ onLogin }) {
     setError('');
 
     try {
-      const response = await fetch('https://jaidee-backend.onrender.com/api/auth/login', {
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

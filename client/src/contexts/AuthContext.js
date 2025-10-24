@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../config/api';
 
 const AuthContext = createContext();
 
@@ -24,7 +25,7 @@ export const AuthProvider = ({ children }) => {
 
         if (storedToken && storedUser) {
           // Verify token is still valid
-          const response = await fetch('https://jaidee-backend.onrender.com/api/auth/me', {
+          const response = await fetch(API_ENDPOINTS.ME, {
             headers: {
               'Authorization': `Bearer ${storedToken}`
             }
@@ -61,7 +62,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       if (token) {
-        await fetch('https://jaidee-backend.onrender.com/api/auth/logout', {
+        await fetch(API_ENDPOINTS.LOGOUT, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`

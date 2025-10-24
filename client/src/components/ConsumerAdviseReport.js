@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 import styles from './ConsumerAdviseReport.module.css';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -16,7 +17,7 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
 
   const loadSavedReportData = useCallback(async () => {
     try {
-      const response = await authenticatedFetch(`https://jaidee-backend.onrender.com/api/reports/${customerData.id}`);
+      const response = await authenticatedFetch(API_ENDPOINTS.REPORT_BY_CUSTOMER(customerData.id));
 
       if (response.ok) {
         const savedData = await response.json();
@@ -1744,7 +1745,7 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
       };
 
       // บันทึกลงฐานข้อมูล
-      const response = await authenticatedFetch('https://jaidee-backend.onrender.com/api/reports', {
+      const response = await authenticatedFetch(API_ENDPOINTS.REPORTS, {
         method: 'POST',
         body: JSON.stringify(reportDataToSave)
       });
