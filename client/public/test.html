@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page - Jaidee System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .status {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        .test-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .test-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { border-left: 4px solid #4CAF50; }
+        .error { border-left: 4px solid #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <</body>h1>🏦 Jaidee System Test</h1>
+
+        <div class="status">
+            <span><strong>🌐 Frontend:</strong> <span id="frontend-status">Testing...</span></span>
+            <span><strong>🔧 Backend:</strong> <span id="backend-status">Testing...</span></span>
+        </div>
+
+        <h2>🧪 API Tests</h2>
+        <button class="test-btn" onclick="testHealthCheck()">Test Health Check</button>
+        <button class="test-btn" onclick="testLogin()">Test Login</button>
+        <button class="test-btn" onclick="testCustomers()">Test Get Customers</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Test functions
+        async function testHealthCheck() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                showResult('Health Check', data, true);
+                document.getElementById('backend-status').textContent = '✅ Online';
+            } catch (error) {
+                showResult('Health Check', error.message, false);
+                document.getElementById('backend-status').textContent = '❌ Error';
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+                const data = await response.json();
+                if (data.token) {
+                    showResult('Login', 'Login successful! Token received.', true);
+                    localStorage.setItem('jaidee_token', data.token);
+                } else {
+                    showResult('Login', 'Login failed: ' + JSON.stringify(data), false);
+                }
+            } catch (error) {
+                showResult('Login', 'Login error: ' + error.message, false);
+            }
+            }
+        }
+
+        async function testCustomers() {
+            const token = localStorage.getItem('jaidee_token');
+            if (!token) {
+                showResult('Customers', 'Please login first!', false);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/customers', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    showResult('Customers', `Found ${data.length} customers in database!`, true);
+                } else {
+                    showResult('Customers', 'Failed to get customers: ' + JSON.stringify(data), false);
+                }
+            } catch (error) {
+                showResult('Customers', 'Customers error: ' + error.message, false);
+            }
+            }
+        }
+
+        function showResult(testName, result, success) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${success ? 'success' : 'error'}`;
+
+            // Clear previous results
+            resultsDiv.innerHTML = '';
+
+            resultDiv.innerHTML = `<strong>${testName}:</strong>\n${typeof result === 'object' ? JSON.stringify(result, null, 2) : result}`;
+            resultsDiv.appendChild(resultDiv);
+
+            console.log(`${testName} result:`, result);
+        }
+
+        // Initialize
+        document.getElementById('frontend-status').textContent = '✅ Online';
+
+        // Auto-run health check
+        testHealthCheck();
+    </script>
+</body>
+</html>
+```
+```
+
+ผมสร้าง test page ง่ายๆ ขึ้นมาแล้วครับ ตอนนี้คุณสามารถเข้าถึงได้ที่:
+
+**http://localhost:3000/test.html**
+
+หน้านี้จะช่วยทดสอบ:
+1. ✅ Frontend Server ว่าโหลดไหม
+2. ✅ Backend Health Check ว่าตอบสนองไหม
+3. ✅ API Login ว่าทำงานไหม
+4. ✅ Get Customers ว่าดึงข้อมูลได้ไหม
+
+จากนั้นจะแสดงผลลัพธ์แบบ interactive พร้อมสีเขียว/แดงบอกสถานะ และแสดง response จาก API แบบ JSON สวยงามครับ
+
+ลองเปิดดูแล้วรีบกดปุ่มทดสอบดูนะครับ! 🧪

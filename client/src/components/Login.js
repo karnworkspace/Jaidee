@@ -1,51 +1,52 @@
-import React, { useState } from 'react';
-import styles from './Login.module.css';
+import React, { useState } from "react";
+import { API_ENDPOINTS } from "../config/api";
+import styles from "./Login.module.css";
 
 function Login({ onLogin }) {
   const [formData, setFormData] = useState({
-    username: '',
-    password: ''
+    username: "",
+    password: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
     // Clear error when user starts typing
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch('https://jaidee-backend.onrender.com/api/auth/login', {
-        method: 'POST',
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         // Store token and user info
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
         // Call parent component's onLogin function
         onLogin(data.user, data.token);
       } else {
-        setError(data.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+        setError(data.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
       }
     } catch (error) {
-      setError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+      setError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
     } finally {
       setLoading(false);
     }
@@ -60,11 +61,7 @@ function Login({ onLogin }) {
         </div>
 
         <form onSubmit={handleSubmit} className={styles.loginForm}>
-          {error && (
-            <div className={styles.errorMessage}>
-              ⚠️ {error}
-            </div>
-          )}
+          {error && <div className={styles.errorMessage}>⚠️ {error}</div>}
 
           <div className={styles.inputGroup}>
             <label htmlFor="username" className={styles.label}>
@@ -100,12 +97,12 @@ function Login({ onLogin }) {
             />
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={styles.loginButton}
             disabled={loading}
           >
-            {loading ? '🔄 กำลังเข้าสู่ระบบ...' : '🚀 เข้าสู่ระบบ'}
+            {loading ? "🔄 กำลังเข้าสู่ระบบ..." : "🚀 เข้าสู่ระบบ"}
           </button>
         </form>
 

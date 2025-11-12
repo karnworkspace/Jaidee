@@ -1,11 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { API_ENDPOINTS } from "../config/api";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -19,15 +20,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const storedToken = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
+        const storedToken = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("user");
 
         if (storedToken && storedUser) {
           // Verify token is still valid
-          const response = await fetch('https://jaidee-backend.onrender.com/api/auth/me', {
+          const response = await fetch(API_ENDPOINTS.ME, {
             headers: {
-              'Authorization': `Bearer ${storedToken}`
-            }
+              Authorization: `Bearer ${storedToken}`,
+            },
           });
 
           if (response.ok) {
@@ -36,13 +37,13 @@ export const AuthProvider = ({ children }) => {
             setUser(userData.user);
           } else {
             // Token is invalid, clear storage
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
           }
         }
       } catch (error) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
       } finally {
         setLoading(false);
       }
@@ -54,18 +55,18 @@ export const AuthProvider = ({ children }) => {
   const login = (userData, userToken) => {
     setUser(userData);
     setToken(userToken);
-    localStorage.setItem('token', userToken);
-    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem("token", userToken);
+    localStorage.setItem("user", JSON.stringify(userData));
   };
 
   const logout = async () => {
     try {
       if (token) {
-        await fetch('https://jaidee-backend.onrender.com/api/auth/logout', {
-          method: 'POST',
+        await fetch(API_ENDPOINTS.LOGOUT, {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
       }
     } catch (error) {
@@ -73,8 +74,8 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null);
       setToken(null);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
     }
   };
 
@@ -89,19 +90,19 @@ export const AuthProvider = ({ children }) => {
     return requiredDepartments.includes(user.department);
   };
 
-  const isAdmin = () => hasRole(['admin']);
-  const canEditData = () => hasRole(['admin', 'data_entry']);
-  const canViewData = () => hasRole(['admin', 'data_entry', 'data_user']);
+  const isAdmin = () => hasRole(["admin"]);
+  const canEditData = () => hasRole(["admin", "data_entry"]);
+  const canViewData = () => hasRole(["admin", "data_entry", "data_user"]);
 
   // HTTP request helper with auth header
   const authenticatedFetch = async (url, options = {}) => {
     const config = {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options.headers,
-        'Authorization': `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     };
 
     const response = await fetch(url, config);
@@ -109,7 +110,7 @@ export const AuthProvider = ({ children }) => {
     // If token is expired, logout user
     if (response.status === 401 || response.status === 403) {
       logout();
-      throw new Error('Authentication required');
+      throw new Error("Authentication required");
     }
 
     return response;
@@ -127,12 +128,8 @@ export const AuthProvider = ({ children }) => {
     isAdmin,
     canEditData,
     canViewData,
-    authenticatedFetch
+    authenticatedFetch,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
