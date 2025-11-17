@@ -36,6 +36,7 @@ const {
   getOtherProblemSolution,
   getAllProblemsFlat
 } = require('./problemsData');
+const { generatePDF } = require('./pdfGenerator');
 
 
 const app = express();
@@ -1525,18 +1526,55 @@ app.post('/api/reports', authenticateToken, async (req, res) => {
 // API endpoint สำหรับดึงข้อมูลรายงานที่บันทึกไว้
 app.get('/api/reports/:customerId', authenticateToken, async (req, res) => {
   try {
-    
+
     const customerId = parseInt(req.params.customerId);
-    
+
     // ดึงข้อมูลรายงานที่บันทึกไว้
     const reports = await getReportsByCustomerId(customerId);
-    
-    
+
+
     res.json(reports);
   } catch (error) {
-    res.status(500).json({ 
-      message: 'Error fetching reports', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching reports',
+      error: error.message
+    });
+  }
+});
+
+// API endpoint สำหรับสร้าง PDF
+app.post('/api/reports/generate-pdf', authenticateToken, async (req, res) => {
+  try {
+    const reportData = req.body;
+
+    // ตรวจสอบข้อมูลที่จำเป็น
+    if (!reportData) {
+      return res.status(400).json({
+        message: 'Missing report data'
+      });
+    }
+
+    console.log('Generating PDF for customer:', reportData.name);
+
+    // สร้าง PDF
+    const pdfBuffer = await generatePDF(reportData);
+
+    // ตั้งค่า response headers
+    const fileName = `รายงาน_Consumer_Advise_${reportData.name || 'Report'}_${new Date().toLocaleDateString('th-TH')}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    // ส่ง PDF กลับไป
+    res.send(pdfBuffer);
+
+    console.log('PDF generated successfully');
+
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    res.status(500).json({
+      message: 'Error generating PDF',
+      error: error.message
     });
   }
 });
