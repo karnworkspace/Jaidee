@@ -1,6 +1,6 @@
 // API Configuration
-// Force empty base URL for local development to use nginx proxy
-const API_BASE_URL = "";
+// Use /jaidee/api for production deployment with Nginx path-based routing
+const API_BASE_URL = "/jaidee";
 
 export const API_ENDPOINTS = {
   // Auth endpoints
