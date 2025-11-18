@@ -160,7 +160,7 @@ const ConsumerAdviseReport = ({ customerData, onClose }) => {
 
       // เรียก Backend API
       const apiUrl = process.env.NODE_ENV === 'production'
-        ? '/api/reports/generate-pdf'  // ใน Docker network ใช้ relative path
+        ? '/jaidee/api/reports/generate-pdf'  // Production with Nginx subpath routing
         : 'http://localhost:3001/api/reports/generate-pdf'; // Local development
 
       const response = await authenticatedFetch(apiUrl, {
