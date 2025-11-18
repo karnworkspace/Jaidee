@@ -6,7 +6,7 @@ services:
     container_name: jaidee-backend-prod
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3101:3001"
     volumes:
       - ../server/data:/app/data
     environment:
@@ -22,7 +22,7 @@ services:
     container_name: jaidee-frontend-prod
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "3100:80"
     depends_on:
       - backend
     networks:
