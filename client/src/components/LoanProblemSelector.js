@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 import styles from './LoanProblemSelector.module.css';
 
 function LoanProblemSelector({ 
@@ -26,12 +27,12 @@ function LoanProblemSelector({
         setLoading(true);
         
         // Load categories
-        const categoriesResponse = await authenticatedFetch('https://jaidee-backend.onrender.com/api/problems/categories');
+        const categoriesResponse = await authenticatedFetch(API_ENDPOINTS.PROBLEMS_CATEGORIES);
         const categoriesData = await categoriesResponse.json();
         setCategories(categoriesData);
 
         // Load other problems
-        const otherResponse = await authenticatedFetch('https://jaidee-backend.onrender.com/api/problems/other');
+        const otherResponse = await authenticatedFetch(API_ENDPOINTS.PROBLEMS_OTHER);
         const otherData = await otherResponse.json();
         setOtherProblems(otherData);
 
@@ -56,7 +57,7 @@ function LoanProblemSelector({
 
       try {
         const response = await authenticatedFetch(
-          `https://jaidee-backend.onrender.com/api/problems/details/${encodeURIComponent(selectedCategory)}`
+          API_ENDPOINTS.PROBLEMS_DETAILS(selectedCategory)
         );
         const details = await response.json();
         setProblemDetails(prev => ({
@@ -81,7 +82,7 @@ function LoanProblemSelector({
 
       try {
         const response = await authenticatedFetch(
-          `https://jaidee-backend.onrender.com/api/problems/solution/${encodeURIComponent(selectedCategory)}/${encodeURIComponent(selectedDetail)}`
+          API_ENDPOINTS.PROBLEMS_SOLUTION(selectedCategory, selectedDetail)
         );
         const data = await response.json();
         setSelectedSolution(data.solution);
@@ -128,10 +129,10 @@ function LoanProblemSelector({
 
     try {
       const response = await authenticatedFetch(
-        `https://jaidee-backend.onrender.com/api/problems/other-solution/${encodeURIComponent(problem)}`
+        API_ENDPOINTS.PROBLEMS_OTHER_SOLUTION(problem)
       );
       const data = await response.json();
-      
+
       const updatedProblems = [...selectedProblems, problem];
       const updatedSolutions = [...selectedSolutions, data.solution];
 

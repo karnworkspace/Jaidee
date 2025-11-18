@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 import { calculateRentToOwn } from '../utils/rentToOwnCalculator';
 import RentToOwnTable from './RentToOwnTable';
 import LoanProblemSelector from './LoanProblemSelector';
@@ -148,7 +149,7 @@ function CustomerForm() {
     const loadCustomerData = async () => {
       if (isEditing) {
         try {
-          const response = await authenticatedFetch(`https://jaidee-backend.onrender.com/api/customers/${customerId}`);
+          const response = await authenticatedFetch(API_ENDPOINTS.CUSTOMER_BY_ID(customerId));
           const data = await response.json();
           
           setFormData({
@@ -308,7 +309,7 @@ function CustomerForm() {
     e.preventDefault();
     
     try {
-      const url = isEditing ? `https://jaidee-backend.onrender.com/api/customers/${customerId}` : 'https://jaidee-backend.onrender.com/api/customers';
+      const url = isEditing ? API_ENDPOINTS.CUSTOMER_BY_ID(customerId) : API_ENDPOINTS.CUSTOMERS;
       const method = isEditing ? 'PUT' : 'POST';
 
       // Prepare data with updated problems and solutions
