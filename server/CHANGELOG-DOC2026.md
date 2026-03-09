@@ -95,3 +95,24 @@
   - เพิ่ม Bureau Check section (form/consent status grid)
   - เพิ่ม LivNex Tracking timeline
   - เพิ่ม CA Recommendations display
+
+## Commit 10: `1c219ae` — Add APP-IN management UI (F2)
+- เพิ่ม `StatusChangeButtons` component ดึง allowed transitions จาก API
+- เพิ่ม `handleCreateLoanApp` (auto-generate APP-IN via POST)
+- เพิ่ม `handleStatusChange` พร้อม confirmation dialog + workflow validation
+- เพิ่ม `doc2026Refresh` state สำหรับ re-fetch หลัง mutation
+
+## Commit 11: `a5882d3` — Add loan status filter to Dashboard (F8)
+- เพิ่ม loanStatus filter dropdown ครบทุกสถานะ DOC2026
+- เพิ่มคอลัมน์ สินเชื่อ ในตาราง Dashboard พร้อม color-coded badges
+- รองรับ sorting ตาม loan_status
+
+## Commit 12: `681e240` — Add DOC2026 test suite (78 tests)
+- Unit tests: workflowService (22 tests) — valid/invalid transitions, terminal states
+- Unit tests: debtCalculation (16 tests) — 5 debt types, DSR, multi-debt scenarios
+- Integration tests: API routes (40 tests) — auth, CRUD, validation ทั้ง 5 modules
+
+## Commit 13: `5b12ca8` — Fix Docker for production
+- เพิ่ม `__tests__/` ใน .dockerignore (exclude test files จาก production image)
+- แก้ deprecated `--only=production` → `--omit=dev` ใน Dockerfile
+- Docker build + smoke test ผ่าน 14/14 tests
