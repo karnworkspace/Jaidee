@@ -9,6 +9,7 @@ const {
   insertLoanApplication, updateLoanApplication
 } = require('../database');
 const { validateTransition, getNextStatuses } = require('../services/workflowService');
+const { generateAppInNumber } = require('../services/appInService');
 
 /**
  * GET /api/loan-applications/customer/:customerId
@@ -57,7 +58,14 @@ router.post('/', authenticateToken, requireRole(['admin', 'data_entry']), async 
     if (!customer_id || !application_date) {
       return res.status(400).json({ message: 'Missing required fields: customer_id, application_date' });
     }
-    const id = await insertLoanApplication(req.body);
+
+    // Auto-generate APP-IN number if not provided
+    const data = { ...req.body };
+    if (!data.app_in_number) {
+      data.app_in_number = await generateAppInNumber();
+    }
+
+    const id = await insertLoanApplication(data);
     const application = await getLoanApplicationById(id);
     res.status(201).json({ message: 'Loan application created', application });
   } catch (error) {

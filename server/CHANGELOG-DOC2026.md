@@ -55,3 +55,10 @@
 - เพิ่ม `GET /customer/:customerId/dsr` endpoint ใน `routes/debtItems.js`
   - คำนวณ DSR = total_calculated_debt / income * 100
   - พร้อม breakdown แต่ละรายการหนี้
+
+## Commit 6 — Add APP-IN auto-generation service
+- สร้าง `services/appInService.js` — auto-generate เลข APP-IN format `APPIN-YYMM-XXXX`
+  - ดึง sequence สูงสุดของเดือนปัจจุบันจาก DB แล้ว +1
+  - zero-padded 4 หลัก (รองรับ 9,999 เคส/เดือน)
+- แก้ `routes/loanApplications.js` POST — auto-generate ถ้าไม่ส่ง app_in_number มา
+- ยังรองรับการใส่เลข APP-IN เองได้ (กรณี REM LivNex ส่งมา)
