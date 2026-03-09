@@ -12,6 +12,15 @@ function CustomerDetail() {
   const [activeSection, setActiveSection] = useState("overview");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // DOC2026 states
+  const [loanApplications, setLoanApplications] = useState([]);
+  const [nextStatuses, setNextStatuses] = useState([]);
+  const [debtItems, setDebtItems] = useState([]);
+  const [dsrData, setDsrData] = useState(null);
+  const [bureauRequests, setBureauRequests] = useState([]);
+  const [livnexTracking, setLivnexTracking] = useState([]);
+  const [caRecommendations, setCaRecommendations] = useState([]);
+
   useEffect(() => {
     const fetchCustomerDetails = async () => {
       if (customerId) {
@@ -31,6 +40,39 @@ function CustomerDetail() {
     };
 
     fetchCustomerDetails();
+  }, [customerId, authenticatedFetch]);
+
+  // Fetch DOC2026 data
+  useEffect(() => {
+    if (!customerId) return;
+    const fetchDOC2026 = async () => {
+      try {
+        const [appsRes, debtRes, dsrRes, bureauRes, trackRes, caRes] = await Promise.all([
+          authenticatedFetch(API_ENDPOINTS.LOAN_APPLICATIONS_BY_CUSTOMER(customerId)),
+          authenticatedFetch(API_ENDPOINTS.DEBT_ITEMS_BY_CUSTOMER(customerId)),
+          authenticatedFetch(API_ENDPOINTS.DEBT_DSR(customerId)),
+          authenticatedFetch(API_ENDPOINTS.BUREAU_REQUESTS_BY_CUSTOMER(customerId)),
+          authenticatedFetch(API_ENDPOINTS.LIVNEX_TRACKING_BY_CUSTOMER(customerId)),
+          authenticatedFetch(API_ENDPOINTS.CA_RECOMMENDATIONS_BY_CUSTOMER(customerId)),
+        ]);
+        if (appsRes.ok) setLoanApplications(await appsRes.json());
+        if (debtRes.ok) setDebtItems(await debtRes.json());
+        if (dsrRes.ok) setDsrData(await dsrRes.json());
+        if (bureauRes.ok) setBureauRequests(await bureauRes.json());
+        if (trackRes.ok) setLivnexTracking(await trackRes.json());
+        if (caRes.ok) setCaRecommendations(await caRes.json());
+
+        // Fetch next statuses for latest loan app
+        const apps = appsRes.ok ? await appsRes.clone().json() : [];
+        if (apps.length > 0) {
+          const nsRes = await authenticatedFetch(API_ENDPOINTS.LOAN_APPLICATION_NEXT_STATUSES(apps[0].id));
+          if (nsRes.ok) setNextStatuses((await nsRes.json()).allowedTransitions || []);
+        }
+      } catch (err) {
+        // Silently fail — DOC2026 data is supplementary
+      }
+    };
+    fetchDOC2026();
   }, [customerId, authenticatedFetch]);
 
   if (!customer) {
@@ -72,6 +114,17 @@ function CustomerDetail() {
       items: [
         { id: "rentResults", label: "💰 ข้อมูลการเช่าออม", icon: "💰" },
         { id: "amortization", label: "📋 Amortization", icon: "📋" },
+      ],
+    },
+    {
+      id: "doc2026",
+      title: "DOC2026 WORKFLOW",
+      items: [
+        { id: "workflowStatus", label: "📌 Workflow Status", icon: "📌" },
+        { id: "debtDetail", label: "💸 รายละเอียดหนี้", icon: "💸" },
+        { id: "bureauInfo", label: "📑 Bureau Check", icon: "📑" },
+        { id: "livnexTrack", label: "📋 LivNex Tracking", icon: "📋" },
+        { id: "caReco", label: "💡 CA Recommendations", icon: "💡" },
       ],
     },
   ];
@@ -863,6 +916,203 @@ function CustomerDetail() {
             <div className={styles.noData}>
               <p>ไม่มีข้อมูล Bank Matching</p>
             </div>
+          )}
+        </div>
+
+        {/* ============ DOC2026 SECTIONS ============ */}
+
+        {/* F1: Workflow Status Bar */}
+        <div id="workflowStatus" className={styles.section}>
+          <h2>📌 Workflow Status</h2>
+          {loanApplications.length > 0 ? (
+            <div>
+              {loanApplications.map(app => {
+                const statusLabels = {
+                  new: 'ใหม่', document_check: 'ตรวจเอกสาร', document_incomplete: 'เอกสารไม่ครบ',
+                  bureau_check: 'ตรวจ Bureau', analyzing: 'วิเคราะห์', approved: 'อนุมัติ',
+                  rejected: 'ปฏิเสธ', transferred: 'โอนแล้ว', cancelled: 'ยกเลิก',
+                  cancelled_after_approval: 'ยกเลิกหลังอนุมัติ'
+                };
+                const statusColors = {
+                  new: '#6b7280', document_check: '#f59e0b', document_incomplete: '#ef4444',
+                  bureau_check: '#3b82f6', analyzing: '#8b5cf6', approved: '#10b981',
+                  rejected: '#ef4444', transferred: '#059669', cancelled: '#6b7280',
+                  cancelled_after_approval: '#dc2626'
+                };
+                const allSteps = ['new', 'document_check', 'bureau_check', 'analyzing', 'approved', 'transferred'];
+                const currentIdx = allSteps.indexOf(app.loan_status);
+
+                return (
+                  <div key={app.id} style={{marginBottom: '1.5rem', padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem'}}>
+                      <span style={{fontWeight: 'bold', fontSize: '1rem'}}>{app.app_in_number || `APP-${app.id}`}</span>
+                      <span style={{padding: '2px 12px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: '600', color: '#fff', background: statusColors[app.loan_status] || '#6b7280'}}>
+                        {statusLabels[app.loan_status] || app.loan_status}
+                      </span>
+                    </div>
+                    {/* Progress bar */}
+                    <div style={{display: 'flex', gap: '4px', marginBottom: '0.5rem'}}>
+                      {allSteps.map((step, i) => (
+                        <div key={step} style={{
+                          flex: 1, height: '6px', borderRadius: '3px',
+                          background: i <= currentIdx ? (statusColors[app.loan_status] || '#6b7280') : '#e5e7eb'
+                        }} title={statusLabels[step]} />
+                      ))}
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#9ca3af'}}>
+                      {allSteps.map(step => (
+                        <span key={step}>{statusLabels[step]}</span>
+                      ))}
+                    </div>
+                    {app.assigned_ca && <p style={{marginTop: '0.5rem', fontSize: '0.85rem'}}>CA: {app.assigned_ca} {app.assigned_co ? `| CO: ${app.assigned_co}` : ''}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className={styles.noData}><p>ยังไม่มีใบสมัครสินเชื่อ</p></div>
+          )}
+        </div>
+
+        {/* F3: Debt Items Table */}
+        <div id="debtDetail" className={styles.section}>
+          <h2>💸 รายละเอียดหนี้</h2>
+          {debtItems.length > 0 ? (
+            <div>
+              {dsrData && (
+                <div style={{display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap'}}>
+                  <div style={{padding: '0.75rem 1.25rem', background: dsrData.dsr > 40 ? '#fef2f2' : '#f0fdf4', borderRadius: '8px', border: `1px solid ${dsrData.dsr > 40 ? '#fecaca' : '#bbf7d0'}`}}>
+                    <div style={{fontSize: '0.75rem', color: '#6b7280'}}>DSR</div>
+                    <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: dsrData.dsr > 40 ? '#dc2626' : '#16a34a'}}>{dsrData.dsr}%</div>
+                  </div>
+                  <div style={{padding: '0.75rem 1.25rem', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd'}}>
+                    <div style={{fontSize: '0.75rem', color: '#6b7280'}}>ภาระหนี้รวม</div>
+                    <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#0284c7'}}>{dsrData.totalDebt?.toLocaleString()} บาท</div>
+                  </div>
+                </div>
+              )}
+              <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem'}}>
+                <thead>
+                  <tr style={{background: '#f3f4f6'}}>
+                    <th style={{padding: '8px', textAlign: 'left', borderBottom: '2px solid #e5e7eb'}}>ประเภท</th>
+                    <th style={{padding: '8px', textAlign: 'left', borderBottom: '2px solid #e5e7eb'}}>เจ้าหนี้</th>
+                    <th style={{padding: '8px', textAlign: 'right', borderBottom: '2px solid #e5e7eb'}}>ยอดคงเหลือ</th>
+                    <th style={{padding: '8px', textAlign: 'right', borderBottom: '2px solid #e5e7eb'}}>ผ่อน/เดือน</th>
+                    <th style={{padding: '8px', textAlign: 'right', borderBottom: '2px solid #e5e7eb'}}>คำนวณได้</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {debtItems.map(item => {
+                    const typeLabels = {
+                      revolving_personal: 'สินเชื่อส่วนบุคคล (5%)', revolving_credit_card: 'บัตรเครดิต (8%)',
+                      revolving_other: 'หมุนเวียนอื่น (5%)', installment: 'ผ่อนชำระ',
+                      joint_loan: 'กู้ร่วม (/2)', legacy: 'ข้อมูลเดิม'
+                    };
+                    return (
+                      <tr key={item.id} style={{borderBottom: '1px solid #e5e7eb'}}>
+                        <td style={{padding: '8px'}}>{typeLabels[item.debt_type] || item.debt_type}</td>
+                        <td style={{padding: '8px'}}>{item.creditor_name || '-'}</td>
+                        <td style={{padding: '8px', textAlign: 'right'}}>{item.outstanding_balance?.toLocaleString()}</td>
+                        <td style={{padding: '8px', textAlign: 'right'}}>{item.monthly_payment?.toLocaleString()}</td>
+                        <td style={{padding: '8px', textAlign: 'right', fontWeight: 'bold'}}>{item.calculated_payment?.toLocaleString()}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className={styles.noData}><p>ยังไม่มีรายละเอียดหนี้</p></div>
+          )}
+        </div>
+
+        {/* F4: Bureau Section */}
+        <div id="bureauInfo" className={styles.section}>
+          <h2>📑 Bureau Check</h2>
+          {bureauRequests.length > 0 ? (
+            <div>
+              {bureauRequests.map(req => (
+                <div key={req.id} style={{padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', marginBottom: '1rem'}}>
+                  <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem'}}>
+                    <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>วันที่ขอ</span><br/><strong>{req.request_date}</strong></div>
+                    <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>หมดอายุ</span><br/><strong>{req.expiry_date || '-'}</strong></div>
+                    <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>Consent</span><br/>
+                      <span style={{padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem', background: req.consent_status === 'received' ? '#dcfce7' : '#fef3c7', color: req.consent_status === 'received' ? '#166534' : '#92400e'}}>
+                        {req.consent_status === 'received' ? 'ได้รับแล้ว' : req.consent_status === 'expired' ? 'หมดอายุ' : 'รอ'}
+                      </span>
+                    </div>
+                    <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>Form 1</span><br/>
+                      <span style={{padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem', background: req.form1_status === 'verified' ? '#dcfce7' : '#f3f4f6'}}>
+                        {req.form1_status}
+                      </span>
+                    </div>
+                    <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>Form 2</span><br/>
+                      <span style={{padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem', background: req.form2_status === 'verified' ? '#dcfce7' : '#f3f4f6'}}>
+                        {req.form2_status}
+                      </span>
+                    </div>
+                    {req.bureau_score && <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>Bureau Score</span><br/><strong style={{fontSize: '1.2rem'}}>{req.bureau_score}</strong></div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.noData}><p>ยังไม่มีข้อมูล Bureau</p></div>
+          )}
+        </div>
+
+        {/* F5: LivNex Tracking */}
+        <div id="livnexTrack" className={styles.section}>
+          <h2>📋 LivNex Tracking</h2>
+          {livnexTracking.length > 0 ? (
+            <div>
+              {livnexTracking.map(track => {
+                const trackColors = { approved: '#f59e0b', active: '#3b82f6', transferred: '#10b981', cancelled: '#ef4444' };
+                return (
+                  <div key={track.id} style={{padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', marginBottom: '1rem'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem'}}>
+                      <span style={{fontWeight: 'bold'}}>Tracking #{track.id}</span>
+                      <span style={{padding: '2px 12px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: '600', color: '#fff', background: trackColors[track.status] || '#6b7280'}}>
+                        {track.status === 'approved' ? 'อนุมัติ' : track.status === 'active' ? 'ดำเนินการ' : track.status === 'transferred' ? 'โอนแล้ว' : 'ยกเลิก'}
+                      </span>
+                    </div>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem', fontSize: '0.85rem'}}>
+                      {track.approval_date && <div>อนุมัติ: {track.approval_date}</div>}
+                      {track.transfer_date && <div>โอน: {track.transfer_date}</div>}
+                      {track.jd_officer && <div>JD: {track.jd_officer}</div>}
+                      {track.co_officer && <div>CO: {track.co_officer}</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className={styles.noData}><p>ยังไม่มีข้อมูล Tracking</p></div>
+          )}
+        </div>
+
+        {/* F6: CA Recommendations */}
+        <div id="caReco" className={styles.section}>
+          <h2>💡 CA Recommendations</h2>
+          {caRecommendations.length > 0 ? (
+            <div>
+              {caRecommendations.map(rec => (
+                <div key={rec.id} style={{padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', marginBottom: '1rem'}}>
+                  {rec.problem_description && <div style={{marginBottom: '0.5rem'}}><strong>ปัญหา:</strong> {rec.problem_description}</div>}
+                  {rec.solution && <div style={{marginBottom: '0.5rem'}}><strong>แนวทาง:</strong> {rec.solution}</div>}
+                  {rec.dsr_calculated && <div style={{marginBottom: '0.5rem'}}><strong>DSR:</strong> {rec.dsr_calculated}%</div>}
+                  <div style={{display: 'flex', gap: '1rem', fontSize: '0.85rem', color: '#6b7280', marginTop: '0.5rem'}}>
+                    {rec.ca_officer && <span>CA: {rec.ca_officer}</span>}
+                    {rec.co_officer && <span>CO: {rec.co_officer}</span>}
+                    <span style={{padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem', background: rec.co_tracking_status === 'completed' ? '#dcfce7' : '#fef3c7'}}>
+                      {rec.co_tracking_status === 'completed' ? 'เสร็จ' : rec.co_tracking_status === 'in_progress' ? 'กำลังดำเนินการ' : 'รอ'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.noData}><p>ยังไม่มี CA Recommendations</p></div>
           )}
         </div>
 

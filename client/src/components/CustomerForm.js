@@ -54,6 +54,15 @@ function CustomerForm() {
     targetBank: '', // Added for loan band calculation
     recommendedLoanTerm: '',
     recommendedInstallment: '',
+    // DOC2026 fields
+    id_card: '',
+    co_borrower_name: '',
+    co_borrower_id_card: '',
+    co_borrower_phone: '',
+    plot_number: '',
+    area_sqm: '',
+    deposit_amount: '',
+    price_after_discount: '',
   });
 
   const [calculatedRentToOwnResults, setCalculatedRentToOwnResults] = useState(null);
@@ -409,6 +418,16 @@ function CustomerForm() {
               </div>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}><label>ตำแหน่ง<span className={styles.required}>*</span></label><input type="text" name="position" value={formData.position} onChange={handleChange} required /></div>
+                <div className={styles.formGroup}><label>เลขบัตรประชาชน</label><input type="text" name="id_card" value={formData.id_card} onChange={handleChange} maxLength="13" placeholder="x-xxxx-xxxxx-xx-x" /></div>
+              </div>
+
+              <h4 style={{marginTop: '1rem', marginBottom: '0.5rem'}}>ผู้กู้ร่วม (ถ้ามี)</h4>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>ชื่อผู้กู้ร่วม</label><input type="text" name="co_borrower_name" value={formData.co_borrower_name} onChange={handleChange} /></div>
+                <div className={styles.formGroup}><label>เลขบัตรผู้กู้ร่วม</label><input type="text" name="co_borrower_id_card" value={formData.co_borrower_id_card} onChange={handleChange} maxLength="13" /></div>
+              </div>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}><label>เบอร์โทรผู้กู้ร่วม</label><input type="text" name="co_borrower_phone" value={formData.co_borrower_phone} onChange={handleChange} /></div>
               </div>
             </div>
 
@@ -507,6 +526,10 @@ function CustomerForm() {
                    </div>
                  </div>
                  <div className={styles.formGroup}><label>เลขห้อง<span className={styles.required}>*</span></label><input type="text" name="unit" value={formData.unit} onChange={handleChange} required /></div>
+               </div>
+               <div className={styles.formRow}>
+                 <div className={styles.formGroup}><label>เลขแปลง</label><input type="text" name="plot_number" value={formData.plot_number} onChange={handleChange} /></div>
+                 <div className={styles.formGroup}><label>พื้นที่ (ตร.ม.)</label><input type="number" name="area_sqm" value={formData.area_sqm} onChange={handleChange} step="0.01" /></div>
                </div>
                <div className={styles.formRow}>
                  <div className={styles.formGroup}><label>มูลค่าทรัพย์เต็มจำนวน</label><input type="text" name="propertyPrice" value={formatNumber(formData.propertyPrice)} onChange={handleNumberChange} /></div>
