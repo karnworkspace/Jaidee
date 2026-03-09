@@ -70,3 +70,15 @@
   - approved → active, cancelled
   - active → transferred, cancelled
   - transferred, cancelled → terminal (ไม่เปลี่ยนได้)
+
+## Commit 8 — Add Bureau + CA Recommendations business logic
+- **Bureau Module** (`routes/bureauRequests.js`):
+  - Validate loan_application ต้อง status `document_check` หรือ `bureau_check` ก่อนขอ bureau
+  - Auto-set expiry_date = request_date + 3 เดือน
+  - Form sequence: form1 ต้อง verified ก่อน form2 ถึง verify ได้
+  - Consent required: ต้องได้ consent ก่อนบันทึก bureau_result/score
+  - 3-month duplicate detection (มีอยู่แล้ว)
+- **CA Recommendations Module** (`routes/caRecommendations.js`):
+  - Validate loan_application ต้อง status `analyzing` ก่อนสร้าง recommendation
+  - Auto-calculate DSR จาก debt_items ถ้าไม่ส่งมา
+  - Auto-generate dsr_breakdown (JSON) จาก debt_items แต่ละรายการ

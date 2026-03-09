@@ -5,7 +5,9 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken, requireRole } = require('../auth');
 const {
-  getCARecommendationsByCustomer, insertCARecommendation, updateCARecommendation
+  getCARecommendationsByCustomer, insertCARecommendation, updateCARecommendation,
+  getCustomerWithDetails, getTotalDebtByCustomer, getDebtItemsByCustomer,
+  getLoanApplicationById
 } = require('../database');
 
 /**
@@ -31,11 +33,48 @@ router.get('/customer/:customerId', authenticateToken, async (req, res) => {
  */
 router.post('/', authenticateToken, requireRole(['admin', 'data_entry']), async (req, res) => {
   try {
-    const { customer_id } = req.body;
+    const { customer_id, loan_application_id } = req.body;
     if (!customer_id) {
       return res.status(400).json({ message: 'Missing required field: customer_id' });
     }
-    const id = await insertCARecommendation(req.body);
+
+    // Validate loan application is in analyzing status
+    if (loan_application_id) {
+      const loanApp = await getLoanApplicationById(loan_application_id);
+      if (!loanApp) {
+        return res.status(404).json({ message: 'Loan application not found' });
+      }
+      if (loanApp.loan_status !== 'analyzing') {
+        return res.status(400).json({
+          message: `Loan must be in "analyzing" status for CA recommendation. Current: "${loanApp.loan_status}"`
+        });
+      }
+    }
+
+    // Auto-calculate DSR if not provided
+    const data = { ...req.body };
+    if (!data.dsr_calculated) {
+      const totalDebt = await getTotalDebtByCustomer(customer_id);
+      const customer = await getCustomerWithDetails(customer_id);
+      if (customer && customer.income > 0) {
+        data.dsr_calculated = Math.round((totalDebt / customer.income) * 10000) / 100;
+      }
+    }
+
+    // Auto-generate DSR breakdown if not provided
+    if (!data.dsr_breakdown) {
+      const items = await getDebtItemsByCustomer(customer_id);
+      if (items.length > 0) {
+        const breakdown = items.map(i => ({
+          type: i.debt_type,
+          creditor: i.creditor_name,
+          calculated: i.calculated_payment
+        }));
+        data.dsr_breakdown = JSON.stringify(breakdown);
+      }
+    }
+
+    const id = await insertCARecommendation(data);
     res.status(201).json({ message: 'CA recommendation created', id });
   } catch (error) {
     res.status(500).json({ message: 'Error creating CA recommendation', error: error.message });
