@@ -82,3 +82,16 @@
   - Validate loan_application ต้อง status `analyzing` ก่อนสร้าง recommendation
   - Auto-calculate DSR จาก debt_items ถ้าไม่ส่งมา
   - Auto-generate dsr_breakdown (JSON) จาก debt_items แต่ละรายการ
+
+## Commit 9: `ca8c812` — Add DOC2026 frontend UI
+- **api.js**: เพิ่ม 20+ endpoint definitions สำหรับ loan applications, bureau, debt, livnex, CA
+- **CustomerForm.js**: เพิ่ม DOC2026 fields (id_card, co_borrower, plot_number, area_sqm, deposit_amount, price_after_discount)
+- **CustomerDetail.js**:
+  - เพิ่ม state variables 7 ตัวสำหรับ DOC2026 data
+  - เพิ่ม useEffect fetch ข้อมูล DOC2026 ทั้ง 5 modules พร้อมกัน (Promise.all)
+  - เพิ่ม sidebar navigation "DOC2026 WORKFLOW" 5 items
+  - เพิ่ม Workflow Status Bar พร้อม progress bar + status badges
+  - เพิ่ม Debt Items Table + DSR card + breakdown
+  - เพิ่ม Bureau Check section (form/consent status grid)
+  - เพิ่ม LivNex Tracking timeline
+  - เพิ่ม CA Recommendations display
