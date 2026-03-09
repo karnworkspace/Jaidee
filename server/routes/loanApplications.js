@@ -8,6 +8,7 @@ const {
   getLoanApplicationsByCustomer, getLoanApplicationById,
   insertLoanApplication, updateLoanApplication
 } = require('../database');
+const { validateTransition, getNextStatuses } = require('../services/workflowService');
 
 /**
  * GET /api/loan-applications/customer/:customerId
@@ -78,6 +79,15 @@ router.put('/:id', authenticateToken, requireRole(['admin', 'data_entry']), asyn
     if (!existing) {
       return res.status(404).json({ message: 'Loan application not found' });
     }
+
+    // Validate workflow transition if loan_status is being changed
+    if (req.body.loan_status && req.body.loan_status !== existing.loan_status) {
+      const check = validateTransition(existing.loan_status, req.body.loan_status);
+      if (!check.valid) {
+        return res.status(400).json({ message: check.message });
+      }
+    }
+
     const updated = await updateLoanApplication(id, req.body);
     if (!updated) {
       return res.status(400).json({ message: 'No valid fields to update' });
@@ -86,6 +96,30 @@ router.put('/:id', authenticateToken, requireRole(['admin', 'data_entry']), asyn
     res.json({ message: 'Loan application updated', application });
   } catch (error) {
     res.status(500).json({ message: 'Error updating loan application', error: error.message });
+  }
+});
+
+/**
+ * GET /api/loan-applications/:id/next-statuses
+ * Get allowed next statuses for a loan application
+ */
+router.get('/:id/next-statuses', authenticateToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid application ID' });
+    }
+    const application = await getLoanApplicationById(id);
+    if (!application) {
+      return res.status(404).json({ message: 'Loan application not found' });
+    }
+    const nextStatuses = getNextStatuses(application.loan_status);
+    res.json({
+      currentStatus: application.loan_status,
+      allowedTransitions: nextStatuses
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching next statuses', error: error.message });
   }
 });
 

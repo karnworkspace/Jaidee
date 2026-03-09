@@ -113,4 +113,46 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res
   }
 });
 
+/**
+ * GET /api/debt-items/customer/:customerId/dsr
+ * Calculate DSR (Debt Service Ratio) for a customer
+ * DSR = total_calculated_debt / income * 100
+ */
+router.get('/customer/:customerId/dsr', authenticateToken, async (req, res) => {
+  try {
+    const customerId = parseInt(req.params.customerId);
+    if (isNaN(customerId)) {
+      return res.status(400).json({ message: 'Invalid customer ID' });
+    }
+    const { getCustomerWithDetails } = require('../database');
+    const customer = await getCustomerWithDetails(customerId);
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    const totalDebt = await getTotalDebtByCustomer(customerId);
+    const items = await getDebtItemsByCustomer(customerId);
+    const income = customer.income || 0;
+    const dsr = income > 0 ? (totalDebt / income) * 100 : 0;
+
+    res.json({
+      customerId,
+      income,
+      totalDebt,
+      dsr: Math.round(dsr * 100) / 100,
+      itemCount: items.length,
+      breakdown: items.map(i => ({
+        id: i.id,
+        type: i.debt_type,
+        creditor: i.creditor_name,
+        outstanding: i.outstanding_balance,
+        monthly: i.monthly_payment,
+        calculated: i.calculated_payment
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error calculating DSR', error: error.message });
+  }
+});
+
 module.exports = router;

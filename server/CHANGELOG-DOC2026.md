@@ -32,7 +32,7 @@
 - เพิ่ม `*.sqlite` ใน `.dockerignore` ป้องกัน sensitive data ใน Docker image
 - เพิ่ม healthcheck ใน `docker-compose.production.yml`
 
-## ยังไม่ commit — API Routes สำหรับ 5 ตารางใหม่
+## Commit 3: `cb2ae23` — Add DOC2026 API routes for 5 new tables
 - สร้าง `routes/loanApplications.js` — GET(by customer), GET(by id), POST, PUT
 - สร้าง `routes/bureauRequests.js` — GET(by customer), GET(recent/3mo check), POST(+duplicate check), PUT
 - สร้าง `routes/debtItems.js` — GET(by customer), GET(summary), POST, PUT, DELETE + debt_type validation
@@ -40,3 +40,18 @@
 - สร้าง `routes/caRecommendations.js` — GET(by customer), POST, PUT
 - แก้ `index.js` — import + mount routes ที่ `/api/loan-applications`, `/api/bureau-requests`, `/api/debt-items`, `/api/livnex-tracking`, `/api/ca-recommendations`
 - ทุก endpoint มี authenticateToken + requireRole + input validation
+
+## Commit 4: `b6a08a0` — Remove old DB file, add deprecated backup to gitignore
+- ลบ `server/jaidee.sqlite` จาก repo (ย้ายไป `data/` แล้ว)
+- เพิ่ม `*.sqlite.backup_deprecated` ใน `.gitignore`
+
+## Commit 5 — Add workflow state machine + DSR calculation
+- สร้าง `services/workflowService.js` — state machine ควบคุม loan_status transitions
+  - กำหนด transitions: new→document_check→bureau_check→analyzing→approved/rejected→transferred/cancelled
+  - ป้องกัน invalid transitions (เช่น document_check→approved ตรงไม่ได้)
+  - `validateTransition()` + `getNextStatuses()` functions
+- เพิ่ม workflow validation ใน `routes/loanApplications.js` PUT endpoint
+- เพิ่ม `GET /:id/next-statuses` endpoint แสดง transitions ที่อนุญาต
+- เพิ่ม `GET /customer/:customerId/dsr` endpoint ใน `routes/debtItems.js`
+  - คำนวณ DSR = total_calculated_debt / income * 100
+  - พร้อม breakdown แต่ละรายการหนี้
