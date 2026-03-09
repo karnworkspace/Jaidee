@@ -62,3 +62,11 @@
   - zero-padded 4 หลัก (รองรับ 9,999 เคส/เดือน)
 - แก้ `routes/loanApplications.js` POST — auto-generate ถ้าไม่ส่ง app_in_number มา
 - ยังรองรับการใส่เลข APP-IN เองได้ (กรณี REM LivNex ส่งมา)
+
+## Commit 7 — Add LivNex tracking business logic
+- เพิ่ม validation ใน POST `/api/livnex-tracking`:
+  - ถ้าส่ง loan_application_id มา ต้องเป็น status `approved` เท่านั้น
+- เพิ่ม status transition validation ใน PUT `/api/livnex-tracking/:id`:
+  - approved → active, cancelled
+  - active → transferred, cancelled
+  - transferred, cancelled → terminal (ไม่เปลี่ยนได้)
