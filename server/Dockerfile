@@ -51,7 +51,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (including Puppeteer with Chromium)
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy source code
 COPY . .
