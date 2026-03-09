@@ -1,8 +1,17 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { runDOC2026Migrations } = require('./migrations');
 
-// Create database connection
-const dbPath = path.join(__dirname, 'jaidee.sqlite');
+// Create database connection — use /app/data/ for Docker volume persistence
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'data', 'jaidee.sqlite');
+
+// Ensure data directory exists
+const dataDir = path.dirname(dbPath);
+const fs = require('fs');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
 const db = new sqlite3.Database(dbPath);
 
 // Initialize database tables
@@ -188,9 +197,16 @@ const initializeDatabase = () => {
             reject(err);
           } else {
             // Add migration for Credit Bureau fields
-            addCreditBureauFields(() => {
-              console.log('Database initialized successfully');
-              resolve();
+            addCreditBureauFields(async () => {
+              // Run DOC2026 migrations
+              try {
+                await runDOC2026Migrations(db);
+                console.log('Database initialized successfully');
+                resolve();
+              } catch (migrationErr) {
+                console.error('DOC2026 migration failed:', migrationErr);
+                reject(migrationErr);
+              }
             });
           }
         });
@@ -287,7 +303,12 @@ const insertCustomerWithDetails = (customerData) => {
         'income', 'debt', 'maxDebtAllowed', 'loanTerm', 'ltv', 'ltvNote', 'maxLoanAmount',
         'targetDate', 'officer', 'selectedBank', 'targetBank', 'recommendedLoanTerm', 'recommendedInstallment',
         'potentialScore', 'degreeOfOwnership', 'financialStatus', 'actionPlanProgress', 'paymentHistory',
-        'creditScore', 'accountStatuses', 'livnexCompleted', 'creditNotes'
+        'creditScore', 'accountStatuses', 'livnexCompleted', 'creditNotes',
+        // DOC2026 fields
+        'loan_status', 'consent_status', 'consent_date', 'assigned_ca', 'assigned_co',
+        'approval_date', 'rejection_date', 'cancellation_reason', 'app_in_number', 'rem_livnex_ref',
+        'area_sqm', 'deposit_amount', 'price_after_discount',
+        'co_borrower_name', 'co_borrower_id_card', 'co_borrower_phone', 'id_card', 'plot_number'
       ];
 
       // Filter only allowed fields
@@ -373,7 +394,12 @@ const updateCustomerWithDetails = (customerId, customerData) => {
         'income', 'debt', 'maxDebtAllowed', 'loanTerm', 'ltv', 'ltvNote', 'maxLoanAmount',
         'targetDate', 'officer', 'selectedBank', 'targetBank', 'recommendedLoanTerm', 'recommendedInstallment',
         'potentialScore', 'degreeOfOwnership', 'financialStatus', 'actionPlanProgress', 'paymentHistory',
-        'creditScore', 'accountStatuses', 'livnexCompleted', 'creditNotes'
+        'creditScore', 'accountStatuses', 'livnexCompleted', 'creditNotes',
+        // DOC2026 fields
+        'loan_status', 'consent_status', 'consent_date', 'assigned_ca', 'assigned_co',
+        'approval_date', 'rejection_date', 'cancellation_reason', 'app_in_number', 'rem_livnex_ref',
+        'area_sqm', 'deposit_amount', 'price_after_discount',
+        'co_borrower_name', 'co_borrower_id_card', 'co_borrower_phone', 'id_card', 'plot_number'
       ];
 
       // Filter only allowed fields
@@ -756,6 +782,438 @@ const getReportsByCustomerId = (customerId) => {
   });
 };
 
+// ============================================================
+// DOC2026: Loan Applications CRUD
+// ============================================================
+
+/**
+ * Get all loan applications for a customer
+ * @param {number} customerId
+ * @returns {Promise<Array>}
+ */
+const getLoanApplicationsByCustomer = (customerId) => {
+  return new Promise((resolve, reject) => {
+    db.all(
+      'SELECT * FROM loan_applications WHERE customer_id = ? ORDER BY created_at DESC',
+      [customerId],
+      (err, rows) => err ? reject(err) : resolve(rows || [])
+    );
+  });
+};
+
+/**
+ * Get a single loan application by ID
+ * @param {number} id
+ * @returns {Promise<Object|null>}
+ */
+const getLoanApplicationById = (id) => {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT * FROM loan_applications WHERE id = ?', [id], (err, row) => {
+      err ? reject(err) : resolve(row || null);
+    });
+  });
+};
+
+/**
+ * Insert a new loan application
+ * @param {Object} data
+ * @returns {Promise<number>} - inserted ID
+ */
+const insertLoanApplication = (data) => {
+  return new Promise((resolve, reject) => {
+    const {
+      customer_id, app_in_number, rem_livnex_ref, application_date,
+      loan_status = 'new', status_reason, assigned_ca, assigned_co, source = 'REM_LivNex', notes
+    } = data;
+
+    db.run(
+      `INSERT INTO loan_applications
+       (customer_id, app_in_number, rem_livnex_ref, application_date, loan_status, status_reason, assigned_ca, assigned_co, source, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [customer_id, app_in_number, rem_livnex_ref, application_date, loan_status, status_reason, assigned_ca, assigned_co, source, notes],
+      function(err) { err ? reject(err) : resolve(this.lastID); }
+    );
+  });
+};
+
+/**
+ * Update loan application status
+ * @param {number} id
+ * @param {Object} data
+ * @returns {Promise<boolean>}
+ */
+const updateLoanApplication = (id, data) => {
+  return new Promise((resolve, reject) => {
+    const allowedFields = [
+      'app_in_number', 'rem_livnex_ref', 'application_date', 'loan_status',
+      'status_reason', 'assigned_ca', 'assigned_co', 'source', 'notes'
+    ];
+    const fields = {};
+    allowedFields.forEach(f => { if (data.hasOwnProperty(f)) fields[f] = data[f]; });
+    fields.status_updated_at = new Date().toISOString();
+    fields.updated_at = new Date().toISOString();
+
+    const cols = Object.keys(fields);
+    const sql = `UPDATE loan_applications SET ${cols.map(c => `${c} = ?`).join(', ')} WHERE id = ?`;
+    db.run(sql, [...cols.map(c => fields[c]), id], function(err) {
+      err ? reject(err) : resolve(this.changes > 0);
+    });
+  });
+};
+
+// ============================================================
+// DOC2026: Bureau Requests CRUD
+// ============================================================
+
+/**
+ * Get bureau requests for a customer
+ * @param {number} customerId
+ * @returns {Promise<Array>}
+ */
+const getBureauRequestsByCustomer = (customerId) => {
+  return new Promise((resolve, reject) => {
+    db.all(
+      'SELECT * FROM bureau_requests WHERE customer_id = ? ORDER BY created_at DESC',
+      [customerId],
+      (err, rows) => err ? reject(err) : resolve(rows || [])
+    );
+  });
+};
+
+/**
+ * Insert a new bureau request
+ * @param {Object} data
+ * @returns {Promise<number>}
+ */
+const insertBureauRequest = (data) => {
+  return new Promise((resolve, reject) => {
+    const {
+      customer_id, loan_application_id, request_date,
+      expiry_date, form1_status = 'pending', form2_status = 'pending',
+      consent_status = 'pending', consent_date, requested_by, notes
+    } = data;
+
+    db.run(
+      `INSERT INTO bureau_requests
+       (customer_id, loan_application_id, request_date, expiry_date, form1_status, form2_status, consent_status, consent_date, requested_by, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [customer_id, loan_application_id, request_date, expiry_date, form1_status, form2_status, consent_status, consent_date, requested_by, notes],
+      function(err) { err ? reject(err) : resolve(this.lastID); }
+    );
+  });
+};
+
+/**
+ * Update a bureau request
+ * @param {number} id
+ * @param {Object} data
+ * @returns {Promise<boolean>}
+ */
+const updateBureauRequest = (id, data) => {
+  return new Promise((resolve, reject) => {
+    const allowedFields = [
+      'form1_status', 'form2_status', 'form2_received_date', 'bureau_result',
+      'bureau_score', 'consent_status', 'consent_date', 'verified_by', 'notes'
+    ];
+    const fields = {};
+    allowedFields.forEach(f => { if (data.hasOwnProperty(f)) fields[f] = data[f]; });
+
+    const cols = Object.keys(fields);
+    if (cols.length === 0) return resolve(false);
+    const sql = `UPDATE bureau_requests SET ${cols.map(c => `${c} = ?`).join(', ')} WHERE id = ?`;
+    db.run(sql, [...cols.map(c => fields[c]), id], function(err) {
+      err ? reject(err) : resolve(this.changes > 0);
+    });
+  });
+};
+
+/**
+ * Check for duplicate bureau request within 3 months
+ * @param {number} customerId
+ * @returns {Promise<Object|null>}
+ */
+const findRecentBureauRequest = (customerId) => {
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT * FROM bureau_requests
+       WHERE customer_id = ? AND request_date >= date('now', '-3 months')
+       ORDER BY request_date DESC LIMIT 1`,
+      [customerId],
+      (err, row) => err ? reject(err) : resolve(row || null)
+    );
+  });
+};
+
+// ============================================================
+// DOC2026: Debt Items CRUD
+// ============================================================
+
+/**
+ * Get all debt items for a customer
+ * @param {number} customerId
+ * @returns {Promise<Array>}
+ */
+const getDebtItemsByCustomer = (customerId) => {
+  return new Promise((resolve, reject) => {
+    db.all(
+      'SELECT * FROM debt_items WHERE customer_id = ? ORDER BY created_at DESC',
+      [customerId],
+      (err, rows) => err ? reject(err) : resolve(rows || [])
+    );
+  });
+};
+
+/**
+ * Insert a new debt item with auto-calculation
+ * @param {Object} data
+ * @returns {Promise<number>}
+ */
+const insertDebtItem = (data) => {
+  return new Promise((resolve, reject) => {
+    const {
+      customer_id, debt_type, creditor_name,
+      outstanding_balance = 0, monthly_payment = 0,
+      is_joint_loan = 0, account_status, notes
+    } = data;
+
+    // Auto-calculate payment per DOC2026 rules
+    let calculated_payment = 0;
+    switch (debt_type) {
+      case 'revolving_personal':
+      case 'revolving_other':
+        calculated_payment = outstanding_balance * 0.05;
+        break;
+      case 'revolving_credit_card':
+        calculated_payment = outstanding_balance * 0.08;
+        break;
+      case 'installment':
+        calculated_payment = monthly_payment > outstanding_balance ? outstanding_balance : monthly_payment;
+        break;
+      case 'joint_loan':
+        calculated_payment = monthly_payment / 2;
+        break;
+      default:
+        calculated_payment = monthly_payment;
+    }
+
+    db.run(
+      `INSERT INTO debt_items
+       (customer_id, debt_type, creditor_name, outstanding_balance, monthly_payment, calculated_payment, is_joint_loan, account_status, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [customer_id, debt_type, creditor_name, outstanding_balance, monthly_payment, calculated_payment, is_joint_loan, account_status, notes],
+      function(err) { err ? reject(err) : resolve(this.lastID); }
+    );
+  });
+};
+
+/**
+ * Update a debt item
+ * @param {number} id
+ * @param {Object} data
+ * @returns {Promise<boolean>}
+ */
+const updateDebtItem = (id, data) => {
+  return new Promise((resolve, reject) => {
+    const allowedFields = [
+      'debt_type', 'creditor_name', 'outstanding_balance', 'monthly_payment',
+      'is_joint_loan', 'account_status', 'notes'
+    ];
+    const fields = {};
+    allowedFields.forEach(f => { if (data.hasOwnProperty(f)) fields[f] = data[f]; });
+
+    // Recalculate if balance/payment changed
+    const debt_type = data.debt_type || '';
+    const outstanding = data.outstanding_balance || 0;
+    const monthly = data.monthly_payment || 0;
+
+    if (data.hasOwnProperty('outstanding_balance') || data.hasOwnProperty('monthly_payment') || data.hasOwnProperty('debt_type')) {
+      switch (debt_type) {
+        case 'revolving_personal':
+        case 'revolving_other':
+          fields.calculated_payment = outstanding * 0.05;
+          break;
+        case 'revolving_credit_card':
+          fields.calculated_payment = outstanding * 0.08;
+          break;
+        case 'installment':
+          fields.calculated_payment = monthly > outstanding ? outstanding : monthly;
+          break;
+        case 'joint_loan':
+          fields.calculated_payment = monthly / 2;
+          break;
+        default:
+          fields.calculated_payment = monthly;
+      }
+    }
+
+    fields.updated_at = new Date().toISOString();
+    const cols = Object.keys(fields);
+    const sql = `UPDATE debt_items SET ${cols.map(c => `${c} = ?`).join(', ')} WHERE id = ?`;
+    db.run(sql, [...cols.map(c => fields[c]), id], function(err) {
+      err ? reject(err) : resolve(this.changes > 0);
+    });
+  });
+};
+
+/**
+ * Delete a debt item
+ * @param {number} id
+ * @returns {Promise<boolean>}
+ */
+const deleteDebtItem = (id) => {
+  return new Promise((resolve, reject) => {
+    db.run('DELETE FROM debt_items WHERE id = ?', [id], function(err) {
+      err ? reject(err) : resolve(this.changes > 0);
+    });
+  });
+};
+
+/**
+ * Get total calculated debt for a customer
+ * @param {number} customerId
+ * @returns {Promise<number>}
+ */
+const getTotalDebtByCustomer = (customerId) => {
+  return new Promise((resolve, reject) => {
+    db.get(
+      'SELECT COALESCE(SUM(calculated_payment), 0) as total_debt FROM debt_items WHERE customer_id = ?',
+      [customerId],
+      (err, row) => err ? reject(err) : resolve(row ? row.total_debt : 0)
+    );
+  });
+};
+
+// ============================================================
+// DOC2026: LivNex Tracking CRUD
+// ============================================================
+
+/**
+ * Get tracking record for a customer
+ * @param {number} customerId
+ * @returns {Promise<Array>}
+ */
+const getLivnexTrackingByCustomer = (customerId) => {
+  return new Promise((resolve, reject) => {
+    db.all(
+      'SELECT * FROM livnex_tracking WHERE customer_id = ? ORDER BY created_at DESC',
+      [customerId],
+      (err, rows) => err ? reject(err) : resolve(rows || [])
+    );
+  });
+};
+
+/**
+ * Insert a LivNex tracking record
+ * @param {Object} data
+ * @returns {Promise<number>}
+ */
+const insertLivnexTracking = (data) => {
+  return new Promise((resolve, reject) => {
+    const {
+      customer_id, loan_application_id, approval_date,
+      status = 'approved', jd_officer, co_officer, notes
+    } = data;
+
+    db.run(
+      `INSERT INTO livnex_tracking
+       (customer_id, loan_application_id, approval_date, status, jd_officer, co_officer, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [customer_id, loan_application_id, approval_date, status, jd_officer, co_officer, notes],
+      function(err) { err ? reject(err) : resolve(this.lastID); }
+    );
+  });
+};
+
+/**
+ * Update LivNex tracking status
+ * @param {number} id
+ * @param {Object} data
+ * @returns {Promise<boolean>}
+ */
+const updateLivnexTracking = (id, data) => {
+  return new Promise((resolve, reject) => {
+    const allowedFields = [
+      'status', 'transfer_date', 'cancellation_date', 'cancellation_reason',
+      'jd_officer', 'co_officer', 'performance_notes', 'notes'
+    ];
+    const fields = {};
+    allowedFields.forEach(f => { if (data.hasOwnProperty(f)) fields[f] = data[f]; });
+    fields.updated_at = new Date().toISOString();
+
+    const cols = Object.keys(fields);
+    const sql = `UPDATE livnex_tracking SET ${cols.map(c => `${c} = ?`).join(', ')} WHERE id = ?`;
+    db.run(sql, [...cols.map(c => fields[c]), id], function(err) {
+      err ? reject(err) : resolve(this.changes > 0);
+    });
+  });
+};
+
+// ============================================================
+// DOC2026: CA Recommendations CRUD
+// ============================================================
+
+/**
+ * Get CA recommendations for a customer
+ * @param {number} customerId
+ * @returns {Promise<Array>}
+ */
+const getCARecommendationsByCustomer = (customerId) => {
+  return new Promise((resolve, reject) => {
+    db.all(
+      'SELECT * FROM ca_recommendations WHERE customer_id = ? ORDER BY created_at DESC',
+      [customerId],
+      (err, rows) => err ? reject(err) : resolve(rows || [])
+    );
+  });
+};
+
+/**
+ * Insert a CA recommendation
+ * @param {Object} data
+ * @returns {Promise<number>}
+ */
+const insertCARecommendation = (data) => {
+  return new Promise((resolve, reject) => {
+    const {
+      customer_id, loan_application_id, problem_description, solution,
+      bank_scores, dsr_calculated, dsr_breakdown,
+      co_tracking_status = 'pending', co_officer, ca_officer, notes
+    } = data;
+
+    db.run(
+      `INSERT INTO ca_recommendations
+       (customer_id, loan_application_id, problem_description, solution, bank_scores, dsr_calculated, dsr_breakdown, co_tracking_status, co_officer, ca_officer, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [customer_id, loan_application_id, problem_description, solution, bank_scores, dsr_calculated, dsr_breakdown, co_tracking_status, co_officer, ca_officer, notes],
+      function(err) { err ? reject(err) : resolve(this.lastID); }
+    );
+  });
+};
+
+/**
+ * Update a CA recommendation
+ * @param {number} id
+ * @param {Object} data
+ * @returns {Promise<boolean>}
+ */
+const updateCARecommendation = (id, data) => {
+  return new Promise((resolve, reject) => {
+    const allowedFields = [
+      'problem_description', 'solution', 'bank_scores', 'dsr_calculated',
+      'dsr_breakdown', 'co_tracking_status', 'co_officer', 'ca_officer', 'notes'
+    ];
+    const fields = {};
+    allowedFields.forEach(f => { if (data.hasOwnProperty(f)) fields[f] = data[f]; });
+    fields.updated_at = new Date().toISOString();
+
+    const cols = Object.keys(fields);
+    const sql = `UPDATE ca_recommendations SET ${cols.map(c => `${c} = ?`).join(', ')} WHERE id = ?`;
+    db.run(sql, [...cols.map(c => fields[c]), id], function(err) {
+      err ? reject(err) : resolve(this.changes > 0);
+    });
+  });
+};
+
 module.exports = {
   db,
   initializeDatabase,
@@ -769,5 +1227,29 @@ module.exports = {
   insertBankRule,
   updateBankRule,
   insertReport,
-  getReportsByCustomerId
+  getReportsByCustomerId,
+  // DOC2026: Loan Applications
+  getLoanApplicationsByCustomer,
+  getLoanApplicationById,
+  insertLoanApplication,
+  updateLoanApplication,
+  // DOC2026: Bureau Requests
+  getBureauRequestsByCustomer,
+  insertBureauRequest,
+  updateBureauRequest,
+  findRecentBureauRequest,
+  // DOC2026: Debt Items
+  getDebtItemsByCustomer,
+  insertDebtItem,
+  updateDebtItem,
+  deleteDebtItem,
+  getTotalDebtByCustomer,
+  // DOC2026: LivNex Tracking
+  getLivnexTrackingByCustomer,
+  insertLivnexTracking,
+  updateLivnexTracking,
+  // DOC2026: CA Recommendations
+  getCARecommendationsByCustomer,
+  insertCARecommendation,
+  updateCARecommendation
 };

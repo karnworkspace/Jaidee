@@ -10,3 +10,8 @@ coverage
 README.md
 Dockerfile
 .dockerignore
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+data/
