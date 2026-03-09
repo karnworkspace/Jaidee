@@ -18,6 +18,7 @@ function Dashboard() {
     potentialScore: "all",
     financialStatus: "all",
     officer: "all",
+    loanStatus: "all",
   });
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showReport, setShowReport] = useState(false);
@@ -122,6 +123,11 @@ function Dashboard() {
         if (customer.officer !== filters.officer) return false;
       }
 
+      // DOC2026: Loan status filter
+      if (filters.loanStatus !== "all") {
+        if ((customer.loan_status || "") !== filters.loanStatus) return false;
+      }
+
       return true;
     });
 
@@ -183,6 +189,7 @@ function Dashboard() {
       potentialScore: "all",
       financialStatus: "all",
       officer: "all",
+      loanStatus: "all",
     });
     setSearchTerm("");
   };
@@ -380,6 +387,23 @@ function Dashboard() {
                 </option>
               ))}
             </select>
+
+            <select
+              value={filters.loanStatus}
+              onChange={(e) => handleFilterChange("loanStatus", e.target.value)}
+              className={styles.filterSelect}
+            >
+              <option value="all">📌 สถานะสินเชื่อทั้งหมด</option>
+              <option value="new">ใหม่</option>
+              <option value="document_check">ตรวจเอกสาร</option>
+              <option value="document_incomplete">เอกสารไม่ครบ</option>
+              <option value="bureau_check">ตรวจ Bureau</option>
+              <option value="analyzing">วิเคราะห์</option>
+              <option value="approved">อนุมัติ</option>
+              <option value="rejected">ปฏิเสธ</option>
+              <option value="transferred">โอนแล้ว</option>
+              <option value="cancelled">ยกเลิก</option>
+            </select>
           </div>
         </div>
 
@@ -467,6 +491,17 @@ function Dashboard() {
                       </span>
                     )}
                   </th>
+                  <th
+                    onClick={() => handleSort("loan_status")}
+                    className={styles.sortableHeader}
+                  >
+                    📌 สินเชื่อ
+                    {sortField === "loan_status" && (
+                      <span className={styles.sortIcon}>
+                        {sortDirection === "asc" ? " ↑" : " ↓"}
+                      </span>
+                    )}
+                  </th>
                   <th>⚡ สถานะ</th>
                   <th>🔧 จัดการ</th>
                 </tr>
@@ -521,6 +556,25 @@ function Dashboard() {
                               "th-TH",
                             )
                           : "-"}
+                      </td>
+                      <td>
+                        {customer.loan_status ? (
+                          <span style={{
+                            padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: '600',
+                            color: '#fff',
+                            background: {
+                              new: '#6b7280', document_check: '#f59e0b', document_incomplete: '#ef4444',
+                              bureau_check: '#3b82f6', analyzing: '#8b5cf6', approved: '#10b981',
+                              rejected: '#ef4444', transferred: '#059669', cancelled: '#6b7280'
+                            }[customer.loan_status] || '#6b7280'
+                          }}>
+                            {{
+                              new: 'ใหม่', document_check: 'ตรวจเอกสาร', document_incomplete: 'เอกสารไม่ครบ',
+                              bureau_check: 'Bureau', analyzing: 'วิเคราะห์', approved: 'อนุมัติ',
+                              rejected: 'ปฏิเสธ', transferred: 'โอนแล้ว', cancelled: 'ยกเลิก'
+                            }[customer.loan_status] || customer.loan_status}
+                          </span>
+                        ) : '-'}
                       </td>
                       <td>
                         <span
