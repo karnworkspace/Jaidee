@@ -1,0 +1,42 @@
+# DOC2026 Changelog
+
+## Commit 1: `3c7061e` — Refactor server/index.js monolith into modular architecture
+- แตก `index.js` จาก 2,212 บรรทัด → 66 บรรทัด + 14 modules
+- สร้าง `config/bankConstants.js` — ค่าคงที่ธนาคาร (refbank rates, credit grades, LTV rules)
+- สร้าง `services/creditAnalysis.js` — วิเคราะห์เครดิต (interpretCreditScore, classify3BProblems, generateLivNexRecommendations)
+- สร้าง `services/loanCalculation.js` — คำนวณสินเชื่อ (calculateKPIs, calculateApprovalProbability, calculateLoanEstimation)
+- สร้าง `services/rentToOwn.js` — คำนวณเช่าออม (calculateRentToOwnEstimation, amortizationTable)
+- สร้าง `services/bankMatching.js` — จับคู่ธนาคาร (calculateEnhancedBankMatching, calculateBankMatchingWithCreditBureau)
+- สร้าง `services/customerService.js` — รวม duplicated calculation logic เป็น `enrichCustomerWithCalculations()`
+- สร้าง `routes/auth.js` — Login/Logout/Me endpoints
+- สร้าง `routes/customers.js` — Customer CRUD
+- สร้าง `routes/bankRules.js` — Bank rules CRUD
+- สร้าง `routes/problems.js` — Loan problems API
+- สร้าง `routes/reports.js` — Reports + PDF generation
+- สร้าง `routes/rentToOwn.js` — Rent-to-own calculation
+- สร้าง `routes/csvImport.js` — CSV import/debug/clear
+
+## Commit 2: `53c0953` — Add DOC2026 database migration and fix critical Docker persistence issue
+- สร้าง `migrations.js` — ระบบ migration idempotent (รันซ้ำได้ปลอดภัย)
+- เพิ่ม 5 ตารางใหม่:
+  - `loan_applications` — APP-IN case tracking + status workflow (10 สถานะ)
+  - `bureau_requests` — Bureau check history + form 1&2 + consent + 3-month duplicate
+  - `debt_items` — รายละเอียดหนี้แยกประเภท + auto-calculation ตาม DOC2026
+  - `livnex_tracking` — สถานะหลัง approve (Active/Transfer/Cancel)
+  - `ca_recommendations` — คำแนะนำ CA + DSR breakdown + CO tracking
+- เพิ่ม 18 columns ใน customers table (loan_status, consent, co-borrower, plot_number, etc.)
+- เพิ่ม CRUD functions 19 ตัวใน `database.js` สำหรับตารางใหม่ทั้ง 5
+- Debt auto-calculation: revolving_personal/other=5%, credit_card=8%, installment=monthly, joint_loan=monthly/2
+- Migrate ข้อมูล debt เดิม 565 records → debt_items (type='legacy')
+- **แก้ Critical bug**: DB path จาก `/app/jaidee.sqlite` → `/app/data/jaidee.sqlite` ให้ตรง Docker volume mount
+- เพิ่ม `*.sqlite` ใน `.dockerignore` ป้องกัน sensitive data ใน Docker image
+- เพิ่ม healthcheck ใน `docker-compose.production.yml`
+
+## ยังไม่ commit — API Routes สำหรับ 5 ตารางใหม่
+- สร้าง `routes/loanApplications.js` — GET(by customer), GET(by id), POST, PUT
+- สร้าง `routes/bureauRequests.js` — GET(by customer), GET(recent/3mo check), POST(+duplicate check), PUT
+- สร้าง `routes/debtItems.js` — GET(by customer), GET(summary), POST, PUT, DELETE + debt_type validation
+- สร้าง `routes/livnexTracking.js` — GET(by customer), POST, PUT
+- สร้าง `routes/caRecommendations.js` — GET(by customer), POST, PUT
+- แก้ `index.js` — import + mount routes ที่ `/api/loan-applications`, `/api/bureau-requests`, `/api/debt-items`, `/api/livnex-tracking`, `/api/ca-recommendations`
+- ทุก endpoint มี authenticateToken + requireRole + input validation

@@ -13,6 +13,13 @@ const csvImportRoutes = require('./routes/csvImport');
 const rentToOwnRoutes = require('./routes/rentToOwn');
 const reportsRoutes = require('./routes/reports');
 
+// DOC2026 route modules
+const loanApplicationRoutes = require('./routes/loanApplications');
+const bureauRequestRoutes = require('./routes/bureauRequests');
+const debtItemRoutes = require('./routes/debtItems');
+const livnexTrackingRoutes = require('./routes/livnexTracking');
+const caRecommendationRoutes = require('./routes/caRecommendations');
+
 const app = express();
 const port = process.env.PORT || 3001;
 
@@ -60,6 +67,13 @@ app.use('/api/problems', problemsRoutes);
 app.use('/api', csvImportRoutes);
 app.use('/api', rentToOwnRoutes);
 app.use('/api/reports', reportsRoutes);
+
+// DOC2026 routes
+app.use('/api/loan-applications', loanApplicationRoutes);
+app.use('/api/bureau-requests', bureauRequestRoutes);
+app.use('/api/debt-items', debtItemRoutes);
+app.use('/api/livnex-tracking', livnexTrackingRoutes);
+app.use('/api/ca-recommendations', caRecommendationRoutes);
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
