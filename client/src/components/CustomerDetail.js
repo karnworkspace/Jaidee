@@ -5,6 +5,53 @@ import { API_ENDPOINTS } from "../config/api";
 import RentToOwnTable from "./RentToOwnTable";
 import styles from "./CustomerDetail.module.css";
 
+/** แสดงปุ่มเปลี่ยนสถานะตาม workflow transitions ที่อนุญาต */
+function StatusChangeButtons({ appId, currentStatus, onStatusChange }) {
+  const [nextStatuses, setNextStatuses] = useState([]);
+  const { authenticatedFetch } = useAuth();
+
+  useEffect(() => {
+    const fetchNext = async () => {
+      try {
+        const res = await authenticatedFetch(API_ENDPOINTS.LOAN_APPLICATION_NEXT_STATUSES(appId));
+        if (res.ok) {
+          const data = await res.json();
+          setNextStatuses(data.allowedTransitions || []);
+        }
+      } catch { /* ignore */ }
+    };
+    fetchNext();
+  }, [appId, authenticatedFetch]);
+
+  const statusLabels = {
+    new: 'ใหม่', document_check: 'ตรวจเอกสาร', document_incomplete: 'เอกสารไม่ครบ',
+    bureau_check: 'ตรวจ Bureau', analyzing: 'วิเคราะห์', approved: 'อนุมัติ',
+    rejected: 'ปฏิเสธ', transferred: 'โอนแล้ว', cancelled: 'ยกเลิก',
+    cancelled_after_approval: 'ยกเลิกหลังอนุมัติ'
+  };
+
+  if (nextStatuses.length === 0) return null;
+
+  return (
+    <div style={{marginTop: '0.75rem', display: 'flex', gap: '6px', flexWrap: 'wrap'}}>
+      <span style={{fontSize: '0.8rem', color: '#6b7280', alignSelf: 'center'}}>เปลี่ยนเป็น:</span>
+      {nextStatuses.map(status => (
+        <button
+          key={status}
+          onClick={() => onStatusChange(appId, status)}
+          style={{
+            padding: '3px 10px', fontSize: '0.8rem', border: '1px solid #d1d5db',
+            borderRadius: '4px', background: '#fff', cursor: 'pointer',
+            color: status === 'cancelled' || status === 'rejected' ? '#dc2626' : '#374151'
+          }}
+        >
+          {statusLabels[status] || status}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function CustomerDetail() {
   const { customerId } = useParams();
   const { authenticatedFetch } = useAuth();
@@ -14,12 +61,12 @@ function CustomerDetail() {
 
   // DOC2026 states
   const [loanApplications, setLoanApplications] = useState([]);
-  const [nextStatuses, setNextStatuses] = useState([]);
   const [debtItems, setDebtItems] = useState([]);
   const [dsrData, setDsrData] = useState(null);
   const [bureauRequests, setBureauRequests] = useState([]);
   const [livnexTracking, setLivnexTracking] = useState([]);
   const [caRecommendations, setCaRecommendations] = useState([]);
+  const [doc2026Refresh, setDoc2026Refresh] = useState(0);
 
   useEffect(() => {
     const fetchCustomerDetails = async () => {
@@ -61,23 +108,55 @@ function CustomerDetail() {
         if (bureauRes.ok) setBureauRequests(await bureauRes.json());
         if (trackRes.ok) setLivnexTracking(await trackRes.json());
         if (caRes.ok) setCaRecommendations(await caRes.json());
-
-        // Fetch next statuses for latest loan app
-        const apps = appsRes.ok ? await appsRes.clone().json() : [];
-        if (apps.length > 0) {
-          const nsRes = await authenticatedFetch(API_ENDPOINTS.LOAN_APPLICATION_NEXT_STATUSES(apps[0].id));
-          if (nsRes.ok) setNextStatuses((await nsRes.json()).allowedTransitions || []);
-        }
       } catch (err) {
         // Silently fail — DOC2026 data is supplementary
       }
     };
     fetchDOC2026();
-  }, [customerId, authenticatedFetch]);
+  }, [customerId, authenticatedFetch, doc2026Refresh]);
 
   if (!customer) {
     return <div>Loading...</div>;
   }
+
+  /** สร้าง Loan Application ใหม่ (auto-generate APP-IN) */
+  const handleCreateLoanApp = async () => {
+    try {
+      const res = await authenticatedFetch(API_ENDPOINTS.LOAN_APPLICATIONS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer_id: parseInt(customerId) }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.message || 'ไม่สามารถสร้างใบสมัครได้');
+        return;
+      }
+      setDoc2026Refresh(prev => prev + 1);
+    } catch (err) {
+      alert('เกิดข้อผิดพลาด');
+    }
+  };
+
+  /** เปลี่ยนสถานะ Loan Application */
+  const handleStatusChange = async (appId, newStatus) => {
+    if (!window.confirm(`ต้องการเปลี่ยนสถานะเป็น "${newStatus}" ?`)) return;
+    try {
+      const res = await authenticatedFetch(API_ENDPOINTS.LOAN_APPLICATION_BY_ID(appId), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ loan_status: newStatus }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.message || 'ไม่สามารถเปลี่ยนสถานะได้');
+        return;
+      }
+      setDoc2026Refresh(prev => prev + 1);
+    } catch (err) {
+      alert('เกิดข้อผิดพลาด');
+    }
+  };
 
   const navigationSections = [
     {
@@ -921,9 +1000,17 @@ function CustomerDetail() {
 
         {/* ============ DOC2026 SECTIONS ============ */}
 
-        {/* F1: Workflow Status Bar */}
+        {/* F1+F2: Workflow Status Bar + APP-IN Management */}
         <div id="workflowStatus" className={styles.section}>
-          <h2>📌 Workflow Status</h2>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
+            <h2 style={{margin: 0}}>📌 Workflow Status</h2>
+            <button
+              onClick={handleCreateLoanApp}
+              style={{padding: '6px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600'}}
+            >
+              + สร้าง APP-IN ใหม่
+            </button>
+          </div>
           {loanApplications.length > 0 ? (
             <div>
               {loanApplications.map(app => {
@@ -965,12 +1052,23 @@ function CustomerDetail() {
                       ))}
                     </div>
                     {app.assigned_ca && <p style={{marginTop: '0.5rem', fontSize: '0.85rem'}}>CA: {app.assigned_ca} {app.assigned_co ? `| CO: ${app.assigned_co}` : ''}</p>}
+                    {app.created_at && <p style={{margin: '0.25rem 0 0', fontSize: '0.75rem', color: '#9ca3af'}}>สร้างเมื่อ: {new Date(app.created_at).toLocaleDateString('th-TH')}</p>}
+                    {/* Status change buttons */}
+                    <StatusChangeButtons appId={app.id} currentStatus={app.loan_status} onStatusChange={handleStatusChange} />
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className={styles.noData}><p>ยังไม่มีใบสมัครสินเชื่อ</p></div>
+            <div className={styles.noData}>
+              <p>ยังไม่มีใบสมัครสินเชื่อ</p>
+              <button
+                onClick={handleCreateLoanApp}
+                style={{padding: '8px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', marginTop: '0.5rem'}}
+              >
+                สร้าง APP-IN ใหม่
+              </button>
+            </div>
           )}
         </div>
 
