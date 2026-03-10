@@ -89,7 +89,7 @@ export default function BureauRequestForm({ customerId, bureauRequests, onDataCh
   };
 
   const consentLabels = { pending: 'รอ', received: 'ได้รับแล้ว', expired: 'หมดอายุ' };
-  const formStatusLabels = { pending: 'รอ', submitted: 'ส่งแล้ว', verified: 'ยืนยันแล้ว' };
+  const formStatusLabels = { pending: 'รอ', received: 'ส่งแล้ว', verified: 'ยืนยันแล้ว' };
 
   const StatusBadge = ({ status, type }) => {
     const labels = type === 'consent' ? consentLabels : formStatusLabels;
@@ -202,7 +202,7 @@ export default function BureauRequestForm({ customerId, bureauRequests, onDataCh
                   <label className={modalStyles.label}>Form 1</label>
                   <select name="form1_status" value={form.form1_status} onChange={handleChange} className={modalStyles.select}>
                     <option value="pending">รอ</option>
-                    <option value="submitted">ส่งแล้ว</option>
+                    <option value="received">ส่งแล้ว</option>
                     <option value="verified">ยืนยันแล้ว</option>
                   </select>
                 </div>
@@ -211,7 +211,7 @@ export default function BureauRequestForm({ customerId, bureauRequests, onDataCh
                   <select name="form2_status" value={form.form2_status} onChange={handleChange} className={modalStyles.select}
                     disabled={form.form1_status !== 'verified'}>
                     <option value="pending">รอ</option>
-                    <option value="submitted">ส่งแล้ว</option>
+                    <option value="received">ส่งแล้ว</option>
                     <option value="verified">ยืนยันแล้ว</option>
                   </select>
                 </div>
