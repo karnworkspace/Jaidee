@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    container_name: jaidee-backend-prod
+    restart: unless-stopped
+    ports:
+      - "3101:3001"
+    volumes:
+      - ../server/data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    networks:
+      - jaidee-network
+
+  frontend:
+    build:
+      context: ../client
+      dockerfile: Dockerfile
+    container_name: jaidee-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "3100:80"
+    depends_on:
+      - backend
+    networks:
+      - jaidee-network
+
+networks:
+  jaidee-network:
+    driver: bridge
