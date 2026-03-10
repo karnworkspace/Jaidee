@@ -1,90 +1,93 @@
-/* CustomerForm.module.css */
+/* ============================================
+   CustomerForm.module.css
+   Redesign: Clean, Modern & Professional
+   ============================================ */
+
 .formContainer {
   max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0;
-  background: linear-gradient(135deg, #32BCAD 0%, #2A9D8F 100%);
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+  background: var(--color-bg-page);
   min-height: 100vh;
 }
 
 .formWrapper {
-  background-color: #ffffff;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 
 .formHeader {
-  background: rgba(255, 255, 255, 0.95);
-  color: #264653;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
   padding: 2rem 2.5rem;
   text-align: center;
-  border-bottom: 3px solid #32BCAD;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .formHeader h2 {
-  font-size: 1.875rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   margin: 0;
   letter-spacing: -0.025em;
-  color: #264653;
+  color: var(--color-text-primary);
 }
 
 .formContent {
-  padding: 2.5rem;
+  padding: 2rem;
 }
 
 .formSection {
-  background-color: #ffffff;
-  border: 1px solid #E5E7EB;
-  border-radius: 0.75rem;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: box-shadow 200ms ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .formSection:hover {
-  border-color: #32BCAD;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-md);
 }
 
 .formSection h3 {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
-  margin-bottom: 1.5rem;
-  color: #264653;
+  margin-bottom: 1.25rem;
+  color: var(--color-text-primary);
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #32BCAD;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .formSection h4 {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 500;
   margin-bottom: 1rem;
-  color: #374151;
+  color: var(--color-text-secondary);
 }
 
 .formRow {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .formRow.twoColumn {
-    grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
 }
 
 .formRow.threeColumn {
-    grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .formRow.fullWidth {
-    grid-template-columns: 1fr;
+  grid-template-columns: 1fr;
 }
 
-/* Responsive breakpoints */
 @media (max-width: 768px) {
   .formRow,
   .formRow.twoColumn,
@@ -94,30 +97,29 @@
 }
 
 .formGroup {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   position: relative;
 }
 
 .formGroup.highlight {
-  background-color: #fef3c7;
+  background-color: var(--color-warning-soft);
   padding: 1rem;
-  border-radius: 0.5rem;
-  border-left: 4px solid #f59e0b;
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--color-warning);
 }
 
 .formGroup label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
-  letter-spacing: 0.025em;
 }
 
 .formGroup label.large {
   font-size: 1rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text-primary);
 }
 
 .formGroup input[type='text'],
@@ -127,13 +129,13 @@
 .formGroup select,
 .formGroup textarea {
   width: 100%;
-  padding: 0.875rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
+  padding: 0.75rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
   box-sizing: border-box;
   font-size: 0.875rem;
-  transition: all 0.2s ease;
-  background-color: #ffffff;
+  transition: all 200ms ease;
+  background-color: var(--color-bg-card);
 }
 
 .formGroup input[type='text']:focus,
@@ -143,8 +145,8 @@
 .formGroup select:focus,
 .formGroup textarea:focus {
   outline: none;
-  border-color: #32BCAD;
-  box-shadow: 0 0 0 3px rgba(50, 188, 173, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(50, 188, 173, 0.12);
 }
 
 .formGroup input[type='text']:hover,
@@ -153,75 +155,73 @@
 .formGroup input[type='month']:hover,
 .formGroup select:hover,
 .formGroup textarea:hover {
-  border-color: #32BCAD;
+  border-color: var(--color-primary);
 }
 
 .checkboxGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .checkboxLabel {
-    display: flex;
-    align-items: center;
-    font-weight: normal;
+  display: flex;
+  align-items: center;
+  font-weight: normal;
 }
 
 .checkboxLabel input {
-    margin-right: 0.5rem;
+  margin-right: 0.5rem;
 }
 
 .buttonGroup {
   display: flex;
   gap: 1rem;
   justify-content: center;
-  padding: 2rem 0;
-  border-top: 1px solid #e5e7eb;
-  margin-top: 2rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--color-border);
+  margin-top: 1.5rem;
 }
 
 .submitButton, .cancelButton {
-  padding: 0.875rem 2rem;
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
   font-size: 0.875rem;
-  transition: all 0.2s ease;
+  transition: all 200ms ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .submitButton:hover, .cancelButton:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: none;
+  box-shadow: var(--shadow-md);
 }
 
 .submitButton {
-  background: linear-gradient(135deg, #32BCAD 0%, #2A9D8F 100%);
+  background: var(--color-primary);
   color: white;
-  box-shadow: 0 2px 4px rgba(50, 188, 173, 0.3);
 }
 
 .submitButton:hover {
-  background: linear-gradient(135deg, #2A9D8F 0%, #264653 100%);
+  background: var(--color-primary-dark);
 }
 
 .cancelButton {
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background-color: var(--color-bg-page-alt);
+  color: var(--color-text-secondary);
+  border: 1.5px solid var(--color-border);
 }
 
 .cancelButton:hover {
-  background-color: #e5e7eb;
-  border-color: #9ca3af;
+  background-color: var(--color-border);
 }
 
 .required {
-  color: #ef4444;
+  color: var(--color-danger);
   margin-left: 4px;
   font-weight: 700;
 }
@@ -241,62 +241,62 @@
 
 .dynamicInputGroup button {
   padding: 0.5rem 1rem;
-  background-color: #ef4444;
+  background-color: var(--color-danger);
   color: white;
   border: none;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 200ms ease;
   white-space: nowrap;
 }
 
 .dynamicInputGroup button:hover {
-  background-color: #dc2626;
+  opacity: 0.9;
 }
 
 .addButton {
-  background-color: #32BCAD;
+  background-color: var(--color-primary);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 200ms ease;
   margin-top: 0.5rem;
 }
 
 .addButton:hover {
-  background-color: #2A9D8F;
+  background-color: var(--color-primary-dark);
 }
 
 .resultsDisplay {
-  background-color: #F0FDFA;
-  border: 1px solid #32BCAD;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
+  background-color: var(--color-primary-light);
+  border: 1px solid rgba(50, 188, 173, 0.2);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
   margin-top: 1rem;
-  box-shadow: 0 4px 16px rgba(50, 188, 173, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .resultsDisplay p {
   margin: 0;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
 }
 
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 1024px) {
   .formContainer {
     max-width: 100%;
-    margin: 1rem;
+    padding: 1rem;
   }
-  
+
   .formContent {
     padding: 1.5rem;
   }
-  
+
   .formHeader {
     padding: 1.5rem;
   }
@@ -304,33 +304,33 @@
 
 @media (max-width: 768px) {
   .formContainer {
-    margin: 0.5rem;
+    padding: 0.75rem;
   }
-  
+
   .formContent {
     padding: 1rem;
   }
-  
+
   .formHeader {
     padding: 1rem;
   }
-  
+
   .formHeader h2 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
-  
+
   .formSection {
-    padding: 1.5rem;
+    padding: 1rem;
   }
-  
+
   .buttonGroup {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .submitButton, .cancelButton {
     width: 100%;
     max-width: 300px;
+    justify-content: center;
   }
 }
-

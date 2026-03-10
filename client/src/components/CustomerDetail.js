@@ -287,7 +287,7 @@ function CustomerDetail() {
       <div className={styles.workflowStrip}>
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '0.5rem'}}>
           <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0}}>
-            <span className={styles.workflowLabel}>📌 Workflow</span>
+            <span className={styles.workflowLabel}>Workflow</span>
             {loanApplications.length > 0 ? (
               <>
                 {(() => {
@@ -363,7 +363,7 @@ function CustomerDetail() {
         {/* Personal Information Section */}
         <div id="personal" className={styles.section}>
           <div className={styles.infoSection}>
-            <h2>👤 ข้อมูลส่วนบุคคล</h2>
+            <h2>ข้อมูลส่วนบุคคล</h2>
             <div className={styles.infoGroupGrid}>
               <div className={styles.infoGroup}>
                 <label>อายุ</label>
@@ -408,7 +408,7 @@ function CustomerDetail() {
         {/* Financial Information Section */}
         <div id="financialInfo" className={styles.section}>
           <div className={styles.infoSection}>
-            <h2>💳 ข้อมูลการเงินและสินเชื่อ</h2>
+            <h2>ข้อมูลการเงินและสินเชื่อ</h2>
             <div className={styles.infoGroupGrid}>
               <div className={styles.infoGroup}>
                 <label>รายได้ปัจจุบัน</label>
@@ -463,7 +463,7 @@ function CustomerDetail() {
         {/* Property Information Section - Moved to show before Rent-to-Own */}
         <div id="property" className={styles.section}>
           <div className={styles.infoSection}>
-            <h2>🏠 ข้อมูลทรัพย์สิน</h2>
+            <h2>ข้อมูลทรัพย์สิน</h2>
             <div className={styles.infoGroupGrid}>
               <div className={styles.infoGroup}>
                 <label>โครงการ</label>
@@ -611,7 +611,7 @@ function CustomerDetail() {
         <div id="rentResults" className={styles.section}>
           {customer.detailedRentToOwnEstimation ? (
             <div className={styles.loanTable}>
-              <h2>💰 ข้อมูลการเช่าออม (Rent-to-Own Evaluation)</h2>
+              <h2>ข้อมูลการเช่าออม (Rent-to-Own Evaluation)</h2>
               <table>
                 <thead>
                   <tr>
@@ -701,7 +701,7 @@ function CustomerDetail() {
           customer.detailedRentToOwnEstimation.amortizationTable &&
           customer.detailedRentToOwnEstimation.amortizationTable.length > 0 ? (
             <div className={styles.amortizationSection}>
-              <h2>📋 ตารางรายละเอียดการผ่อนชำระ</h2>
+              <h2>ตารางรายละเอียดการผ่อนชำระ</h2>
               <RentToOwnTable
                 data={customer.detailedRentToOwnEstimation.amortizationTable}
               />
@@ -723,7 +723,7 @@ function CustomerDetail() {
           {customer.enhancedBankMatching &&
           Object.keys(customer.enhancedBankMatching).length > 0 ? (
             <div className={styles.bankMatchingSection}>
-              <h2>🏦 Enhanced Bank Matching Analysis</h2>
+              <h2>Enhanced Bank Matching Analysis</h2>
               <div className={styles.bankMatchingGrid}>
                 {Object.entries(customer.enhancedBankMatching).map(
                   ([bankName, data]) => (
@@ -987,13 +987,13 @@ function CustomerDetail() {
 
         {/* F3: Debt Items Table — CRUD */}
         <div id="debtDetail" className={styles.section}>
-          <h2>💸 รายละเอียดหนี้</h2>
+          <h2>รายละเอียดหนี้</h2>
           <DebtItemForm customerId={customerId} debtItems={debtItems} dsrData={dsrData} onDataChange={fetchAllData} />
         </div>
 
         {/* F4: Bureau Section — CRUD */}
         <div id="bureauInfo" className={styles.section}>
-          <h2>📑 Bureau Check</h2>
+          <h2>Bureau Check</h2>
           <BureauRequestForm customerId={customerId} bureauRequests={bureauRequests} onDataChange={fetchAllData} />
         </div>
 
@@ -1004,13 +1004,13 @@ function CustomerDetail() {
 
         {/* F5: LivNex Tracking — CRUD */}
         <div id="livnexTrack" className={styles.section}>
-          <h2>📋 LivNex Tracking</h2>
+          <h2>LivNex Tracking</h2>
           <LivNexTrackingForm customerId={customerId} livnexTracking={livnexTracking} onDataChange={fetchAllData} />
         </div>
 
         {/* F6: CA Recommendations — CRUD */}
         <div id="caReco" className={styles.section}>
-          <h2>💡 CA Recommendations</h2>
+          <h2>CA Recommendations</h2>
           <CaRecommendationForm customerId={customerId} caRecommendations={caRecommendations} onDataChange={fetchAllData} />
         </div>
 

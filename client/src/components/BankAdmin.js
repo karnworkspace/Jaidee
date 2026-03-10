@@ -146,13 +146,13 @@ function BankAdmin() {
   return (
     <div className={styles.adminContainer}>
       <div className={styles.header}>
-        <h1>🏦 จัดการข้อมูลธนาคาร</h1>
+        <h1>จัดการข้อมูลธนาคาร</h1>
         <button onClick={() => navigate('/')} className={styles.backButton}>
-          🏠 กลับหน้าแรก
+          กลับหน้าแรก
         </button>
       </div>
 
-      <div className={styles.mainContent}>
+      <div className={`${styles.mainContent} ${selectedBank ? styles.hasSelection : ''}`}>
         {/* Bank List */}
         <div className={styles.bankList}>
           <h2>รายการธนาคาร ({banks.length})</h2>
@@ -186,19 +186,19 @@ function BankAdmin() {
         {selectedBank && (
           <div className={styles.bankDetails}>
             <div className={styles.detailsHeader}>
-              <h2>🏛️ {selectedBank.bank_name} ({selectedBank.bank_code})</h2>
+              <h2>{selectedBank.bank_name} ({selectedBank.bank_code})</h2>
               <button
                 onClick={() => setIsEditing(!isEditing)}
                 className={`${styles.editButton} ${isEditing ? styles.editing : ''}`}
               >
-                {isEditing ? '❌ ยกเลิก' : '✏️ แก้ไข'}
+                {isEditing ? 'ยกเลิก' : 'แก้ไข'}
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className={styles.bankForm}>
               {/* Basic Info */}
               <div className={styles.formSection}>
-                <h3>📋 ข้อมูลพื้นฐาน</h3>
+                <h3>ข้อมูลพื้นฐาน</h3>
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>ชื่อธนาคาร</label>
@@ -229,7 +229,7 @@ function BankAdmin() {
 
               {/* DSR Settings */}
               <div className={styles.formSection}>
-                <h3>💰 เกณฑ์ DSR</h3>
+                <h3>เกณฑ์ DSR</h3>
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>DSR สูง (%)</label>
@@ -273,7 +273,7 @@ function BankAdmin() {
 
               {/* Age Settings */}
               <div className={styles.formSection}>
-                <h3>👤 เกณฑ์อายุ</h3>
+                <h3>เกณฑ์อายุ</h3>
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>อายุขั้นต่ำ</label>
@@ -316,7 +316,7 @@ function BankAdmin() {
 
               {/* LTV Settings */}
               <div className={styles.formSection}>
-                <h3>🏠 เกณฑ์ LTV</h3>
+                <h3>เกณฑ์ LTV</h3>
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>บ้านหลังที่ 1</label>
@@ -375,7 +375,7 @@ function BankAdmin() {
 
               {/* Enhanced Bank Matching */}
               <div className={styles.formSection}>
-                <h3>🎯 Enhanced Bank Matching</h3>
+                <h3>Enhanced Bank Matching</h3>
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>เครดิตสกอร์ขั้นต่ำ</label>
@@ -446,7 +446,7 @@ function BankAdmin() {
 
               {/* Scoring Weights */}
               <div className={styles.formSection}>
-                <h3>⚖️ น้ำหนักการให้คะแนน</h3>
+                <h3>น้ำหนักการให้คะแนน</h3>
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>น้ำหนัก Loan Band</label>
@@ -497,7 +497,7 @@ function BankAdmin() {
 
               {/* Special Programs Section */}
               <div className={styles.formSection}>
-                <h3>⭐ โปรแกรมพิเศษ</h3>
+                <h3>โปรแกรมพิเศษ</h3>
                 <div className={styles.specialProgramsContainer}>
                   {(formData.special_programs || []).length === 0 ? (
                     <div className={styles.noPrograms}>
@@ -507,7 +507,7 @@ function BankAdmin() {
                     <div className={styles.programsList}>
                       {(formData.special_programs || []).map((program, index) => (
                         <div key={index} className={styles.programItem}>
-                          <span className={styles.programText}>⭐ {program}</span>
+                          <span className={styles.programText}>{program}</span>
                           {isEditing && (
                             <div className={styles.programActions}>
                               <button
@@ -516,7 +516,7 @@ function BankAdmin() {
                                 className={styles.editProgramBtn}
                                 title="แก้ไข"
                               >
-                                ✏️
+                                แก้ไข
                               </button>
                               <button
                                 type="button"
@@ -524,7 +524,7 @@ function BankAdmin() {
                                 className={styles.removeProgramBtn}
                                 title="ลบ"
                               >
-                                🗑️
+                                ลบ
                               </button>
                             </div>
                           )}
@@ -539,7 +539,7 @@ function BankAdmin() {
                       onClick={handleAddSpecialProgram}
                       className={styles.addProgramBtn}
                     >
-                      ➕ เพิ่มโปรแกรมพิเศษ
+                      เพิ่มโปรแกรมพิเศษ
                     </button>
                   )}
                 </div>
@@ -548,10 +548,10 @@ function BankAdmin() {
               {isEditing && (
                 <div className={styles.formActions}>
                   <button type="submit" className={styles.saveButton}>
-                    💾 บันทึกการเปลี่ยนแปลง
+                    บันทึกการเปลี่ยนแปลง
                   </button>
                   <button type="button" onClick={() => setIsEditing(false)} className={styles.cancelButton}>
-                    ❌ ยกเลิก
+                    ยกเลิก
                   </button>
                 </div>
               )}
