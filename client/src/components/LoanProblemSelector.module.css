@@ -96,8 +96,18 @@
   margin-top: 8px;
 }
 
+.solutionError {
+  background: var(--color-warning-soft, #FFFBEB);
+  color: #92400e;
+  padding: 0.625rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--color-warning, #F59E0B);
+}
+
 .addButton {
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  background: var(--color-primary, #32BCAD);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -109,8 +119,9 @@
 }
 
 .addButton:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+  background: var(--color-primary-dark, #2A9D8F);
+  transform: none;
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.06));
 }
 
 .addButton:disabled {

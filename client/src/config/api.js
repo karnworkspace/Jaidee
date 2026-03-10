@@ -22,7 +22,7 @@ export const API_ENDPOINTS = {
   PROBLEMS_DETAILS: (category) =>
     `${API_BASE_URL}/api/problems/details/${encodeURIComponent(category)}`,
   PROBLEMS_SOLUTION: (category, detail) =>
-    `${API_BASE_URL}/api/problems/solution/${encodeURIComponent(category)}/${encodeURIComponent(detail)}`,
+    `${API_BASE_URL}/api/problems/solution?category=${encodeURIComponent(category)}&detail=${encodeURIComponent(detail)}`,
   PROBLEMS_OTHER_SOLUTION: (problem) =>
     `${API_BASE_URL}/api/problems/other-solution/${encodeURIComponent(problem)}`,
 

@@ -19,6 +19,8 @@ function LoanProblemSelector({
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedDetail, setSelectedDetail] = useState('');
   const [selectedSolution, setSelectedSolution] = useState('');
+  const [solutionLoaded, setSolutionLoaded] = useState(false);
+  const [solutionError, setSolutionError] = useState('');
 
   // Load initial data
   useEffect(() => {
@@ -77,17 +79,27 @@ function LoanProblemSelector({
     const loadSolution = async () => {
       if (!selectedCategory || !selectedDetail) {
         setSelectedSolution('');
+        setSolutionLoaded(false);
+        setSolutionError('');
         return;
       }
 
       try {
+        setSolutionError('');
+        setSolutionLoaded(false);
         const response = await authenticatedFetch(
           API_ENDPOINTS.PROBLEMS_SOLUTION(selectedCategory, selectedDetail)
         );
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
         const data = await response.json();
-        setSelectedSolution(data.solution);
+        setSelectedSolution(data.solution || '');
+        setSolutionLoaded(true);
       } catch (error) {
-        // Handle error silently
+        setSolutionError('ไม่สามารถโหลดวิธีแก้ไขได้ แต่สามารถเพิ่มปัญหาได้');
+        setSelectedSolution('');
+        setSolutionLoaded(true);
       }
     };
 
@@ -96,15 +108,16 @@ function LoanProblemSelector({
 
   // Handle adding categorized problem
   const handleAddCategorizedProblem = () => {
-    if (!selectedCategory || !selectedDetail || !selectedSolution) {
+    if (!selectedCategory || !selectedDetail || !solutionLoaded) {
       return;
     }
 
     const newProblem = `${selectedCategory} > ${selectedDetail}`;
-    const newSolution = selectedSolution;
+    const newSolution = selectedSolution || '-';
 
     // Check if already exists
     if (selectedProblems.includes(newProblem)) {
+      alert('ปัญหานี้ถูกเพิ่มไว้แล้ว');
       return;
     }
 
@@ -119,6 +132,8 @@ function LoanProblemSelector({
     setSelectedCategory('');
     setSelectedDetail('');
     setSelectedSolution('');
+    setSolutionLoaded(false);
+    setSolutionError('');
   };
 
   // Handle adding other problem
@@ -153,21 +168,21 @@ function LoanProblemSelector({
   };
 
   if (loading) {
-    return <div className={styles.loading}>🔄 กำลังโหลดข้อมูลปัญหา...</div>;
+    return <div className={styles.loading}>กำลังโหลดข้อมูลปัญหา...</div>;
   }
 
   return (
     <div className={styles.problemSelector}>
-      <h3 className={styles.title}>📋 ปัญหาทางด้านสินเชื่อ</h3>
+      <h3 className={styles.title}>ปัญหาทางด้านสินเชื่อ</h3>
 
       {/* Categorized Problems Section */}
       <div className={styles.categorizedSection}>
-        <h4 className={styles.sectionTitle}>🎯 ปัญหาหลัก</h4>
+        <h4 className={styles.sectionTitle}>ปัญหาหลัก</h4>
         
         <div className={styles.dropdownRow}>
           {/* ระดับ 1: ประเภทปัญหา */}
           <div className={styles.dropdownGroup}>
-            <label className={styles.label}>1️⃣ ประเภทปัญหา:</label>
+            <label className={styles.label}>ประเภทปัญหา:</label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
@@ -184,7 +199,7 @@ function LoanProblemSelector({
 
           {/* ระดับ 2: รายละเอียดปัญหา */}
           <div className={styles.dropdownGroup}>
-            <label className={styles.label}>2️⃣ รายละเอียดปัญหา:</label>
+            <label className={styles.label}>รายละเอียดปัญหา:</label>
             <select
               value={selectedDetail}
               onChange={(e) => setSelectedDetail(e.target.value)}
@@ -202,28 +217,34 @@ function LoanProblemSelector({
         </div>
 
         {/* ระดับ 3: วิธีการแก้ไข */}
-        {selectedSolution && (
+        {solutionLoaded && (
           <div className={styles.solutionPreview}>
-            <label className={styles.label}>3️⃣ วิธีการแก้ไข:</label>
+            <label className={styles.label}>วิธีการแก้ไข:</label>
             <div className={styles.solutionText}>
-              {selectedSolution}
+              {selectedSolution || 'ไม่มีวิธีแก้ไขที่กำหนดไว้'}
             </div>
+          </div>
+        )}
+
+        {solutionError && (
+          <div className={styles.solutionError}>
+            {solutionError}
           </div>
         )}
 
         <button
           type="button"
           onClick={handleAddCategorizedProblem}
-          disabled={!selectedCategory || !selectedDetail || !selectedSolution}
+          disabled={!selectedCategory || !selectedDetail || !solutionLoaded}
           className={styles.addButton}
         >
-          ➕ เพิ่มปัญหาหลัก
+          + เพิ่มปัญหาหลัก
         </button>
       </div>
 
       {/* Other Problems Section */}
       <div className={styles.otherSection}>
-        <h4 className={styles.sectionTitle}>🔧 ปัญหาอื่น ๆ</h4>
+        <h4 className={styles.sectionTitle}>ปัญหาอื่น ๆ</h4>
         <div className={styles.otherProblemsGrid}>
           {otherProblems.map(problem => (
             <button
@@ -244,7 +265,7 @@ function LoanProblemSelector({
       {/* Selected Problems Display */}
       {selectedProblems.length > 0 && (
         <div className={styles.selectedSection}>
-          <h4 className={styles.sectionTitle}>✅ ปัญหาที่เลือก</h4>
+          <h4 className={styles.sectionTitle}>ปัญหาที่เลือก</h4>
           <div className={styles.selectedList}>
             {selectedProblems.map((problem, index) => (
               <div key={index} className={styles.selectedItem}>
@@ -259,7 +280,7 @@ function LoanProblemSelector({
                   onClick={() => handleRemoveProblem(index)}
                   className={styles.removeButton}
                 >
-                  🗑️
+                  ลบ
                 </button>
               </div>
             ))}

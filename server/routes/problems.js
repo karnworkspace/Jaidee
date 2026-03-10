@@ -26,10 +26,13 @@ router.get('/details/:category', authenticateToken, (req, res) => {
   }
 });
 
-router.get('/solution/:category/:detail', authenticateToken, (req, res) => {
+router.get('/solution', authenticateToken, (req, res) => {
   try {
-    const category = decodeURIComponent(req.params.category);
-    const detail = decodeURIComponent(req.params.detail);
+    const category = req.query.category;
+    const detail = req.query.detail;
+    if (!category || !detail) {
+      return res.status(400).json({ message: 'category and detail are required' });
+    }
     res.json({ solution: getSolution(category, detail) });
   } catch (error) {
     res.status(500).json({ message: 'Error getting solution' });
