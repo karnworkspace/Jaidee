@@ -79,6 +79,13 @@
   font-weight: 600;
 }
 
+.testBanner {
+  color: #DC2626;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
 .navRight {
   display: flex;
   align-items: center;

@@ -62,6 +62,8 @@ function Navbar() {
           </div>
         </div>
 
+        <span className={styles.testBanner}>ระบบสำหรับการทดสอบใช้งาน Ver1.0 (March26)</span>
+
         <div className={styles.navRight}>
           <div className={styles.userInfo}>
             <div className={styles.userDetails}>

@@ -56,8 +56,9 @@ function Login({ onLogin }) {
     <div className={styles.loginContainer}>
       <div className={styles.loginBox}>
         <div className={styles.loginHeader}>
-          <h1 className={styles.title}>🏛️ Jaidee System</h1>
+          <h1 className={styles.title}>Jaidee System</h1>
           <h2 className={styles.subtitle}>Customer Analysis Platform</h2>
+          <p className={styles.testBanner}>ระบบสำหรับการทดสอบใช้งาน Ver1.0 (March26)</p>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.loginForm}>
