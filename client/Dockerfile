@@ -19,8 +19,8 @@ RUN npm run build
 # Stage 2: Serve with nginx
 FROM nginx:alpine
 
-# Copy built app from builder stage
-COPY --from=builder /app/build /usr/share/nginx/html
+# Copy built app to /jaidee subpath (matches PUBLIC_URL=/jaidee)
+COPY --from=builder /app/build /usr/share/nginx/html/jaidee
 
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf

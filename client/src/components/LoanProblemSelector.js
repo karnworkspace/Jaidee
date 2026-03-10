@@ -212,6 +212,7 @@ function LoanProblemSelector({
         )}
 
         <button
+          type="button"
           onClick={handleAddCategorizedProblem}
           disabled={!selectedCategory || !selectedDetail || !selectedSolution}
           className={styles.addButton}
@@ -226,6 +227,7 @@ function LoanProblemSelector({
         <div className={styles.otherProblemsGrid}>
           {otherProblems.map(problem => (
             <button
+              type="button"
               key={problem}
               onClick={() => handleAddOtherProblem(problem)}
               disabled={selectedProblems.includes(problem)}
@@ -253,6 +255,7 @@ function LoanProblemSelector({
                   <strong>วิธีแก้:</strong> {selectedSolutions[index]}
                 </div>
                 <button
+                  type="button"
                   onClick={() => handleRemoveProblem(index)}
                   className={styles.removeButton}
                 >

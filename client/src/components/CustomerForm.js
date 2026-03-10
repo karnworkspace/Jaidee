@@ -253,6 +253,20 @@ function CustomerForm() {
     }
   };
 
+  // Handler สำหรับเลขบัตรประชาชน — ตัวเลขเท่านั้น, สูงสุด 13 หลัก
+  const handleIdCardChange = (e) => {
+    const { name, value } = e.target;
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 13);
+    setFormData(prev => ({ ...prev, [name]: digitsOnly }));
+  };
+
+  // Handler สำหรับเบอร์โทร — ตัวเลขเท่านั้น, สูงสุด 10 หลัก
+  const handlePhoneChange = (e) => {
+    const { name, value } = e.target;
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+    setFormData(prev => ({ ...prev, [name]: digitsOnly }));
+  };
+
   // Project search functions
   const handleProjectSearch = (e) => {
     const searchTerm = e.target.value;
@@ -405,7 +419,7 @@ function CustomerForm() {
                 <div className={styles.formGroup}><label>อายุ<span className={styles.required}>*</span></label><input type="number" name="age" value={formData.age} onChange={handleChange} required /></div>
               </div>
               <div className={styles.formRow}>
-                <div className={styles.formGroup}><label>เบอร์โทร<span className={styles.required}>*</span></label><input type="text" name="phone" value={formData.phone} onChange={handleChange} required /></div>
+                <div className={styles.formGroup}><label>เบอร์โทร<span className={styles.required}>*</span></label><input type="text" name="phone" value={formData.phone} onChange={handlePhoneChange} required pattern="[0-9]{10}" title="กรุณากรอกเบอร์โทร 10 หลัก (ตัวเลขเท่านั้น)" placeholder="0xxxxxxxxx" /></div>
                 <div className={styles.formGroup}>
                   <label>อาชีพ<span className={styles.required}>*</span></label>
                   <select name="job" value={formData.job} onChange={handleChange} required className={styles.select}>
@@ -418,16 +432,16 @@ function CustomerForm() {
               </div>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}><label>ตำแหน่ง<span className={styles.required}>*</span></label><input type="text" name="position" value={formData.position} onChange={handleChange} required /></div>
-                <div className={styles.formGroup}><label>เลขบัตรประชาชน</label><input type="text" name="id_card" value={formData.id_card} onChange={handleChange} maxLength="13" placeholder="x-xxxx-xxxxx-xx-x" /></div>
+                <div className={styles.formGroup}><label>เลขบัตรประชาชน</label><input type="text" name="id_card" value={formData.id_card} onChange={handleIdCardChange} pattern="[0-9]{13}|^$" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก (ตัวเลขเท่านั้น)" placeholder="เลข 13 หลัก" /></div>
               </div>
 
               <h4 style={{marginTop: '1rem', marginBottom: '0.5rem'}}>ผู้กู้ร่วม (ถ้ามี)</h4>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}><label>ชื่อผู้กู้ร่วม</label><input type="text" name="co_borrower_name" value={formData.co_borrower_name} onChange={handleChange} /></div>
-                <div className={styles.formGroup}><label>เลขบัตรผู้กู้ร่วม</label><input type="text" name="co_borrower_id_card" value={formData.co_borrower_id_card} onChange={handleChange} maxLength="13" /></div>
+                <div className={styles.formGroup}><label>เลขบัตรผู้กู้ร่วม</label><input type="text" name="co_borrower_id_card" value={formData.co_borrower_id_card} onChange={handleIdCardChange} pattern="[0-9]{13}|^$" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก (ตัวเลขเท่านั้น)" placeholder="เลข 13 หลัก" /></div>
               </div>
               <div className={styles.formRow}>
-                <div className={styles.formGroup}><label>เบอร์โทรผู้กู้ร่วม</label><input type="text" name="co_borrower_phone" value={formData.co_borrower_phone} onChange={handleChange} /></div>
+                <div className={styles.formGroup}><label>เบอร์โทรผู้กู้ร่วม</label><input type="text" name="co_borrower_phone" value={formData.co_borrower_phone} onChange={handlePhoneChange} pattern="[0-9]{10}|^$" title="กรุณากรอกเบอร์โทร 10 หลัก (ตัวเลขเท่านั้น)" placeholder="0xxxxxxxxx" /></div>
               </div>
             </div>
 
@@ -457,8 +471,8 @@ function CustomerForm() {
                   <label>ธนาคารเป้าหมาย<span className={styles.required}>*</span></label>
                   <select name="targetBank" value={formData.targetBank} onChange={handleChange} required className={styles.select}>
                     <option value="">-- เลือกธนาคาร --</option>
-                    <option value="KTB">ธนาคารกรุงไทย (KTB)</option>
                     <option value="GHB">ธนาคารอาคารสงเคราะห์ (GHB)</option>
+                    <option value="KTB">ธนาคารกรุงไทย (KTB)</option>
                     <option value="GSB">ธนาคารออมสิน (GSB)</option>
                     <option value="BBL">ธนาคารกรุงเทพ (BBL)</option>
                     <option value="SCB">ธนาคารไทยพาณิชย์ (SCB)</option>

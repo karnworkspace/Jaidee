@@ -67,6 +67,7 @@ export default function RentToOwnTable({ data }) {
 
       <div className={styles.buttonContainer}>
         <button
+          type="button"
           onClick={toggleExpanded}
           className={styles.toggleButton}
         >

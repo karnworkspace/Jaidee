@@ -298,7 +298,72 @@ const runDOC2026Migrations = async (db) => {
   // 3. Migrate existing data
   await migrateDebtData(db);
 
+  // 4. Seed bank rules if empty
+  await seedBankRules(db);
+
   console.log('--- DOC2026 Migrations Complete ---');
+};
+
+/**
+ * Seed bank_rules table with default data from bankConstants if empty
+ */
+const seedBankRules = async (db) => {
+  const count = await new Promise((resolve, reject) => {
+    db.get('SELECT COUNT(*) as count FROM bank_rules', (err, row) => {
+      if (err) { resolve(0); return; }
+      resolve(row.count);
+    });
+  });
+
+  if (count > 0) {
+    console.log(`bank_rules already has ${count} rows, skipping seed`);
+    return;
+  }
+
+  console.log('Seeding bank_rules with default data...');
+
+  const { refbank, bankMatchingRules } = require('./config/bankConstants');
+
+  const defaultBanks = [
+    { code: 'GHB', name: 'ธนาคารอาคารสงเคราะห์', partnership: 'Government_Backing', dsr_high: 0.70, dsr_low: 0.40, age_min: 20, age_max: 70, max_term: 40, ltv1: 1.00, ltv2o: 0.90, ltv2u: 0.80, ltv3: 0.70, min_credit: 550, max_ltv_rto: 100, pref_rate: 3.5, max_term_rto: 30, livnex_bonus: 50 },
+    { code: 'KTB', name: 'ธนาคารกรุงไทย', partnership: 'Standard_Commercial', dsr_high: 0.50, dsr_low: 0.40, age_min: 20, age_max: 65, max_term: 40, ltv1: 1.00, ltv2o: 0.90, ltv2u: 0.80, ltv3: 0.70, min_credit: 650, max_ltv_rto: 80, pref_rate: 4.5, max_term_rto: 20, livnex_bonus: 25 },
+    { code: 'GSB', name: 'ธนาคารออมสิน', partnership: 'Government_Backing', dsr_high: 0.70, dsr_low: 0.40, age_min: 20, age_max: 65, max_term: 40, ltv1: 1.00, ltv2o: 0.90, ltv2u: 0.80, ltv3: 0.70, min_credit: 600, max_ltv_rto: 85, pref_rate: 4.0, max_term_rto: 25, livnex_bonus: 50 },
+    { code: 'BBL', name: 'ธนาคารกรุงเทพ', partnership: 'Premium_Commercial', dsr_high: 0.45, dsr_low: 0.40, age_min: 20, age_max: 65, max_term: 30, ltv1: 0.95, ltv2o: 0.85, ltv2u: 0.75, ltv3: 0.65, min_credit: 700, max_ltv_rto: 75, pref_rate: 4.8, max_term_rto: 20, livnex_bonus: 20 },
+    { code: 'SCB', name: 'ธนาคารไทยพาณิชย์', partnership: 'Premium_Commercial', dsr_high: 0.50, dsr_low: 0.40, age_min: 20, age_max: 65, max_term: 30, ltv1: 0.95, ltv2o: 0.85, ltv2u: 0.75, ltv3: 0.65, min_credit: 700, max_ltv_rto: 75, pref_rate: 4.7, max_term_rto: 20, livnex_bonus: 20 },
+    { code: 'KBANK', name: 'ธนาคารกสิกรไทย', partnership: 'Premium_Commercial', dsr_high: 0.45, dsr_low: 0.40, age_min: 20, age_max: 65, max_term: 30, ltv1: 0.95, ltv2o: 0.85, ltv2u: 0.75, ltv3: 0.65, min_credit: 700, max_ltv_rto: 75, pref_rate: 4.7, max_term_rto: 20, livnex_bonus: 20 },
+    { code: 'BAY', name: 'ธนาคารกรุงศรีอยุธยา', partnership: 'Standard_Commercial', dsr_high: 0.50, dsr_low: 0.40, age_min: 20, age_max: 65, max_term: 30, ltv1: 0.95, ltv2o: 0.85, ltv2u: 0.75, ltv3: 0.65, min_credit: 650, max_ltv_rto: 80, pref_rate: 4.5, max_term_rto: 20, livnex_bonus: 25 },
+    { code: 'TTB', name: 'ธนาคารทีเอ็มบีธนชาต', partnership: 'Standard_Commercial', dsr_high: 0.50, dsr_low: 0.40, age_min: 20, age_max: 65, max_term: 30, ltv1: 0.95, ltv2o: 0.85, ltv2u: 0.75, ltv3: 0.65, min_credit: 650, max_ltv_rto: 80, pref_rate: 4.5, max_term_rto: 20, livnex_bonus: 25 },
+    { code: 'CIMBT', name: 'ธนาคารซีไอเอ็มบีไทย', partnership: 'Standard_Commercial', dsr_high: 0.50, dsr_low: 0.40, age_min: 20, age_max: 65, max_term: 30, ltv1: 0.90, ltv2o: 0.80, ltv2u: 0.70, ltv3: 0.60, min_credit: 650, max_ltv_rto: 75, pref_rate: 5.0, max_term_rto: 20, livnex_bonus: 15 },
+    { code: 'TISCO', name: 'ธนาคารทิสโก้', partnership: 'Standard_Commercial', dsr_high: 0.50, dsr_low: 0.40, age_min: 20, age_max: 65, max_term: 40, ltv1: 0.90, ltv2o: 0.80, ltv2u: 0.70, ltv3: 0.60, min_credit: 650, max_ltv_rto: 75, pref_rate: 5.0, max_term_rto: 20, livnex_bonus: 15 },
+    { code: 'KKP', name: 'ธนาคารเกียรตินาคิน', partnership: 'Standard_Commercial', dsr_high: 0.50, dsr_low: 0.40, age_min: 20, age_max: 65, max_term: 40, ltv1: 0.90, ltv2o: 0.80, ltv2u: 0.70, ltv3: 0.60, min_credit: 650, max_ltv_rto: 75, pref_rate: 5.0, max_term_rto: 20, livnex_bonus: 15 },
+    { code: 'LH BANK', name: 'ธนาคารแอลเอช', partnership: 'Standard_Commercial', dsr_high: 0.50, dsr_low: 0.40, age_min: 20, age_max: 65, max_term: 40, ltv1: 0.90, ltv2o: 0.80, ltv2u: 0.70, ltv3: 0.60, min_credit: 650, max_ltv_rto: 75, pref_rate: 5.0, max_term_rto: 20, livnex_bonus: 15 },
+  ];
+
+  for (const bank of defaultBanks) {
+    const rates = refbank[bank.code] || {};
+    await new Promise((resolve) => {
+      db.run(`INSERT INTO bank_rules (
+        bank_code, bank_name, criteria, dsr_high, dsr_low, min_income_for_dsr_high,
+        age_min, age_max, max_term, ltv_type1, ltv_type2_over_2years, ltv_type2_under_2years, ltv_type3,
+        installment_rates, interest_rates, partnership_type, min_credit_score, max_ltv_rent_to_own,
+        preferred_interest_rate, max_term_rent_to_own, special_programs, livnex_bonus, exclude_status,
+        acceptable_grades, loan_weight, rent_to_own_weight, credit_weight, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      [
+        bank.code, bank.name, JSON.stringify({}), bank.dsr_high, bank.dsr_low, 30000,
+        bank.age_min, bank.age_max, bank.max_term, bank.ltv1, bank.ltv2o, bank.ltv2u, bank.ltv3,
+        JSON.stringify(rates), JSON.stringify({}), bank.partnership, bank.min_credit, bank.max_ltv_rto,
+        bank.pref_rate, bank.max_term_rto, JSON.stringify([]), bank.livnex_bonus, JSON.stringify([]),
+        JSON.stringify([]), 0.4, 0.3, 0.3
+      ], (err) => {
+        if (err) console.warn(`Failed to seed ${bank.code}:`, err.message);
+        else console.log(`  Seeded bank rule: ${bank.code} (${bank.name})`);
+        resolve();
+      });
+    });
+  }
+
+  console.log(`Seeded ${defaultBanks.length} bank rules`);
 };
 
 module.exports = {

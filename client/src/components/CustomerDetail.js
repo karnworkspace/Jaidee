@@ -125,7 +125,7 @@ function CustomerDetail() {
       const res = await authenticatedFetch(API_ENDPOINTS.LOAN_APPLICATIONS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customer_id: parseInt(customerId) }),
+        body: JSON.stringify({ customer_id: parseInt(customerId), application_date: new Date().toISOString().split('T')[0] }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -1061,13 +1061,7 @@ function CustomerDetail() {
             </div>
           ) : (
             <div className={styles.noData}>
-              <p>ยังไม่มีใบสมัครสินเชื่อ</p>
-              <button
-                onClick={handleCreateLoanApp}
-                style={{padding: '8px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', marginTop: '0.5rem'}}
-              >
-                สร้าง APP-IN ใหม่
-              </button>
+              <p>ยังไม่มีใบสมัครสินเชื่อ — กดปุ่ม "+ สร้าง APP-IN ใหม่" ด้านบนขวาเพื่อเริ่มต้น</p>
             </div>
           )}
         </div>
