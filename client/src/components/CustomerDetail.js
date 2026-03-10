@@ -3,6 +3,10 @@ import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { API_ENDPOINTS } from "../config/api";
 import RentToOwnTable from "./RentToOwnTable";
+import DebtItemForm from "./DebtItemForm";
+import BureauRequestForm from "./BureauRequestForm";
+import LivNexTrackingForm from "./LivNexTrackingForm";
+import CaRecommendationForm from "./CaRecommendationForm";
 import styles from "./CustomerDetail.module.css";
 
 /** แสดงปุ่มเปลี่ยนสถานะตาม workflow transitions ที่อนุญาต */
@@ -67,6 +71,7 @@ function CustomerDetail() {
   const [livnexTracking, setLivnexTracking] = useState([]);
   const [caRecommendations, setCaRecommendations] = useState([]);
   const [doc2026Refresh, setDoc2026Refresh] = useState(0);
+  const fetchAllData = () => setDoc2026Refresh(prev => prev + 1);
 
   useEffect(() => {
     const fetchCustomerDetails = async () => {
@@ -1066,146 +1071,28 @@ function CustomerDetail() {
           )}
         </div>
 
-        {/* F3: Debt Items Table */}
+        {/* F3: Debt Items Table — CRUD */}
         <div id="debtDetail" className={styles.section}>
           <h2>💸 รายละเอียดหนี้</h2>
-          {debtItems.length > 0 ? (
-            <div>
-              {dsrData && (
-                <div style={{display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap'}}>
-                  <div style={{padding: '0.75rem 1.25rem', background: dsrData.dsr > 40 ? '#fef2f2' : '#f0fdf4', borderRadius: '8px', border: `1px solid ${dsrData.dsr > 40 ? '#fecaca' : '#bbf7d0'}`}}>
-                    <div style={{fontSize: '0.75rem', color: '#6b7280'}}>DSR</div>
-                    <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: dsrData.dsr > 40 ? '#dc2626' : '#16a34a'}}>{dsrData.dsr}%</div>
-                  </div>
-                  <div style={{padding: '0.75rem 1.25rem', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd'}}>
-                    <div style={{fontSize: '0.75rem', color: '#6b7280'}}>ภาระหนี้รวม</div>
-                    <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#0284c7'}}>{dsrData.totalDebt?.toLocaleString()} บาท</div>
-                  </div>
-                </div>
-              )}
-              <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem'}}>
-                <thead>
-                  <tr style={{background: '#f3f4f6'}}>
-                    <th style={{padding: '8px', textAlign: 'left', borderBottom: '2px solid #e5e7eb'}}>ประเภท</th>
-                    <th style={{padding: '8px', textAlign: 'left', borderBottom: '2px solid #e5e7eb'}}>เจ้าหนี้</th>
-                    <th style={{padding: '8px', textAlign: 'right', borderBottom: '2px solid #e5e7eb'}}>ยอดคงเหลือ</th>
-                    <th style={{padding: '8px', textAlign: 'right', borderBottom: '2px solid #e5e7eb'}}>ผ่อน/เดือน</th>
-                    <th style={{padding: '8px', textAlign: 'right', borderBottom: '2px solid #e5e7eb'}}>คำนวณได้</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {debtItems.map(item => {
-                    const typeLabels = {
-                      revolving_personal: 'สินเชื่อส่วนบุคคล (5%)', revolving_credit_card: 'บัตรเครดิต (8%)',
-                      revolving_other: 'หมุนเวียนอื่น (5%)', installment: 'ผ่อนชำระ',
-                      joint_loan: 'กู้ร่วม (/2)', legacy: 'ข้อมูลเดิม'
-                    };
-                    return (
-                      <tr key={item.id} style={{borderBottom: '1px solid #e5e7eb'}}>
-                        <td style={{padding: '8px'}}>{typeLabels[item.debt_type] || item.debt_type}</td>
-                        <td style={{padding: '8px'}}>{item.creditor_name || '-'}</td>
-                        <td style={{padding: '8px', textAlign: 'right'}}>{item.outstanding_balance?.toLocaleString()}</td>
-                        <td style={{padding: '8px', textAlign: 'right'}}>{item.monthly_payment?.toLocaleString()}</td>
-                        <td style={{padding: '8px', textAlign: 'right', fontWeight: 'bold'}}>{item.calculated_payment?.toLocaleString()}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className={styles.noData}><p>ยังไม่มีรายละเอียดหนี้</p></div>
-          )}
+          <DebtItemForm customerId={customerId} debtItems={debtItems} dsrData={dsrData} onDataChange={fetchAllData} />
         </div>
 
-        {/* F4: Bureau Section */}
+        {/* F4: Bureau Section — CRUD */}
         <div id="bureauInfo" className={styles.section}>
           <h2>📑 Bureau Check</h2>
-          {bureauRequests.length > 0 ? (
-            <div>
-              {bureauRequests.map(req => (
-                <div key={req.id} style={{padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', marginBottom: '1rem'}}>
-                  <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem'}}>
-                    <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>วันที่ขอ</span><br/><strong>{req.request_date}</strong></div>
-                    <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>หมดอายุ</span><br/><strong>{req.expiry_date || '-'}</strong></div>
-                    <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>Consent</span><br/>
-                      <span style={{padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem', background: req.consent_status === 'received' ? '#dcfce7' : '#fef3c7', color: req.consent_status === 'received' ? '#166534' : '#92400e'}}>
-                        {req.consent_status === 'received' ? 'ได้รับแล้ว' : req.consent_status === 'expired' ? 'หมดอายุ' : 'รอ'}
-                      </span>
-                    </div>
-                    <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>Form 1</span><br/>
-                      <span style={{padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem', background: req.form1_status === 'verified' ? '#dcfce7' : '#f3f4f6'}}>
-                        {req.form1_status}
-                      </span>
-                    </div>
-                    <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>Form 2</span><br/>
-                      <span style={{padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem', background: req.form2_status === 'verified' ? '#dcfce7' : '#f3f4f6'}}>
-                        {req.form2_status}
-                      </span>
-                    </div>
-                    {req.bureau_score && <div><span style={{fontSize: '0.75rem', color: '#6b7280'}}>Bureau Score</span><br/><strong style={{fontSize: '1.2rem'}}>{req.bureau_score}</strong></div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className={styles.noData}><p>ยังไม่มีข้อมูล Bureau</p></div>
-          )}
+          <BureauRequestForm customerId={customerId} bureauRequests={bureauRequests} onDataChange={fetchAllData} />
         </div>
 
-        {/* F5: LivNex Tracking */}
+        {/* F5: LivNex Tracking — CRUD */}
         <div id="livnexTrack" className={styles.section}>
           <h2>📋 LivNex Tracking</h2>
-          {livnexTracking.length > 0 ? (
-            <div>
-              {livnexTracking.map(track => {
-                const trackColors = { approved: '#f59e0b', active: '#3b82f6', transferred: '#10b981', cancelled: '#ef4444' };
-                return (
-                  <div key={track.id} style={{padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', marginBottom: '1rem'}}>
-                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem'}}>
-                      <span style={{fontWeight: 'bold'}}>Tracking #{track.id}</span>
-                      <span style={{padding: '2px 12px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: '600', color: '#fff', background: trackColors[track.status] || '#6b7280'}}>
-                        {track.status === 'approved' ? 'อนุมัติ' : track.status === 'active' ? 'ดำเนินการ' : track.status === 'transferred' ? 'โอนแล้ว' : 'ยกเลิก'}
-                      </span>
-                    </div>
-                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem', fontSize: '0.85rem'}}>
-                      {track.approval_date && <div>อนุมัติ: {track.approval_date}</div>}
-                      {track.transfer_date && <div>โอน: {track.transfer_date}</div>}
-                      {track.jd_officer && <div>JD: {track.jd_officer}</div>}
-                      {track.co_officer && <div>CO: {track.co_officer}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className={styles.noData}><p>ยังไม่มีข้อมูล Tracking</p></div>
-          )}
+          <LivNexTrackingForm customerId={customerId} livnexTracking={livnexTracking} onDataChange={fetchAllData} />
         </div>
 
-        {/* F6: CA Recommendations */}
+        {/* F6: CA Recommendations — CRUD */}
         <div id="caReco" className={styles.section}>
           <h2>💡 CA Recommendations</h2>
-          {caRecommendations.length > 0 ? (
-            <div>
-              {caRecommendations.map(rec => (
-                <div key={rec.id} style={{padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', marginBottom: '1rem'}}>
-                  {rec.problem_description && <div style={{marginBottom: '0.5rem'}}><strong>ปัญหา:</strong> {rec.problem_description}</div>}
-                  {rec.solution && <div style={{marginBottom: '0.5rem'}}><strong>แนวทาง:</strong> {rec.solution}</div>}
-                  {rec.dsr_calculated && <div style={{marginBottom: '0.5rem'}}><strong>DSR:</strong> {rec.dsr_calculated}%</div>}
-                  <div style={{display: 'flex', gap: '1rem', fontSize: '0.85rem', color: '#6b7280', marginTop: '0.5rem'}}>
-                    {rec.ca_officer && <span>CA: {rec.ca_officer}</span>}
-                    {rec.co_officer && <span>CO: {rec.co_officer}</span>}
-                    <span style={{padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem', background: rec.co_tracking_status === 'completed' ? '#dcfce7' : '#fef3c7'}}>
-                      {rec.co_tracking_status === 'completed' ? 'เสร็จ' : rec.co_tracking_status === 'in_progress' ? 'กำลังดำเนินการ' : 'รอ'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className={styles.noData}><p>ยังไม่มี CA Recommendations</p></div>
-          )}
+          <CaRecommendationForm customerId={customerId} caRecommendations={caRecommendations} onDataChange={fetchAllData} />
         </div>
 
         <div className={styles.footerButtons}>
