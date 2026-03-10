@@ -483,15 +483,35 @@ const updateCustomerWithDetails = (customerId, customerData) => {
 // Helper function to get all customers with basic info
 const getAllCustomers = () => {
   return new Promise((resolve, reject) => {
-    db.all('SELECT * FROM customers ORDER BY created_at DESC', (err, customers) => {
+    // JOIN with loan_applications to get latest loan_status
+    const sql = `
+      SELECT c.*, la.loan_status AS latest_loan_status
+      FROM customers c
+      LEFT JOIN (
+        SELECT customer_id, loan_status
+        FROM loan_applications
+        WHERE id IN (SELECT MAX(id) FROM loan_applications GROUP BY customer_id)
+      ) la ON c.id = la.customer_id
+      ORDER BY c.created_at DESC
+    `;
+    db.all(sql, (err, customers) => {
       if (err) {
         reject(err);
         return;
       }
 
+      // Override loan_status with latest from loan_applications
+      const merged = customers.map(c => ({
+        ...c,
+        loan_status: c.latest_loan_status || c.loan_status || 'new'
+      }));
+
       // Get related data for each customer
-      const customersWithDetails = customers.map(customer => {
-        return getCustomerWithDetails(customer.id);
+      const customersWithDetails = merged.map(customer => {
+        return getCustomerWithDetails(customer.id).then(detail => ({
+          ...detail,
+          loan_status: customer.loan_status
+        }));
       });
 
       Promise.all(customersWithDetails)

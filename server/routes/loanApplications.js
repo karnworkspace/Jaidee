@@ -100,6 +100,16 @@ router.put('/:id', authenticateToken, requireRole(['admin', 'data_entry']), asyn
     if (!updated) {
       return res.status(400).json({ message: 'No valid fields to update' });
     }
+
+    // Sync loan_status back to customers table for Dashboard display
+    if (req.body.loan_status) {
+      const { db } = require('../database');
+      db.run(
+        'UPDATE customers SET loan_status = ? WHERE id = ?',
+        [req.body.loan_status, existing.customer_id]
+      );
+    }
+
     const application = await getLoanApplicationById(id);
     res.json({ message: 'Loan application updated', application });
   } catch (error) {
