@@ -22,7 +22,7 @@ function Navbar() {
       <div className={styles.navContainer}>
         <div className={styles.navLeft}>
           <Link to="/" className={styles.logo}>
-            🏛️ <span>Jaidee System</span>
+            <span>Jaidee</span> System
           </Link>
           
           <div className={styles.navLinks}>
@@ -30,7 +30,7 @@ function Navbar() {
               to="/" 
               className={`${styles.navLink} ${isActive('/') ? styles.active : ''}`}
             >
-              📊 Dashboard
+              Dashboard
             </Link>
             
             {canEditData() && (
@@ -38,7 +38,7 @@ function Navbar() {
                 to="/add-customer" 
                 className={`${styles.navLink} ${isActive('/add-customer') ? styles.active : ''}`}
               >
-                👥 เพิ่มลูกค้า
+                เพิ่มลูกค้า
               </Link>
             )}
             
@@ -56,7 +56,7 @@ function Navbar() {
                 to="/admin/banks" 
                 className={`${styles.navLink} ${isActive('/admin/banks') ? styles.active : ''}`}
               >
-                🏦 จัดการธนาคาร
+                จัดการธนาคาร
               </Link>
             )}
           </div>
@@ -72,12 +72,12 @@ function Navbar() {
               </span>
             </div>
             <div className={styles.userAvatar}>
-              {user.role === 'admin' ? '👑' : user.role === 'data_entry' ? '📝' : '👁️'}
+              {user.full_name?.charAt(0) || 'U'}
             </div>
           </div>
           
           <button onClick={handleLogout} className={styles.logoutButton}>
-            🚪 ออกจากระบบ
+            ออกจากระบบ
           </button>
         </div>
       </div>

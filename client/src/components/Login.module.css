@@ -1,123 +1,185 @@
+/* ==============================================
+   Login.module.css — Glassmorphism (Teal Brand)
+   Brand colors: #32BCAD, #2A9D8F
+   ============================================== */
+
+/* --- Animated Mesh Gradient Background --- */
 .loginContainer {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
+  background: linear-gradient(-45deg, #2A9D8F, #32BCAD, #1a7a6e, #3dd4c4, #264653);
+  background-size: 400% 400%;
+  animation: gradientShift 20s ease infinite;
+  font-family: 'Inter', 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* --- Glassmorphism Card --- */
 .loginBox {
-  background: white;
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 24px;
+  padding: 48px 40px;
   width: 100%;
-  max-width: 450px;
+  max-width: 440px;
   text-align: center;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Header --- */
 .loginHeader {
-  margin-bottom: 40px;
+  margin-bottom: 36px;
 }
 
 .title {
-  color: #4a5568;
-  font-size: 2.5rem;
-  margin: 0 0 10px 0;
+  color: #ffffff;
+  font-size: 2rem;
+  margin: 0 0 8px 0;
   font-weight: 700;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .subtitle {
-  color: #718096;
-  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 1rem;
   margin: 0;
   font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
+/* --- Form --- */
 .loginForm {
   text-align: left;
 }
 
+/* --- Input Group --- */
 .inputGroup {
-  margin-bottom: 25px;
+  margin-bottom: 22px;
 }
 
 .label {
   display: block;
   margin-bottom: 8px;
-  color: #4a5568;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
 }
 
 .input {
   width: 100%;
-  padding: 15px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  color: #ffffff;
+  transition: all 0.25s ease;
   box-sizing: border-box;
+  font-family: inherit;
+}
+
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
 }
 
 .input:disabled {
-  background-color: #f7fafc;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
+/* --- Login Button --- */
 .loginButton {
   width: 100%;
-  padding: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  padding: 14px;
+  background: linear-gradient(135deg, #ffffff 0%, #e0f7f4 100%);
+  color: #1a6b60;
   border: none;
-  border-radius: 10px;
-  font-size: 1.1rem;
-  font-weight: 600;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 30px;
+  transition: all 0.25s ease;
+  margin-top: 4px;
+  margin-bottom: 28px;
+  font-family: inherit;
+  letter-spacing: 0.01em;
 }
 
 .loginButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.loginButton:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
 }
 
 .loginButton:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
 
+/* --- Error Message --- */
 .errorMessage {
-  background-color: #fed7d7;
-  color: #e53e3e;
-  padding: 12px;
-  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fecaca;
+  padding: 12px 16px;
+  border-radius: 10px;
   margin-bottom: 20px;
   font-weight: 500;
-  border-left: 4px solid #e53e3e;
+  font-size: 0.9rem;
+  backdrop-filter: blur(4px);
 }
 
+/* --- Demo Accounts Section --- */
 .demoAccounts {
-  background-color: #f7fafc;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 20px;
-  border-radius: 12px;
-  margin-top: 20px;
+  border-radius: 16px;
+  margin-top: 8px;
 }
 
 .demoAccounts h3 {
-  margin: 0 0 15px 0;
-  color: #4a5568;
-  font-size: 1rem;
+  margin: 0 0 14px 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .accountList {
@@ -126,9 +188,9 @@
 
 .account {
   padding: 8px 0;
-  color: #718096;
-  font-size: 0.9rem;
-  border-bottom: 1px solid #e2e8f0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .account:last-child {
@@ -136,24 +198,36 @@
 }
 
 .account strong {
-  color: #4a5568;
+  color: rgba(255, 255, 255, 0.85);
 }
 
-/* Responsive Design */
+/* --- Responsive --- */
 @media (max-width: 500px) {
   .loginContainer {
-    padding: 10px;
+    padding: 12px;
   }
-  
+
   .loginBox {
-    padding: 30px 20px;
+    padding: 32px 24px;
+    border-radius: 20px;
   }
-  
+
   .title {
-    font-size: 2rem;
+    font-size: 1.6rem;
   }
-  
+
   .subtitle {
-    font-size: 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* --- Accessibility: Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  .loginContainer {
+    animation: none;
+  }
+
+  .loginBox {
+    animation: none;
   }
 }

@@ -5,6 +5,27 @@ import { API_ENDPOINTS } from "../config/api";
 import ConsumerAdviseReport from "./ConsumerAdviseReport";
 import styles from "./Dashboard.module.css";
 
+// Financial status mapping (Thai → English CSS class)
+const FINANCIAL_CLASS_MAP = {
+  'ดีเยี่ยม': 'excellent',
+  'ดี': 'good',
+  'ปานกลาง': 'fair',
+  'ต้องปรับปรุง': 'poor',
+};
+
+// Loan status display labels
+const LOAN_STATUS_LABELS = {
+  new: 'ใหม่',
+  document_check: 'ตรวจเอกสาร',
+  document_incomplete: 'เอกสารไม่ครบ',
+  bureau_check: 'Bureau',
+  analyzing: 'วิเคราะห์',
+  approved: 'อนุมัติ',
+  rejected: 'ปฏิเสธ',
+  transferred: 'โอนแล้ว',
+  cancelled: 'ยกเลิก',
+};
+
 function Dashboard() {
   const [customers, setCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -285,7 +306,7 @@ function Dashboard() {
           <div className={styles.headerActions}>
             {isAdmin() && (
               <Link to="/admin/banks" className={styles.adminButton}>
-                🏦 จัดการธนาคาร
+                จัดการธนาคาร
               </Link>
             )}
 
@@ -326,13 +347,13 @@ function Dashboard() {
           <div className={styles.searchRow}>
             <input
               type="text"
-              placeholder="🔍 Super Search: ชื่อ, โครงการ, ห้อง, เจ้าหน้าที่, เบอร์โทร, อาชีพ, ธนาคาร, รายได้, ปัญหา, แผนแก้ไข, วันที่บันทึก..."
+              placeholder="ค้นหา: ชื่อ, โครงการ, ห้อง, เจ้าหน้าที่, เบอร์โทร, อาชีพ, ธนาคาร, รายได้, ปัญหา, แผนแก้ไข..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={styles.searchInput}
             />
             <button onClick={clearFilters} className={styles.clearButton}>
-              🔄 ล้างตัวกรอง
+              ล้างตัวกรอง
             </button>
           </div>
 
@@ -342,9 +363,9 @@ function Dashboard() {
               onChange={(e) => handleFilterChange("status", e.target.value)}
               className={styles.filterSelect}
             >
-              <option value="all">📋 สถานะทั้งหมด</option>
-              <option value="urgent">⚠️ เร่งด่วน</option>
-              <option value="normal">✅ ปกติ</option>
+              <option value="all">สถานะทั้งหมด</option>
+              <option value="urgent">เร่งด่วน</option>
+              <option value="normal">ปกติ</option>
             </select>
 
             <select
@@ -354,10 +375,10 @@ function Dashboard() {
               }
               className={styles.filterSelect}
             >
-              <option value="all">📊 คะแนนทั้งหมด</option>
-              <option value="high">🔥 สูง (80%+)</option>
-              <option value="medium">⚡ ปานกลาง (50-79%)</option>
-              <option value="low">📉 ต่ำ (น้อยกว่า 50%)</option>
+              <option value="all">คะแนนทั้งหมด</option>
+              <option value="high">สูง (80%+)</option>
+              <option value="medium">ปานกลาง (50-79%)</option>
+              <option value="low">ต่ำ (น้อยกว่า 50%)</option>
             </select>
 
             <select
@@ -367,7 +388,7 @@ function Dashboard() {
               }
               className={styles.filterSelect}
             >
-              <option value="all">💰 สถานะการเงินทั้งหมด</option>
+              <option value="all">สถานะการเงินทั้งหมด</option>
               {getUniqueFinancialStatuses().map((status) => (
                 <option key={status} value={status}>
                   {status}
@@ -380,7 +401,7 @@ function Dashboard() {
               onChange={(e) => handleFilterChange("officer", e.target.value)}
               className={styles.filterSelect}
             >
-              <option value="all">👤 ผู้วิเคราะห์ CAA ทั้งหมด</option>
+              <option value="all">ผู้วิเคราะห์ทั้งหมด</option>
               {getUniqueOfficers().map((officer) => (
                 <option key={officer} value={officer}>
                   {officer}
@@ -393,7 +414,7 @@ function Dashboard() {
               onChange={(e) => handleFilterChange("loanStatus", e.target.value)}
               className={styles.filterSelect}
             >
-              <option value="all">📌 สถานะสินเชื่อทั้งหมด</option>
+              <option value="all">สถานะสินเชื่อทั้งหมด</option>
               <option value="new">ใหม่</option>
               <option value="document_check">ตรวจเอกสาร</option>
               <option value="document_incomplete">เอกสารไม่ครบ</option>
@@ -427,7 +448,7 @@ function Dashboard() {
                     onClick={() => handleSort("name")}
                     className={styles.sortableHeader}
                   >
-                    👤 ชื่อลูกค้า
+                    ชื่อลูกค้า
                     {sortField === "name" && (
                       <span className={styles.sortIcon}>
                         {sortDirection === "asc" ? " ↑" : " ↓"}
@@ -438,19 +459,19 @@ function Dashboard() {
                     onClick={() => handleSort("projectName")}
                     className={styles.sortableHeader}
                   >
-                    🏠 โครงการ
+                    โครงการ
                     {sortField === "projectName" && (
                       <span className={styles.sortIcon}>
                         {sortDirection === "asc" ? " ↑" : " ↓"}
                       </span>
                     )}
                   </th>
-                  <th>🏢 ห้อง</th>
+                  <th>ห้อง</th>
                   <th
                     onClick={() => handleSort("income")}
                     className={styles.sortableHeader}
                   >
-                    💰 รายได้
+                    รายได้
                     {sortField === "income" && (
                       <span className={styles.sortIcon}>
                         {sortDirection === "asc" ? " ↑" : " ↓"}
@@ -461,19 +482,19 @@ function Dashboard() {
                     onClick={() => handleSort("potentialScore")}
                     className={styles.sortableHeader}
                   >
-                    📊 คะแนน
+                    คะแนน
                     {sortField === "potentialScore" && (
                       <span className={styles.sortIcon}>
                         {sortDirection === "asc" ? " ↑" : " ↓"}
                       </span>
                     )}
                   </th>
-                  <th>💼 สถานะการเงิน</th>
+                  <th>สถานะการเงิน</th>
                   <th
                     onClick={() => handleSort("officer")}
                     className={styles.sortableHeader}
                   >
-                    👨‍💼 ผู้วิเคราะห์ CAA
+                    ผู้วิเคราะห์
                     {sortField === "officer" && (
                       <span className={styles.sortIcon}>
                         {sortDirection === "asc" ? " ↑" : " ↓"}
@@ -484,7 +505,7 @@ function Dashboard() {
                     onClick={() => handleSort("created_at")}
                     className={styles.sortableHeader}
                   >
-                    📅 วันที่บันทึก
+                    วันที่บันทึก
                     {sortField === "created_at" && (
                       <span className={styles.sortIcon}>
                         {sortDirection === "asc" ? " ↑" : " ↓"}
@@ -495,15 +516,15 @@ function Dashboard() {
                     onClick={() => handleSort("loan_status")}
                     className={styles.sortableHeader}
                   >
-                    📌 สินเชื่อ
+                    สินเชื่อ
                     {sortField === "loan_status" && (
                       <span className={styles.sortIcon}>
                         {sortDirection === "asc" ? " ↑" : " ↓"}
                       </span>
                     )}
                   </th>
-                  <th>⚡ สถานะ</th>
-                  <th>🔧 จัดการ</th>
+                  <th>สถานะ</th>
+                  <th>จัดการ</th>
                 </tr>
               </thead>
               <tbody>
@@ -544,7 +565,7 @@ function Dashboard() {
                       </td>
                       <td className={styles.financialCell}>
                         <span
-                          className={`${styles.financialBadge} ${styles[customer.financialStatus?.replace(" ", "").toLowerCase() || "default"]}`}
+                          className={`${styles.financialBadge} ${styles[FINANCIAL_CLASS_MAP[customer.financialStatus] || 'default']}`}
                         >
                           {customer.financialStatus || "-"}
                         </span>
@@ -559,20 +580,8 @@ function Dashboard() {
                       </td>
                       <td>
                         {customer.loan_status ? (
-                          <span style={{
-                            padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: '600',
-                            color: '#fff',
-                            background: {
-                              new: '#6b7280', document_check: '#f59e0b', document_incomplete: '#ef4444',
-                              bureau_check: '#3b82f6', analyzing: '#8b5cf6', approved: '#10b981',
-                              rejected: '#ef4444', transferred: '#059669', cancelled: '#6b7280'
-                            }[customer.loan_status] || '#6b7280'
-                          }}>
-                            {{
-                              new: 'ใหม่', document_check: 'ตรวจเอกสาร', document_incomplete: 'เอกสารไม่ครบ',
-                              bureau_check: 'Bureau', analyzing: 'วิเคราะห์', approved: 'อนุมัติ',
-                              rejected: 'ปฏิเสธ', transferred: 'โอนแล้ว', cancelled: 'ยกเลิก'
-                            }[customer.loan_status] || customer.loan_status}
+                          <span className={`${styles.loanStatusBadge} ${styles[`loan_${customer.loan_status}`] || ''}`}>
+                            {LOAN_STATUS_LABELS[customer.loan_status] || customer.loan_status}
                           </span>
                         ) : '-'}
                       </td>
@@ -588,15 +597,15 @@ function Dashboard() {
                           to={`/customer/${customer.id}`}
                           className={styles.viewButton}
                           onClick={(e) => e.stopPropagation()}
+                          title="ดูรายละเอียด"
                         >
-                          📋
+                          ดู
                         </Link>
                         <button
                           className={styles.printButton}
                           onClick={async (e) => {
                             e.stopPropagation();
                             try {
-                              // ดึงข้อมูลลูกค้าที่มี detailedRentToOwnEstimation ครบถ้วน
                               const response = await authenticatedFetch(
                                 API_ENDPOINTS.CUSTOMER_BY_ID(customer.id),
                               );
@@ -614,17 +623,18 @@ function Dashboard() {
                               setShowReport(true);
                             }
                           }}
-                          title="พิมพ์ Consumer Advise Report"
+                          title="พิมพ์รายงาน"
                         >
-                          🖨️
+                          พิมพ์
                         </button>
                         {canEditData() && (
                           <Link
                             to={`/edit-customer/${customer.id}`}
                             className={styles.editButton}
                             onClick={(e) => e.stopPropagation()}
+                            title="แก้ไขข้อมูล"
                           >
-                            ⚙️
+                            แก้ไข
                           </Link>
                         )}
                       </td>
