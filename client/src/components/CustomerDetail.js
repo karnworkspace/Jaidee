@@ -60,8 +60,7 @@ function CustomerDetail() {
   const { customerId } = useParams();
   const { authenticatedFetch } = useAuth();
   const [customer, setCustomer] = useState(null);
-  const [activeSection, setActiveSection] = useState("overview");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   // DOC2026 states
   const [loanApplications, setLoanApplications] = useState([]);
@@ -163,72 +162,13 @@ function CustomerDetail() {
     }
   };
 
-  const navigationSections = [
-    {
-      id: "overview",
-      title: "OVERVIEW",
-      items: [
-        { id: "kpi", label: "📊 KPI Dashboard", icon: "📊" },
-        { id: "personal", label: "👤 ข้อมูลส่วนบุคคล", icon: "👤" },
-      ],
-    },
-    {
-      id: "property",
-      title: "PROPERTY",
-      items: [{ id: "property", label: "🏠 ข้อมูลทรัพย์สิน", icon: "🏠" }],
-    },
-    {
-      id: "financial",
-      title: "FINANCIAL",
-      items: [{ id: "financialInfo", label: "💳 ข้อมูลการเงิน", icon: "💳" }],
-    },
-    {
-      id: "bankAnalysis",
-      title: "BANK ANALYSIS",
-      items: [{ id: "bankMatching", label: "🏦 Bank Matching", icon: "🏦" }],
-    },
-    {
-      id: "loanEstimation",
-      title: "LOAN ESTIMATION",
-      items: [{ id: "loanTable", label: "📈 Loan Table", icon: "📈" }],
-    },
-    {
-      id: "rentToOwn",
-      title: "RENT-TO-OWN",
-      items: [
-        { id: "rentResults", label: "💰 ข้อมูลการเช่าออม", icon: "💰" },
-        { id: "amortization", label: "📋 Amortization", icon: "📋" },
-      ],
-    },
-    {
-      id: "doc2026",
-      title: "DOC2026 WORKFLOW",
-      items: [
-        { id: "workflowStatus", label: "📌 Workflow Status", icon: "📌" },
-        { id: "debtDetail", label: "💸 รายละเอียดหนี้", icon: "💸" },
-        { id: "bureauInfo", label: "📑 Bureau Check", icon: "📑" },
-        { id: "livnexTrack", label: "📋 LivNex Tracking", icon: "📋" },
-        { id: "caReco", label: "💡 CA Recommendations", icon: "💡" },
-      ],
-    },
+  const TAB_CONFIG = [
+    { id: 'overview', label: 'ภาพรวม' },
+    { id: 'analysis', label: 'วิเคราะห์สินเชื่อ' },
+    { id: 'bank_matching', label: 'จับคู่ธนาคาร' },
+    { id: 'doc2026', label: 'สถานะ' },
+    { id: 'tracking', label: 'ติดตาม & สรุป' },
   ];
-
-  const handleNavClick = (sectionId) => {
-    setActiveSection(sectionId);
-    setIsMobileMenuOpen(false);
-
-    // Smooth scroll to section
-    setTimeout(() => {
-      const element = document.getElementById(sectionId);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
-      }
-    }, 100);
-  };
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
 
   const formatNumber = (num) => {
     if (num === null || num === undefined || num === "") return "-";
@@ -303,82 +243,122 @@ function CustomerDetail() {
 
   return (
     <div className={styles.detailContainer}>
-      {/* Mobile Menu Toggle */}
-      <button className={styles.mobileMenuToggle} onClick={toggleMobileMenu}>
-        ☰
-      </button>
-
-      {/* Sidebar Overlay for Mobile */}
-      <div
-        className={`${styles.sidebarOverlay} ${isMobileMenuOpen ? styles.open : ""}`}
-        onClick={() => setIsMobileMenuOpen(false)}
-      />
-
-      {/* Sidebar */}
-      <div
-        className={`${styles.sidebar} ${isMobileMenuOpen ? styles.open : ""}`}
-      >
-        <div className={styles.sidebarContent}>
-          <div className={styles.sidebarTitle}>{customer.name}</div>
-
-          {navigationSections.map((section) => (
-            <div key={section.id} className={styles.navSection}>
-              <div className={styles.navSectionTitle}>{section.title}</div>
-              {section.items.map((item) => (
-                <div
-                  key={item.id}
-                  className={`${styles.navItem} ${activeSection === item.id ? styles.active : ""}`}
-                  onClick={() => handleNavClick(item.id)}
-                >
-                  {item.label}
-                </div>
-              ))}
-            </div>
-          ))}
-
-          <div className={styles.navSection}>
-            <div className={styles.navSectionTitle}>ACTIONS</div>
-            <Link
-              to={`/edit-customer/${customerId}`}
-              className={styles.navItem}
-            >
-              ✏️ แก้ไขข้อมูล
-            </Link>
-            <Link to="/" className={styles.navItem}>
-              🏠 กลับหน้าแรก
-            </Link>
-          </div>
+      {/* Header Bar */}
+      <div className={styles.headerBar}>
+        <div className={styles.headerLeft}>
+          <Link to="/" className={styles.backLink}>กลับ</Link>
+          <h1 className={styles.headerName}>{customer.name}</h1>
+          <span className={styles.headerOfficer}>CA: {customer.officer}</span>
+        </div>
+        <div className={styles.headerRight}>
+          <Link to={`/edit-customer/${customerId}`} className={styles.headerBtn}>แก้ไขข้อมูล</Link>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className={styles.contentWrapper}>
-        <div className={styles.header}>
-          <h1>
-            {customer.name}
-            <span>ผู้วิเคราะห์ CAA: {customer.officer}</span>
-          </h1>
+      {/* KPI Strip — Always Visible */}
+      <div className={styles.kpiStrip}>
+        <div className={styles.kpiItem}>
+          <span className={styles.kpiValue}>{customer.potentialScore || 0}%</span>
+          <span className={styles.kpiLabel}>Potential</span>
         </div>
-
-        {/* KPI Dashboard Section */}
-        <div id="kpi" className={styles.section}>
-          <div className={styles.kpiGrid}>
-            <div className={styles.kpiCard}>
-              <div className={styles.value}>
-                {customer.potentialScore || 0}%
-              </div>
-              <div className={styles.label}>Potential Score</div>
-              <div className={styles.subtitle}>คะแนนศักยภาพ</div>
-            </div>
-            <div className={styles.kpiCard}>
-              <div className={styles.value}>
-                {customer.degreeOfOwnership || 0}%
-              </div>
-              <div className={styles.label}>Ownership</div>
-              <div className={styles.subtitle}>ระดับความเป็นเจ้าของ</div>
-            </div>
+        <div className={styles.kpiItem}>
+          <span className={styles.kpiValue}>{customer.degreeOfOwnership || 0}%</span>
+          <span className={styles.kpiLabel}>Ownership</span>
+        </div>
+        {dsrData && (
+          <div className={styles.kpiItem}>
+            <span className={styles.kpiValue} style={{color: dsrData.dsr > 40 ? '#dc2626' : '#16a34a'}}>{dsrData.dsr}%</span>
+            <span className={styles.kpiLabel}>DSR</span>
           </div>
+        )}
+        {loanApplications.length > 0 && (
+          <div className={styles.kpiItem}>
+            <span className={styles.kpiValue}>{
+              {new: 'ใหม่', document_check: 'ตรวจเอกสาร', bureau_check: 'ตรวจ Bureau',
+               analyzing: 'วิเคราะห์', approved: 'อนุมัติ', transferred: 'โอนแล้ว',
+               rejected: 'ปฏิเสธ', cancelled: 'ยกเลิก'}[loanApplications[0].loan_status] || loanApplications[0].loan_status
+            }</span>
+            <span className={styles.kpiLabel}>สถานะ</span>
+          </div>
+        )}
+      </div>
+
+      {/* Workflow Status Strip — แสดงเสมอทุก Tab */}
+      <div className={styles.workflowStrip}>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '0.5rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0}}>
+            <span className={styles.workflowLabel}>📌 Workflow</span>
+            {loanApplications.length > 0 ? (
+              <>
+                {(() => {
+                  const app = loanApplications[0];
+                  const statusLabels = {
+                    new: 'ใหม่', document_check: 'ตรวจเอกสาร', document_incomplete: 'เอกสารไม่ครบ',
+                    bureau_check: 'ตรวจ Bureau', analyzing: 'วิเคราะห์', approved: 'อนุมัติ',
+                    rejected: 'ปฏิเสธ', transferred: 'โอนแล้ว', cancelled: 'ยกเลิก',
+                    cancelled_after_approval: 'ยกเลิกหลังอนุมัติ'
+                  };
+                  const statusColors = {
+                    new: '#6b7280', document_check: '#f59e0b', document_incomplete: '#ef4444',
+                    bureau_check: '#3b82f6', analyzing: '#8b5cf6', approved: '#10b981',
+                    rejected: '#ef4444', transferred: '#059669', cancelled: '#6b7280',
+                    cancelled_after_approval: '#dc2626'
+                  };
+                  const allSteps = ['new', 'document_check', 'bureau_check', 'analyzing', 'approved', 'transferred'];
+                  const currentIdx = allSteps.indexOf(app.loan_status);
+                  return (
+                    <>
+                      <span style={{fontWeight: '600', fontSize: '0.85rem', color: '#264653'}}>{app.app_in_number || `APP-${app.id}`}</span>
+                      <span style={{padding: '2px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '600', color: '#fff', background: statusColors[app.loan_status] || '#6b7280'}}>
+                        {statusLabels[app.loan_status] || app.loan_status}
+                      </span>
+                      <div style={{display: 'flex', gap: '3px', flex: 1, maxWidth: '300px'}}>
+                        {allSteps.map((step, i) => (
+                          <div key={step} style={{
+                            flex: 1, height: '5px', borderRadius: '3px',
+                            background: i <= currentIdx ? (statusColors[app.loan_status] || '#6b7280') : '#e5e7eb'
+                          }} title={statusLabels[step]} />
+                        ))}
+                      </div>
+                      <StatusChangeButtons appId={app.id} currentStatus={app.loan_status} onStatusChange={handleStatusChange} />
+                    </>
+                  );
+                })()}
+              </>
+            ) : (
+              <span style={{fontSize: '0.8rem', color: '#9ca3af'}}>ยังไม่มีใบสมัคร</span>
+            )}
+          </div>
+          <button
+            onClick={handleCreateLoanApp}
+            style={{padding: '4px 12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600', whiteSpace: 'nowrap'}}
+          >
+            + สร้าง APP-IN ใหม่
+          </button>
         </div>
+      </div>
+
+      {/* Tab Bar */}
+      <div className={styles.tabBar}>
+        {TAB_CONFIG.map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            className={`${styles.tabBtn} ${activeTab === tab.id ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className={styles.tabContent}>
+
+        {/* ========== Tab 1: ภาพรวม ========== */}
+        {activeTab === 'overview' && (<>
+
+        {/* Personal Information Section */}
 
         {/* Personal Information Section */}
         <div id="personal" className={styles.section}>
@@ -534,6 +514,11 @@ function CustomerDetail() {
             </div>
           </div>
         </div>
+
+        </>)}
+
+        {/* ========== Tab 2: วิเคราะห์สินเชื่อ ========== */}
+        {activeTab === 'analysis' && (<>
 
         {/* Loan Table Section */}
         <div id="loanTable" className={styles.section}>
@@ -728,6 +713,11 @@ function CustomerDetail() {
           )}
         </div>
 
+        </>)}
+
+        {/* ========== Tab 3: จับคู่ธนาคาร (Bank Matching) ========== */}
+        {activeTab === 'bank_matching' && (<>
+
         {/* Enhanced Bank Matching Section */}
         <div id="bankMatching" className={styles.section}>
           {customer.enhancedBankMatching &&
@@ -770,19 +760,6 @@ function CustomerDetail() {
                           ></div>
                         </div>
                       </div>
-
-                      {/* Temporarily hidden - Component scores
-                <div className={styles.componentScores}>
-                  <div className={styles.componentScore}>
-                    <span className={styles.componentLabel}>Loan Band</span>
-                    <span className={styles.componentValue}>{data.componentScores.loanBand}</span>
-                  </div>
-                  <div className={styles.componentScore}>
-                    <span className={styles.componentLabel}>Rent-to-Own</span>
-                    <span className={styles.componentValue}>{data.componentScores.rentToOwn}</span>
-                  </div>
-                </div>
-                */}
 
                       <div className={styles.bankDetails}>
                         <div className={styles.detailRow}>
@@ -1003,73 +980,10 @@ function CustomerDetail() {
           )}
         </div>
 
-        {/* ============ DOC2026 SECTIONS ============ */}
+        </>)}
 
-        {/* F1+F2: Workflow Status Bar + APP-IN Management */}
-        <div id="workflowStatus" className={styles.section}>
-          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-            <h2 style={{margin: 0}}>📌 Workflow Status</h2>
-            <button
-              onClick={handleCreateLoanApp}
-              style={{padding: '6px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600'}}
-            >
-              + สร้าง APP-IN ใหม่
-            </button>
-          </div>
-          {loanApplications.length > 0 ? (
-            <div>
-              {loanApplications.map(app => {
-                const statusLabels = {
-                  new: 'ใหม่', document_check: 'ตรวจเอกสาร', document_incomplete: 'เอกสารไม่ครบ',
-                  bureau_check: 'ตรวจ Bureau', analyzing: 'วิเคราะห์', approved: 'อนุมัติ',
-                  rejected: 'ปฏิเสธ', transferred: 'โอนแล้ว', cancelled: 'ยกเลิก',
-                  cancelled_after_approval: 'ยกเลิกหลังอนุมัติ'
-                };
-                const statusColors = {
-                  new: '#6b7280', document_check: '#f59e0b', document_incomplete: '#ef4444',
-                  bureau_check: '#3b82f6', analyzing: '#8b5cf6', approved: '#10b981',
-                  rejected: '#ef4444', transferred: '#059669', cancelled: '#6b7280',
-                  cancelled_after_approval: '#dc2626'
-                };
-                const allSteps = ['new', 'document_check', 'bureau_check', 'analyzing', 'approved', 'transferred'];
-                const currentIdx = allSteps.indexOf(app.loan_status);
-
-                return (
-                  <div key={app.id} style={{marginBottom: '1.5rem', padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb'}}>
-                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem'}}>
-                      <span style={{fontWeight: 'bold', fontSize: '1rem'}}>{app.app_in_number || `APP-${app.id}`}</span>
-                      <span style={{padding: '2px 12px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: '600', color: '#fff', background: statusColors[app.loan_status] || '#6b7280'}}>
-                        {statusLabels[app.loan_status] || app.loan_status}
-                      </span>
-                    </div>
-                    {/* Progress bar */}
-                    <div style={{display: 'flex', gap: '4px', marginBottom: '0.5rem'}}>
-                      {allSteps.map((step, i) => (
-                        <div key={step} style={{
-                          flex: 1, height: '6px', borderRadius: '3px',
-                          background: i <= currentIdx ? (statusColors[app.loan_status] || '#6b7280') : '#e5e7eb'
-                        }} title={statusLabels[step]} />
-                      ))}
-                    </div>
-                    <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#9ca3af'}}>
-                      {allSteps.map(step => (
-                        <span key={step}>{statusLabels[step]}</span>
-                      ))}
-                    </div>
-                    {app.assigned_ca && <p style={{marginTop: '0.5rem', fontSize: '0.85rem'}}>CA: {app.assigned_ca} {app.assigned_co ? `| CO: ${app.assigned_co}` : ''}</p>}
-                    {app.created_at && <p style={{margin: '0.25rem 0 0', fontSize: '0.75rem', color: '#9ca3af'}}>สร้างเมื่อ: {new Date(app.created_at).toLocaleDateString('th-TH')}</p>}
-                    {/* Status change buttons */}
-                    <StatusChangeButtons appId={app.id} currentStatus={app.loan_status} onStatusChange={handleStatusChange} />
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className={styles.noData}>
-              <p>ยังไม่มีใบสมัครสินเชื่อ — กดปุ่ม "+ สร้าง APP-IN ใหม่" ด้านบนขวาเพื่อเริ่มต้น</p>
-            </div>
-          )}
-        </div>
+        {/* ========== Tab 4: สถานะ ========== */}
+        {activeTab === 'doc2026' && (<>
 
         {/* F3: Debt Items Table — CRUD */}
         <div id="debtDetail" className={styles.section}>
@@ -1083,6 +997,11 @@ function CustomerDetail() {
           <BureauRequestForm customerId={customerId} bureauRequests={bureauRequests} onDataChange={fetchAllData} />
         </div>
 
+        </>)}
+
+        {/* ========== Tab 5: ติดตาม & สรุป ========== */}
+        {activeTab === 'tracking' && (<>
+
         {/* F5: LivNex Tracking — CRUD */}
         <div id="livnexTrack" className={styles.section}>
           <h2>📋 LivNex Tracking</h2>
@@ -1095,11 +1014,8 @@ function CustomerDetail() {
           <CaRecommendationForm customerId={customerId} caRecommendations={caRecommendations} onDataChange={fetchAllData} />
         </div>
 
-        <div className={styles.footerButtons}>
-          <Link to="/" className={styles.editButton}>
-            กลับหน้าแรก
-          </Link>
-        </div>
+        </>)}
+
       </div>
     </div>
   );

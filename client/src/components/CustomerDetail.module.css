@@ -5,6 +5,201 @@
   background: linear-gradient(135deg, #32BCAD 0%, #2A9D8F 100%);
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
+}
+
+/* ===== Header Bar ===== */
+.headerBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.backLink {
+  color: #2A9D8F;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #2A9D8F;
+  border-radius: 6px;
+}
+
+.backLink:hover {
+  background: #2A9D8F;
+  color: #fff;
+}
+
+.headerName {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #264653;
+  margin: 0;
+}
+
+.headerOfficer {
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.headerRight {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.headerBtn {
+  padding: 0.4rem 1rem;
+  background: #2A9D8F;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.headerBtn:hover {
+  background: #238377;
+}
+
+/* ===== KPI Strip ===== */
+.kpiStrip {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.75rem 2rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid #e5e7eb;
+  overflow-x: auto;
+}
+
+.kpiItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+}
+
+.kpiValue {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #264653;
+}
+
+.kpiLabel {
+  font-size: 0.8rem;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+/* ===== Workflow Strip ===== */
+.workflowStrip {
+  padding: 0.5rem 2rem;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+  border-bottom: 1px solid #d1fae5;
+}
+
+.workflowLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #264653;
+  white-space: nowrap;
+}
+
+/* ===== Tab Bar ===== */
+.tabBar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 2rem;
+  background: #f8fafb;
+  border-bottom: 2px solid #e5e7eb;
+  overflow-x: auto;
+}
+
+.tabBtn {
+  padding: 0.6rem 1.25rem;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.tabBtn:hover {
+  color: #264653;
+  background: #f0fdfa;
+  border-color: #a7d8d0;
+}
+
+.tabActive {
+  color: #ffffff;
+  background: #2A9D8F;
+  border-color: #2A9D8F;
+  border-bottom-color: #2A9D8F;
+  box-shadow: 0 2px 8px rgba(42, 157, 143, 0.3);
+}
+
+/* ===== Tab Content ===== */
+.tabContent {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .headerBar {
+    padding: 0.5rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .headerName {
+    font-size: 1rem;
+  }
+
+  .headerOfficer {
+    display: none;
+  }
+
+  .kpiStrip {
+    padding: 0.5rem 1rem;
+    gap: 1rem;
+  }
+
+  .workflowStrip {
+    padding: 0.5rem 1rem;
+  }
+
+  .tabBar {
+    padding: 0.5rem 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .tabBtn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .tabContent {
+    padding: 1rem;
+  }
 }
 
 .sidebar {
